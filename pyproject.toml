@@ -1,7 +1,7 @@
 [project]
 name = "pestinha"
 version = "0.7.0"
-description = "Pestinha: pets de tela para Windows, cada um com uma rede neural pulsada."
+description = "Pestinha: pets de tela para Windows, macOS e Linux, cada um com uma rede neural pulsada."
 requires-python = ">=3.11"
 readme = "README.md"
 license = "GPL-3.0-or-later"
@@ -10,3 +10,45 @@ license-files = ["LICENSE"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
+filterwarnings = ["error"]      # qualquer aviso do Python vira falha: o gate é 0 avisos
+
+# Gate de qualidade (ver CONTRIBUTING.md): ruff check . && mypy && bandit -c pyproject.toml -r pestinha main.py ferramentas
+[tool.ruff]
+target-version = "py311"
+extend-exclude = [".venv", "build", "executáveis"]
+
+[tool.ruff.lint]
+# além das regras padrão do ruff, o conjunto da auditoria de 2026-11 (bugs, segurança, estilo)
+extend-select = ["B", "E", "W", "PL", "RUF", "SIM", "BLE", "S", "UP", "PERF", "PIE", "RET", "ARG",
+                 "DTZ", "PTH", "TRY", "C4", "ISC", "ERA"]
+ignore = [
+    "E501",     # linhas longas: o projeto não fixa largura
+    "PLR2004",  # números mágicos: os limiares têm nome em ajustes.py; o resto é geometria de desenho
+    "PLR0911", "PLR0912", "PLR0913", "PLR0915", "PLR0917",  # tamanho de funções/assinaturas (callbacks Qt e simulação)
+    "PTH123",   # open(): usado com encoding explícito
+    "RUF001", "RUF002", "RUF003",  # caracteres ambíguos: o texto é em português (acentos, aspas, travessão)
+    "S311",     # random serve para comportamento (sorteio, ruído da rede), nunca para segurança
+    "TRY003",   # mensagens de erro em português dentro da exceção, de propósito
+    "PLC0415",  # imports dentro de função: dependências opcionais por sistema (pyobjc, Xlib, pynput)
+]
+
+[tool.ruff.lint.per-file-ignores]
+# testes: assert é o próprio teste; lambdas de encaixe (monkeypatch/Qt) ignoram argumentos; sys.path antes do import
+"tests/**" = ["S101", "ARG", "E402", "PLW0603", "S108"]
+"conftest.py" = ["E402"]
+# ferramentas são scripts: ajustam o sys.path antes de importar o pacote; o fuzzer ignora argumentos
+"ferramentas/**" = ["E402", "ARG", "T201"]
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+
+[tool.mypy]
+files = ["pestinha", "main.py"]
+python_version = "3.11"
+check_untyped_defs = true
+ignore_missing_imports = true      # pywin32, pyobjc, Xlib e pynput não têm stubs instalados
+warn_unused_ignores = true
+
+[tool.bandit]
+# random serve para comportamento (sorteio de travessuras, ruído da rede), nunca para segurança
+skips = ["B311"]

@@ -13,23 +13,23 @@ RAIZ = Path(__file__).resolve().parent.parent
 PACOTE = RAIZ / "pestinha"
 
 CAMADAS = [
-    ("core", "Cérebro e regras puras: rede neural, emoção, homeostase, memória, condicionamento, física e protesto. "
-             "Sem Qt e sem API do sistema, para ser testável em qualquer lugar.", "módulos compartilhados"),
-    ("plataforma", "Tudo que depende do sistema operacional: programa em primeiro plano, tempo ocioso, janelas, "
+    ("core", ("Cérebro e regras puras: rede neural, emoção, homeostase, memória, condicionamento, física e protesto. "
+             "Sem Qt e sem API do sistema, para ser testável em qualquer lugar."), "módulos compartilhados"),
+    ("plataforma", ("Tudo que depende do sistema operacional: programa em primeiro plano, tempo ocioso, janelas, "
                    "tela cheia, foco e o atalho de pânico. Um módulo por sistema (Windows, macOS, Linux). "
-                   "Só nome de programa e geometria; nunca conteúdo nem título de janela.", "nada (só o sistema)"),
-    ("sense", "Sentidos: o que as leituras da plataforma significam (atividade, tela cheia, janela para pousar) "
-              "e registro da rotina. Nunca conteúdo nem título de janela.", "core, plataforma"),
-    ("body", "O corpo do pet: a janela com o rosto, o estado que ele mostra, o comportamento (movimento) e a "
-             "bolinha.", "core, sense"),
-    ("world", "Objetos que aparecem na tela: post-its, memes, cartazes, notebook, fogos e a janela arrastável "
-              "base.", "core, sense, body"),
-    ("mind", "Controladores de decisão: ligam o que a rede decide à cena (sono, mesa, protesto, travessuras, "
-             "festa, revolução, cantinho do castigo).", "core, sense, body, world"),
-    ("ui", "Janelas de interface: tela de permissões, bandeja, passo a passo, monitor neural e painel de "
-           "protesto.", "core, sense, body, world, mind"),
-    ("controle", "Mixins de `PestinhaApp`: sessão (permissões, visibilidade, pausa, pânico, salvar, sair, apagar) e "
-                 "interação (cutucar, arrastar, menus, notebook).", "todas as anteriores"),
+                   "Só nome de programa e geometria; nunca conteúdo de janela, e o título (se vier junto) é descartado."), "nada (só o sistema)"),
+    ("sense", ("Sentidos: o que as leituras da plataforma significam (atividade, tela cheia, janela para pousar) "
+              "e registro da rotina. Nunca conteúdo de janela nem título."), "core, plataforma"),
+    ("body", ("O corpo do pet: a janela com o rosto, o estado que ele mostra, o comportamento (movimento) e a "
+             "bolinha."), "core, sense"),
+    ("world", ("Objetos que aparecem na tela: post-its, memes, cartazes, notebook, fogos e a janela arrastável "
+              "base."), "core, sense, body"),
+    ("mind", ("Controladores de decisão: ligam o que a rede decide à cena (sono, mesa, protesto, travessuras, "
+             "festa, revolução, cantinho do castigo)."), "core, sense, body, world"),
+    ("ui", ("Janelas de interface: tela de permissões, bandeja, passo a passo, monitor neural e painel de "
+           "protesto."), "core, sense, body, world, mind"),
+    ("controle", ("Mixins de `PestinhaApp`: sessão (permissões, visibilidade, pausa, pânico, salvar, sair, apagar) e "
+                 "interação (cutucar, arrastar, menus, notebook)."), "todas as anteriores"),
 ]
 COMPARTILHADOS = ["ajustes.py", "config.py", "paths.py", "store.py", "log.py", "mathutil.py", "settings_store.py"]
 

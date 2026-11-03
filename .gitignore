@@ -5,6 +5,8 @@ memory/
 __pycache__/
 *.pyc
 .pytest_cache/
+.ruff_cache/
+.mypy_cache/
 build/
 dist/
 *.spec
@@ -12,5 +14,8 @@ dist/
 # Temporários
 *.tmp
 *.corrompido
+*.descartado
+*.descartado.*
+*.corrompido.*
 *.log
 scratch_*.py

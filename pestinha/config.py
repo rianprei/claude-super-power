@@ -5,8 +5,11 @@ Tudo o que o usuário escolhe na tela inicial mora em memory/permissions.json (v
 e é gravado a CADA mudança (se o programa cair, a escolha não se perde).
 """
 
+import copy
+import math
 import random
 
+from .log import log
 from .paths import pet_id_valido
 from .store import read_json, read_lines, write_json
 
@@ -49,6 +52,8 @@ DEFAULT_PERMISSIONS = {
     "mostrar_emocao": False,   # só vale com modo_teste ligado
     "bolinha": True,           # a bolinha para ele brincar
     "fogos": True,             # fogo de artifício quando ele fica feliz de verdade (rede)
+    "notebook": True,          # o notebook na tela (escondê-lo pelo menu também fica salvo)
+    "super_saiyajin": False,   # só o corpo clawd3d: cabelo dourado e aura (o menu do botão direito também troca)
 }
 
 # (chave, rótulo, descrição) na ordem da tela inicial
@@ -62,8 +67,8 @@ PERMISSION_GROUPS = [
     ("Interação", [
         ("cutucar", "Cutucar", "Clicar nele é uma cutucada, e ele reage."),
         ("carinho", "Carinho e aprendizado",
-         "Passar o mouse para lá e para cá em cima dele é carinho. Ele aprende a gostar "
-         "do que estava acontecendo quando ganhou carinho (e a desgostar de ser dispensado)."),
+         ("Passar o mouse para lá e para cá em cima dele é carinho. Ele aprende a gostar "
+         "do que estava acontecendo quando ganhou carinho (e a desgostar de ser dispensado).")),
         ("arrastar", "Arrastar e arremessar", "Segurar, girar com a rodinha e jogar longe."),
         ("pousar_janelas", "Pousar em janelas", "Solto no ar, ele pode cair em cima da barra de título."),
     ]),
@@ -73,12 +78,14 @@ PERMISSION_GROUPS = [
     ]),
     ("Rotina", [
         ("rotina", "Aprender minha rotina",
-         "Grava 1 linha por minuto em memory/timeline.csv: hora, categoria de atividade, "
-         "trocas de programa, ocioso. Nunca títulos, sites ou conteúdo."),
+         ("Grava 1 linha por minuto em memory/timeline.csv: hora, categoria de atividade, "
+         "trocas de programa, ocioso. Nunca títulos, sites ou conteúdo.")),
     ]),
     ("Brincadeira", [
         ("fogos", "Fogos de artifício", "Quando ele fica muito feliz, a alegria da rede pode soltar um fogo."),
         ("bolinha", "Bolinha", "Uma bolinha para ele brincar. Se você levar para longe, ele reage (pode ficar triste, bravo ou ir atrás)."),
+        ("notebook", "Notebook", "O notebook onde ele senta para trabalhar junto. Desligado, o notebook some e ele não senta."),
+        ("super_saiyajin", "Super Saiyajin 1", "Só no Claude (o mascote do Claude Code): cabelo dourado, olhos verdes e aura. Também liga e desliga no menu do botão direito em cima dele."),
     ]),
     ("Teste", [
         ("modo_teste", "Modo teste", "Tempos curtos: travessuras e emoções acontecem em segundos."),
@@ -205,7 +212,7 @@ def profile(perms):
 # PETS
 # ============================================================
 
-APP_NOME = "Pestinha"             # o programa; cada personagem tem o próprio nome (pets/<pet>.json)
+APP_NOME = "Claude Super Power"   # o nome que aparece; por dentro (pacote, log, .exe) continua pestinha
 PET_PADRAO = "bryan"
 
 DEFAULT_PET = {
@@ -214,6 +221,7 @@ DEFAULT_PET = {
     "brincadeira": {"bola": 1.0, "arremesso": 0.6, "postit": 0.5},   # pesos: 0 desliga
     "temperamento": {},
     "reacao_notebook": "bravo",         # o que sente se arrancarem o notebook: "bravo" ou "triste"
+    "corpo": "tela",                    # "tela" (rosto na telinha) ou "clawd3d" (o mascote do Claude Code em 3D)
 }
 
 
@@ -235,8 +243,7 @@ def escolher_pet(paths, pedido):
 
 def _numero_ok(valor, minimo=0.0):
     """Diz se o valor é um número finito e não negativo (ou maior que `minimo`)."""
-    return (type(valor) in (int, float) and valor == valor and valor not in (float("inf"),)
-            and valor >= minimo)
+    return type(valor) in (int, float) and math.isfinite(valor) and valor >= minimo
 
 
 def _pet_valido(saved):
@@ -254,17 +261,25 @@ def _pet_valido(saved):
         out["temperamento"] = dict(temp)
     if saved.get("reacao_notebook") in ("bravo", "triste"):
         out["reacao_notebook"] = saved["reacao_notebook"]
+    if saved.get("corpo") in ("tela", "clawd3d"):
+        out["corpo"] = saved["corpo"]
     if isinstance(saved.get("aparencia"), dict):
         out["aparencia"] = dict(saved["aparencia"])    # cores e acessórios: validados em body/desenho_rosto.py
     return out
 
 
 def load_pet(paths, name):
-    """Carrega o personagem: pets/<pet>.json sobre o padrão, com o nome e o id."""
-    pet = dict(DEFAULT_PET)
-    saved = read_json(paths.definicao(name), default=None)
+    """Carrega o personagem: pets/<pet>.json sobre o padrão, com o nome e o id.
+
+    O .json é seu: se tiver erro de sintaxe, ele fica onde está (não é renomeado) e o pet usa o padrão.
+    """
+    pet = copy.deepcopy(DEFAULT_PET)
+    arquivo = paths.definicao(name)
+    saved = read_json(arquivo, default=None, guardar_corrompido=False)
     if isinstance(saved, dict):
         pet.update(_pet_valido(saved))
+    elif arquivo.exists():
+        log(f"[pet] {arquivo.name} não é um JSON válido: usando o padrão (o arquivo não foi alterado)")
     pet["id"] = name
     if not pet["nome"]:
         pet["nome"] = name.capitalize()
@@ -314,6 +329,7 @@ class Notes:
             mtime = self.path.stat().st_mtime
         except OSError:
             self.lines = []
+            self.mtime = None           # sumiu: quando voltar, relê mesmo com o mesmo mtime
             return
         if mtime == self.mtime:
             return
@@ -333,6 +349,6 @@ class Notes:
         self._reload()
         if not self.lines:
             return None
-        options = [l for l in self.lines if l != self.last] or self.lines
+        options = [linha for linha in self.lines if linha != self.last] or self.lines
         self.last = random.choice(options)
         return self.last

@@ -17,9 +17,9 @@ from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QApplication, QDialog, QMessageBox
 
 from pestinha import config
+from pestinha.app import PestinhaApp
 from pestinha.paths import Paths
 from pestinha.settings_store import SettingsStore
-from pestinha.app import PestinhaApp
 from pestinha.ui.onboarding import Onboarding
 from pestinha.ui.ui import SettingsDialog, face_icon
 
@@ -33,24 +33,27 @@ def apagar_memoria(paths):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Pestinha")
+    parser = argparse.ArgumentParser(description=config.APP_NOME)
     parser.add_argument("--direto", action="store_true", help="pula a tela inicial")
     parser.add_argument("--sair-em", type=float, default=0.0, help="fecha sozinho após N segundos (teste)")
     args = parser.parse_args()
 
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)
-    app.setWindowIcon(face_icon())
 
     paths = Paths()
     store = SettingsStore(paths)
     perms = store.perms
+    pet = config.load_pet(paths, config.escolher_pet(paths, perms["pet"]))
+    app.setWindowIcon(face_icon(corpo=pet["corpo"]))       # o passo a passo usa este ícone
     if not args.direto:
         first_time = not paths.permissions.exists()
-        if first_time and Onboarding(config.load_pet(paths, config.escolher_pet(paths, perms["pet"]))["nome"]).exec() != QDialog.Accepted:
+        if first_time and Onboarding(pet["nome"], pet["corpo"]).exec() != QDialog.DialogCode.Accepted:
             pass                                    # "Pular" também segue para as permissões
         dialog = SettingsDialog(perms, paths, first_run=True)
-        dialog.changed.connect(store.update)        # o diálogo trabalha numa cópia: cada escolha vem por aqui
+        # o diálogo trabalha numa cópia: cada escolha vem por aqui, mas só é gravada ao clicar em Começar
+        # (quem clica em Sair não deixa permissões salvas, e o passo a passo volta na próxima vez)
+        dialog.changed.connect(lambda novo: perms.update(config.permissoes_validas(novo)))
         apagado = []
 
         def apagar_tudo():
@@ -67,7 +70,7 @@ def main():
             dialog.reject()
 
         dialog.wipe_all.connect(apagar_tudo)
-        if dialog.exec() != QDialog.Accepted or apagado:
+        if dialog.exec() != QDialog.DialogCode.Accepted or apagado:
             return 0
         store.save()                                # grava já: a próxima vez não mostra o passo a passo
 

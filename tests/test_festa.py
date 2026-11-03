@@ -7,10 +7,10 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-import pytest  # noqa: E402
-from PySide6.QtWidgets import QApplication  # noqa: E402
+import pytest
+from PySide6.QtWidgets import QApplication
 
-from pestinha.world.fireworks import Fireworks  # noqa: E402
+from pestinha.world.fireworks import Fireworks
 
 
 @pytest.fixture(scope="module")

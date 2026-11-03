@@ -6,13 +6,12 @@ aparece na tela: o cartaz preso no pet, a bandeja da revolução, o cartaz
 que volta maior depois de arrancado e o cartaz de acordo ou desistência.
 """
 
-from ..log import log
 import math
 import time
 
-from ..ajustes import TEMPO_CARTAZ_FIM as END_SIGN_SECONDS
-from ..ajustes import INSATISFACAO_MAXIMA
+from ..ajustes import INSATISFACAO_MAXIMA, TEMPO_CARTAZ_FIM as END_SIGN_SECONDS
 from ..core.protesto import STAGE_NAMES
+from ..log import log
 from ..world.cartazes import FlagThing, criar_cartaz
 
 

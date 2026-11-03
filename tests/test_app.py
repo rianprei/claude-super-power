@@ -13,16 +13,16 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-import pytest  # noqa: E402
-from PySide6.QtCore import QPointF, Qt  # noqa: E402
-from PySide6.QtGui import QMouseEvent  # noqa: E402
-from PySide6.QtWidgets import QApplication  # noqa: E402
+import pytest
+from PySide6.QtCore import QPointF, Qt
+from PySide6.QtGui import QMouseEvent
+from PySide6.QtWidgets import QApplication
 
-from pestinha import config  # noqa: E402
-from pestinha.app import PestinhaApp  # noqa: E402
-from pestinha.paths import Paths  # noqa: E402
-from pestinha.settings_store import SettingsStore  # noqa: E402
-from main import apagar_memoria  # noqa: E402
+from main import apagar_memoria
+from pestinha import config
+from pestinha.app import PestinhaApp
+from pestinha.paths import Paths
+from pestinha.settings_store import SettingsStore
 
 
 @pytest.fixture(scope="session")
@@ -39,7 +39,7 @@ def buddy(qapp, tmp_path):
     store.update(dict(config.DEFAULT_PERMISSIONS, travessuras=True))
     app = PestinhaApp(store, paths)
     yield app
-    app.floats.hidden_by_tray = True
+    app.floats.close_all()
     for w in list(app.floats.windows.values()):
         w.close()
     app.mischief.clear()
@@ -88,17 +88,13 @@ def test_apagar_memoria_informa_falha_sem_fingir_sucesso(tmp_path, monkeypatch):
     assert paths.memory.exists()
 
 
-def test_modo_teste_mostra_os_paineis(buddy):
+def test_modo_teste_nao_abre_os_paineis(buddy):
     buddy.apply_perms(dict(buddy.perms, modo_teste=True, ativo=True))
-    assert buddy.floats.windows.get("neural") is not None
-    assert buddy.floats.windows["neural"].isVisible()
-    assert buddy.floats.windows["greve"].isVisible()
-    buddy.apply_perms(dict(buddy.perms, modo_teste=False))
-    assert not buddy.floats.windows["neural"].isVisible()
+    assert not any(w.isVisible() for w in buddy.floats.windows.values())    # só o pet; painel é pelo menu
 
 
 def test_painel_arrastado_salva_a_posicao(buddy, tmp_path):
-    buddy.apply_perms(dict(buddy.perms, modo_teste=True, ativo=True))
+    buddy.floats.open("greve")
     w = buddy.floats.windows["greve"]
     start = QPointF(w.mapToGlobal(w.rect().center()))
     end = start + QPointF(-120, 80)
@@ -111,12 +107,13 @@ def test_painel_arrastado_salva_a_posicao(buddy, tmp_path):
     w.mouseReleaseEvent(ev(QMouseEvent.MouseButtonRelease, end))
     saved = buddy.paths.panels
     assert saved.exists()
-    from pestinha.world.arrastavel import load_positions  # noqa: E402
+    from pestinha.world.arrastavel import load_positions
     assert load_positions(saved)["greve"] == [w.x(), w.y()]
 
 
 def test_painel_nao_entra_na_lista_de_pouso(buddy):
-    buddy.apply_perms(dict(buddy.perms, modo_teste=True, ativo=True))
+    buddy.floats.open("greve")
+    buddy.floats.open("neural")
     buddy.floats.windows["greve"].move(100, 100)
     buddy.floats.windows["neural"].move(100, 500)
     handles = {int(w.winId()) for w in buddy.floats.windows.values()}

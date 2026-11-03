@@ -9,13 +9,13 @@ from unittest.mock import Mock
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-import pytest  # noqa: E402
-from PySide6.QtWidgets import QApplication  # noqa: E402
+import pytest
+from PySide6.QtWidgets import QApplication
 
-from pestinha import config  # noqa: E402
-from pestinha.mind.castigo_ctl import CARTAZ_MIN_S  # noqa: E402
-from pestinha.paths import Paths  # noqa: E402
-from pestinha.settings_store import SettingsStore  # noqa: E402
+from pestinha import config
+from pestinha.mind.castigo_ctl import CARTAZ_MIN_S
+from pestinha.paths import Paths
+from pestinha.settings_store import SettingsStore
 
 
 @pytest.fixture

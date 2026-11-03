@@ -6,6 +6,8 @@ psutil>=7.2.2
 numpy>=2.4.6
 # Atalho global no Linux; Windows usa a API do sistema e macOS usa QuickMacHotKey
 pynput>=1.7.7; sys_platform == "linux"
+# Linux: ordem de empilhamento das janelas e região de clique do pet (já vem com o pynput)
+python-xlib>=0.33; sys_platform == "linux"
 # Windows: leitura das janelas e do teclado
 pywin32>=305; sys_platform == "win32"
 # macOS: janelas (Quartz), programa em primeiro plano (AppKit) e atalho teclado

@@ -19,7 +19,7 @@ recuperar o equilíbrio.
 import time
 
 from ..mathutil import clamp, valor_real
-from ..store import read_json, write_json
+from ..store import preservar, read_json, write_json
 
 SLEEP_BELOW = 0.18          # energia abaixo disso: dorme (se puder)
 WAKE_ABOVE = 0.6            # energia acima disso: acorda sozinho (antes 0,95: dormia quase até o fim)
@@ -113,7 +113,8 @@ class Drives:
             stimulation = valor_real(data.get("stimulation", 0.6), 0.0, 1.0)
             contact = valor_real(data.get("contact", 0.0), 0.0, 1.0)
         except (TypeError, ValueError):
-            return False                        # arquivo com tipos errados: fica com os valores iniciais
+            preservar(path, "descartado", copiar=True)       # tipos errados: guarda o arquivo e fica com os valores iniciais
+            return False
         self.energy = clamp(energy + elapsed / prof["sleep_recover"])
         self.stimulation = clamp(stimulation - elapsed / prof["stim_decay"])
         self.contact = clamp(contact + 0.3 * elapsed / prof["contact_span"])

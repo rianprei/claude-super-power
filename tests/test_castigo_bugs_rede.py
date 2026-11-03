@@ -7,6 +7,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import pytest
 from PySide6.QtWidgets import QApplication
+
 from pestinha.body.pet_state import PetState
 from pestinha.core.episodic import EpisodicMemory
 from pestinha.mind.castigo_ctl import CastigoController

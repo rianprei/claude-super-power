@@ -18,23 +18,32 @@ pip install -r requirements-dev.txt
 python main.py
 ```
 
-Ligue o **modo teste** em Configurações para os tempos ficarem curtos e ver o monitor neural e o painel
-de protesto. O terminal mostra cada decisão (`[notebook]`, `[castigo]`, `[escolha]`...).
+Ligue o **modo teste** em Configurações para os tempos ficarem curtos; o monitor neural e o painel de
+protesto abrem pelo menu do pet (botão direito) e fecham no ×. O terminal mostra cada decisão
+(`[notebook]`, `[castigo]`, `[escolha]`...).
 
 ## Testes
 
 ```bash
 python -m pytest -q
 python -m pyflakes pestinha tests main.py ferramentas conftest.py
+ruff check .
+mypy
+bandit -q -c pyproject.toml -r pestinha main.py ferramentas
 ```
 
-- Os testes não abrem janelas: o `conftest.py` da raiz liga o Qt em modo offscreen e isola cada teste.
+O gate é zero: nenhum teste falhando, nenhum aviso do Python (`filterwarnings = error`), nenhum achado
+do ruff, do mypy ou do bandit. As regras ficam no `pyproject.toml`; uma exceção pontual leva `noqa`/`nosec`
+com o motivo na mesma linha.
+
+- Os testes não abrem janelas: o `conftest.py` da raiz liga o Qt em modo offscreen e isola cada teste
+  (inclusive dos sentidos do Linux: nenhum teste lê a janela ativa ou a lista de janelas de verdade).
 - Tudo é gravado em pastas temporárias; a sua `memory/` nunca é tocada.
 - Testes que montam o app inteiro usam relógio virtual (veja `tests/test_castigo_real.py`).
 - Para procurar bugs de sequência, rode o fuzzer: `python -B ferramentas/fuzz_pestinha.py 150 80`.
 
-O GitHub Actions roda pyflakes e pytest em Windows, macOS e Linux a cada push e pull request
-(`.github/workflows/testes.yml`).
+O GitHub Actions roda pyflakes e pytest em Windows, macOS e Linux (Python 3.11 e 3.14), e ruff, mypy e
+bandit no Linux, a cada push e pull request (`.github/workflows/testes.yml`).
 
 ## Organização
 
@@ -68,6 +77,7 @@ a seção "Como acrescentar um comportamento" tem o passo a passo.
 
 - [ ] `python -m pytest -q` passa.
 - [ ] `python -m pyflakes pestinha tests main.py ferramentas conftest.py` não aponta nada.
+- [ ] `ruff check .`, `mypy` e `bandit -q -c pyproject.toml -r pestinha main.py ferramentas` não apontam nada.
 - [ ] Há teste para o comportamento novo ou para o bug corrigido.
 - [ ] Se criou ou mudou módulos, rodou `python ferramentas/gerar_readmes.py`.
 - [ ] Se mexeu na rede ou nos limiares, rodou `python ferramentas/gerar_doc_rede.py`.

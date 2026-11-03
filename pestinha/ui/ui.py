@@ -1,8 +1,11 @@
 """
 UI - tela inicial de permissões, ícone na bandeja e atalho de pânico.
+
+O visual é o do Claude Code: fundo escuro quente, texto creme, letra de terminal e o laranja do Claude
+(cores em body/desenho_rosto.py). A tela abre com a caixa de boas-vindas com borda laranja e o ✻.
 """
 
-from .. import plataforma
+from string import Template
 
 from PySide6.QtCore import QObject, Qt, Signal
 from PySide6.QtGui import QAction, QIcon, QPainter, QPixmap
@@ -11,6 +14,7 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QDialog,
+    QFrame,
     QGroupBox,
     QHBoxLayout,
     QLabel,
@@ -19,44 +23,88 @@ from PySide6.QtWidgets import (
     QPushButton,
     QScrollArea,
     QSystemTrayIcon,
-    QWidget,
     QVBoxLayout,
+    QWidget,
 )
 
-from .. import config
-from ..sense import timeline
-from ..core.emotion import EYE_SHAPES
+from .. import config, plataforma
+from ..body import desenho_rosto as tema
+from ..body.clawd3d import draw_clawd
 from ..body.pet import draw_face
+from ..core.emotion import EYE_SHAPES
+from ..sense import timeline
 
-STYLE = """
-QDialog { background: #0c1f13; }
-QScrollArea { background: #0c1f13; border: none; }
-QWidget#conteudo, QWidget#qt_scrollarea_viewport { background: #0c1f13; }
-QLabel { color: #b9f5c8; }
-QLabel#title { color: #63e56f; font: bold 20px 'Consolas'; }
-QLabel#hint { color: #6f9c7b; font-size: 11px; }
-QGroupBox { color: #63e56f; font: bold 12px; border: 1px solid #24402c;
+_CORES = {nome: getattr(tema, nome) for nome in ("FUNDO", "SUPERFICIE", "SUPERFICIE_ALTA", "BORDA", "TEXTO",
+                                                "TEXTO_FORTE", "APAGADO", "DESLIGADO", "LARANJA", "LARANJA_CLARO")}
+_CORES["MONO"] = ", ".join(f if f == "monospace" else f"'{f}'" for f in tema.MONO)
+
+STYLE = Template("""
+QWidget { font-family: $MONO; }
+QDialog { background: $FUNDO; }
+QScrollArea { background: $FUNDO; border: none; }
+QWidget#conteudo, QWidget#qt_scrollarea_viewport { background: $FUNDO; }
+QLabel { color: $TEXTO; font-size: 12px; }
+QFrame#banner { border: 1px solid $LARANJA; border-radius: 8px; background: $FUNDO; }
+QFrame#banner QLabel { background: transparent; }
+QLabel#title { color: $TEXTO_FORTE; font-size: 15px; }
+QLabel#banner_sub { color: $APAGADO; font-size: 12px; }
+QLabel#hint { color: $APAGADO; font-size: 11px; }
+QGroupBox { color: $LARANJA; font-size: 12px; font-weight: bold; border: 1px solid $BORDA;
             border-radius: 8px; margin-top: 14px; padding: 10px 8px 6px 8px; }
 QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 4px; }
-QCheckBox { color: #dfffe6; font-size: 13px; spacing: 8px; }
-QCheckBox:disabled { color: #4d6655; }
-QComboBox { background: #17201a; color: #dfffe6; border: 1px solid #2c5236; padding: 3px 6px; }
-QPushButton { background: #17201a; color: #dfffe6; border: 1px solid #2c5236;
-              border-radius: 6px; padding: 7px 18px; font-size: 13px; }
-QPushButton#start { background: #2c8a40; border-color: #63e56f; font-weight: bold; }
-QPushButton:hover { border-color: #63e56f; }
-"""
+QCheckBox { color: $TEXTO; font-size: 12px; spacing: 8px; }
+QCheckBox:disabled { color: $DESLIGADO; }
+QCheckBox::indicator { width: 13px; height: 13px; border: 1px solid $DESLIGADO; border-radius: 3px;
+                       background: $SUPERFICIE; }
+QCheckBox::indicator:hover { border-color: $LARANJA; }
+QCheckBox::indicator:checked { background: $LARANJA; border-color: $LARANJA_CLARO; }
+QCheckBox::indicator:disabled { border-color: $BORDA; background: $FUNDO; }
+QCheckBox::indicator:checked:disabled { background: $DESLIGADO; border-color: $DESLIGADO; }
+QComboBox { background: $SUPERFICIE; color: $TEXTO; border: 1px solid $BORDA; border-radius: 6px;
+            padding: 4px 8px; }
+QComboBox:hover, QComboBox:focus { border-color: $LARANJA; }
+QComboBox QAbstractItemView { background: $SUPERFICIE_ALTA; color: $TEXTO; border: 1px solid $BORDA;
+                              selection-background-color: $LARANJA; selection-color: $FUNDO; }
+QPushButton { background: $SUPERFICIE; color: $TEXTO; border: 1px solid $BORDA;
+              border-radius: 6px; padding: 7px 18px; font-size: 12px; }
+QPushButton:hover { border-color: $LARANJA; color: $TEXTO_FORTE; }
+QPushButton:disabled { color: $DESLIGADO; border-color: $BORDA; }
+QPushButton#start { background: $LARANJA; color: $FUNDO; border-color: $LARANJA; font-weight: bold; }
+QPushButton#start:hover { background: $LARANJA_CLARO; border-color: $LARANJA_CLARO; }
+QScrollBar:vertical { background: $FUNDO; width: 10px; margin: 0; }
+QScrollBar::handle:vertical { background: $BORDA; border-radius: 5px; min-height: 30px; }
+QScrollBar::handle:vertical:hover { background: $LARANJA; }
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background: none; }
+QToolTip { background: $SUPERFICIE_ALTA; color: $TEXTO; border: 1px solid $LARANJA; padding: 4px; }
+QMessageBox { background: $FUNDO; }
+""").substitute(_CORES)
+
+# menus (bandeja e botão direito no pet) no mesmo tema
+MENU_STYLE = Template("""
+QMenu { background: $SUPERFICIE; color: $TEXTO; border: 1px solid $BORDA; padding: 5px;
+        font-family: $MONO; font-size: 12px; }
+QMenu::item { padding: 6px 24px 6px 14px; border-radius: 5px; }
+QMenu::item:selected { background: $LARANJA; color: $FUNDO; }
+QMenu::item:disabled { color: $DESLIGADO; }
+QMenu::separator { height: 1px; background: $BORDA; margin: 5px 8px; }
+""").substitute(_CORES)
 
 
-def face_icon(emotion="observando"):
-    """Ícone da bandeja e das janelas: o rosto do pet desenhado numa imagem pequena."""
+def face_icon(emotion="observando", corpo="tela"):
+    """Ícone da bandeja e das janelas: o pet (a telinha ou o Clawd 3D) desenhado numa imagem pequena."""
     pix = QPixmap(128, 128)
-    pix.fill(Qt.transparent)
+    pix.fill(Qt.GlobalColor.transparent)
     p = QPainter(pix)
-    p.setRenderHint(QPainter.Antialiasing)
-    p.translate(64, 64)
-    p.scale(0.95, 0.95)
-    draw_face(p, EYE_SHAPES[emotion])
+    p.setRenderHint(QPainter.RenderHint.Antialiasing)
+    if corpo == "clawd3d":
+        p.translate(64, 62)
+        p.scale(1.15, 1.15)
+        draw_clawd(p, EYE_SHAPES[emotion])
+    else:
+        p.translate(64, 64)
+        p.scale(0.95, 0.95)
+        draw_face(p, EYE_SHAPES[emotion])
     p.end()
     return QIcon(pix)
 
@@ -77,7 +125,8 @@ class SettingsDialog(QDialog):
         self.perms = dict(perms)           # cópia: só o app grava, pela transição certa
         self.paths = paths
         self.setWindowTitle(config.APP_NOME)
-        self.setWindowIcon(face_icon())
+        pet = config.load_pet(paths, config.escolher_pet(paths, perms["pet"]))
+        self.setWindowIcon(face_icon(corpo=pet["corpo"]))
         self.setStyleSheet(STYLE)
         self.setMinimumWidth(460)
         # cabe na tela: o conteúdo rola dentro da janela, e o botão de começar fica sempre visível
@@ -87,6 +136,7 @@ class SettingsDialog(QDialog):
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(scroll.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)    # o conteúdo quebra a linha; só rola na vertical
         content = QWidget()
         content.setObjectName("conteudo")
         scroll.setWidget(content)
@@ -96,12 +146,10 @@ class SettingsDialog(QDialog):
 
         root = QVBoxLayout(content)
         root.setSpacing(8)
-        title = QLabel(config.APP_NOME.upper())
-        title.setObjectName("title")
-        root.addWidget(title)
+        root.addWidget(self._banner(pet["nome"], pet["id"]))
         if first_run:
             welcome = QLabel(
-                f"Bem-vindo! O {config.APP_NOME} vê só o nome dos programas, o tempo sem usar o teclado e "
+                f"O {config.APP_NOME} vê só o nome dos programas, o tempo sem usar o teclado e "
                 "as janelas para pousar. Nunca lê o conteúdo de nada. Detalhes em PRIVACIDADE.md.\n"
                 "Escolha abaixo o que ele pode fazer e clique em Começar. Tudo pode ser mudado depois.")
             welcome.setObjectName("hint")
@@ -196,6 +244,28 @@ class SettingsDialog(QDialog):
 
         self._sync_enabled()
 
+    def _banner(self, nome, pet_id):
+        """Caixa de boas-vindas no jeito do Claude Code: borda laranja, ✻ e, embaixo, quem e onde (como o cwd)."""
+        banner = QFrame()
+        banner.setObjectName("banner")
+        layout = QVBoxLayout(banner)
+        layout.setContentsMargins(16, 12, 16, 12)
+        layout.setSpacing(6)
+        title = QLabel(f"<span style='color:{tema.LARANJA}'>✻</span> Welcome to <b>{config.APP_NOME}</b>!")
+        title.setObjectName("title")
+        title.setTextFormat(Qt.TextFormat.RichText)
+        layout.addWidget(title)
+        self.banner_sub = QLabel()
+        self.banner_sub.setObjectName("banner_sub")
+        self.banner_sub.setWordWrap(True)
+        layout.addWidget(self.banner_sub)
+        self._atualizar_banner(nome, pet_id)
+        return banner
+
+    def _atualizar_banner(self, nome, pet_id):
+        """As linhas de baixo da caixa de boas-vindas: o personagem escolhido e onde fica a memória dele."""
+        self.banner_sub.setText(f"  personagem: {nome}\n  memória:    memory/pets/{pet_id}/")
+
     def _asset_summary(self):
         """Linha de resumo do conteúdo do pet escolhido (memes, fotos, recadinhos)."""
         label = QLabel()
@@ -233,12 +303,13 @@ class SettingsDialog(QDialog):
             self, "Apagar histórico",
             "Apagar todo o histórico da sua rotina (memory/timeline.csv)? Não dá para desfazer.",
         )
-        if answer == QMessageBox.Yes:
+        if answer == QMessageBox.StandardButton.Yes:
             try:
                 self.paths.timeline.unlink(missing_ok=True)
             except OSError as error:
                 QMessageBox.warning(self, "Apagar histórico", f"Não deu para apagar: {error}")
-            self.history_wiped.emit()             # o app descarta também o minuto que ainda está em RAM
+            else:
+                self.history_wiped.emit()         # o app descarta também o minuto que ainda está em RAM
             self._update_history_label()
 
     def _wipe_everything(self):
@@ -248,12 +319,13 @@ class SettingsDialog(QDialog):
             f"Apagar tudo que o {config.APP_NOME} guardou (pasta memory/: a memória de todos os "
             f"personagens, histórico, painéis, permissões)? O {config.APP_NOME} vai fechar. Não dá para desfazer.",
         )
-        if answer == QMessageBox.Yes:
+        if answer == QMessageBox.StandardButton.Yes:
             self.wipe_all.emit()
 
     def _trocar_pet(self, _indice):
         """Só grava a escolha: o pet que está na tela continua até reabrir (a memória dele é outra)."""
         self._set("pet", self.pet_combo.currentData())
+        self._atualizar_banner(self.pet_combo.currentText(), self.pet_combo.currentData())
         self._atualizar_resumo()
 
     def _set(self, key, value):
@@ -281,26 +353,27 @@ class Tray(QObject):
     open_settings = Signal()
     open_monitor = Signal()
     open_panel = Signal()
-    toggle_floating = Signal()
+    fechar_paineis = Signal()
     toggle_pause = Signal()
     toggle_hidden = Signal()
     clear_things = Signal()
     panic = Signal()
     quit = Signal()
 
-    def __init__(self, nome):
-        """Cria o ícone e o menu; cada item emite um sinal que o app ouve."""
+    def __init__(self, nome, corpo="tela"):
+        """Cria o ícone (o desenho do pet) e o menu; cada item emite um sinal que o app ouve."""
         super().__init__()
         self.titulo = f"{config.APP_NOME} · {nome}"
-        self.icon = QSystemTrayIcon(face_icon())
+        self.icon = QSystemTrayIcon(face_icon(corpo=corpo))
         self.icon.setToolTip(self.titulo)
         menu = QMenu()
+        menu.setStyleSheet(MENU_STYLE)
         self.actions = {}
         for key, text, signal in [
             ("settings", "Configurações...", self.open_settings),
             ("monitor", "Monitor neural", self.open_monitor),
             ("panel", "Painel de protesto", self.open_panel),
-            ("floating", "Esconder painéis de teste", self.toggle_floating),
+            ("paineis", "Fechar painéis", self.fechar_paineis),
             ("pause", "Pausar", self.toggle_pause),
             ("hide", "Esconder", self.toggle_hidden),
             ("clear", "Limpar travessuras", self.clear_things),
@@ -316,7 +389,7 @@ class Tray(QObject):
         self.menu = menu
         self.icon.setContextMenu(menu)
         self.icon.activated.connect(
-            lambda reason: self.open_settings.emit() if reason == QSystemTrayIcon.DoubleClick else None
+            lambda reason: self.open_settings.emit() if reason == QSystemTrayIcon.ActivationReason.DoubleClick else None
         )
         self.icon.show()
 

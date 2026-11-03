@@ -14,12 +14,12 @@ from unittest.mock import Mock
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from PySide6.QtWidgets import QApplication  # noqa: E402
+from PySide6.QtWidgets import QApplication
 
-from pestinha import config  # noqa: E402
-from pestinha.core.protesto import DEFAULT_SIGNS  # noqa: E402
-from pestinha.paths import Paths  # noqa: E402
-from pestinha.settings_store import SettingsStore  # noqa: E402
+from pestinha import config
+from pestinha.core.protesto import DEFAULT_SIGNS
+from pestinha.paths import Paths
+from pestinha.settings_store import SettingsStore
 
 
 def dois_pets(tmp_path):
@@ -111,7 +111,7 @@ def test_nome_do_pet_e_do_programa_nos_lugares_certos(tmp_path, monkeypatch):
     paths = dois_pets(tmp_path)
     SettingsStore(paths).update(dict(config.DEFAULT_PERMISSIONS, pet="teste"))
     app = abrir(paths, monkeypatch)
-    assert app.tray.icon.toolTip().startswith("Pestinha · Teste")
+    assert app.tray.icon.toolTip().startswith("Claude Super Power · Teste")
     from pestinha.ui.monitor import NeuralMonitor
     from pestinha.ui.panel import StrikePanel
     from pestinha.world.notebook import Notebook
@@ -119,7 +119,8 @@ def test_nome_do_pet_e_do_programa_nos_lugares_certos(tmp_path, monkeypatch):
     assert NeuralMonitor(app, (0, 0)).windowTitle().startswith("Teste ·")
     assert StrikePanel(app, (0, 0)).windowTitle().startswith("Teste ·")
     d = dialogo(paths, app.perms)
-    assert d.windowTitle() == "Pestinha" and d.active_box.text() == "Pestinha ligado"
+    assert d.windowTitle() == "Claude Super Power" and d.active_box.text() == "Claude Super Power ligado"
+    assert "personagem: Teste" in d.banner_sub.text()                          # a caixa de boas-vindas fala do pet
 
 
 def test_apresentacao_usa_o_nome_do_pet():
@@ -129,13 +130,14 @@ def test_apresentacao_usa_o_nome_do_pet():
     textos = [o.stack.widget(i).text() for i in range(o.stack.count())]
     assert any("eu sou o Teste" in t for t in textos)
     assert not any("Bryan" in t for t in textos)
-    assert o.windowTitle().startswith("Pestinha")
+    assert o.windowTitle().startswith("Claude Super Power")
+    assert any("telinha com dois olhinhos" in t for t in textos)              # corpo padrão: a telinha
 
 
 def test_nenhum_texto_visivel_chama_o_pet_de_bryan_no_codigo():
     """Nome de personagem vem do pets/<pet>.json; no código só em comentário, docstring ou log."""
     achados = []
-    for arquivo in list((ROOT / "pestinha").rglob("*.py")) + [ROOT / "main.py"]:
+    for arquivo in [*(ROOT / "pestinha").rglob("*.py"), ROOT / "main.py"]:
         arvore = ast.parse(arquivo.read_text(encoding="utf-8"))
         docstrings = {id(n.body[0].value) for n in ast.walk(arvore)
                       if isinstance(n, (ast.Module, ast.FunctionDef, ast.ClassDef, ast.AsyncFunctionDef))
@@ -143,10 +145,9 @@ def test_nenhum_texto_visivel_chama_o_pet_de_bryan_no_codigo():
         de_log = {id(c) for n in ast.walk(arvore)
                   if isinstance(n, ast.Call) and getattr(n.func, "id", getattr(n.func, "attr", "")) == "log"
                   for c in ast.walk(n)}
-        for n in ast.walk(arvore):
-            if (isinstance(n, ast.Constant) and isinstance(n.value, str) and "Bryan" in n.value
-                    and id(n) not in docstrings and id(n) not in de_log):
-                achados.append(f"{arquivo.name}:{n.lineno}: {n.value[:50]}")
+        achados.extend(f"{arquivo.name}:{n.lineno}: {n.value[:50]}" for n in ast.walk(arvore)
+                       if isinstance(n, ast.Constant) and isinstance(n.value, str) and "Bryan" in n.value
+                       and id(n) not in docstrings and id(n) not in de_log)
     assert achados == []
 
 

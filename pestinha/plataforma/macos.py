@@ -1,23 +1,25 @@
 """
 macOS: Quartz (pyobjc) para as janelas e o tempo ocioso; AppKit para o programa em primeiro plano.
 
-Sem pyobjc, o tempo ocioso sai do ioreg. O atalho global usa pynput, e o macOS pede permissão de
-Acessibilidade na primeira vez. Os retângulos saem em pixels físicos (pontos x escala).
+Sem pyobjc, o tempo ocioso sai do ioreg, a lista de janelas fica vazia e o atalho fica desligado.
+O atalho global usa o QuickMacHotKey.
+Os retângulos saem em pixels físicos (pontos x escala).
 """
 
 import os
 import re
 import threading
 
-from ._comum import rodar
 from PySide6.QtWidgets import QApplication
-from quickmachotkey import quickHotKey, mask
-from quickmachotkey.constants import (
-    kVK_ANSI_B,
-    controlKey,
-    optionKey,
-    shiftKey,
-)
+
+from ._comum import rodar
+
+try:
+    from quickmachotkey import mask, quickHotKey
+    from quickmachotkey.constants import controlKey, kVK_ANSI_B, optionKey, shiftKey
+except ImportError:                     # sem pyobjc/QuickMacHotKey: o app abre, só sem o atalho global
+    quickHotKey = mask = None
+    controlKey = kVK_ANSI_B = optionKey = shiftKey = None
 
 LARGURA_MINIMA, ALTURA_MINIMA = 120, 60
 OPCOES_NA_TELA = (1 << 0) | (1 << 4)        # OnScreenOnly | ExcludeDesktopElements
@@ -28,9 +30,9 @@ def _quartz():
     """Carrega o módulo Quartz (pyobjc); devolve None se não estiver instalado."""
     try:
         import Quartz
-        return Quartz
-    except Exception:
+    except Exception:  # noqa: BLE001 - pyobjc/Quartz: erros do Objective-C não têm classe comum
         return None
+    return Quartz
 
 
 def _programa_da_frente():
@@ -38,7 +40,7 @@ def _programa_da_frente():
     try:
         from AppKit import NSWorkspace
         return NSWorkspace.sharedWorkspace().frontmostApplication()
-    except Exception:
+    except Exception:  # noqa: BLE001 - pyobjc/Quartz: erros do Objective-C não têm classe comum
         return None
 
 
@@ -55,7 +57,7 @@ def ocioso_segundos():
         try:
             return float(quartz.CGEventSourceSecondsSinceLastEventType(
                 quartz.kCGEventSourceStateCombinedSessionState, quartz.kCGAnyInputEventType))
-        except Exception:
+        except Exception:  # noqa: BLE001, S110 - pyobjc/Quartz: erros do Objective-C não têm classe comum  # nosec B110
             pass
     return ocioso_do_ioreg(rodar(["ioreg", "-c", "IOHIDSystem", "-d", "4"]) or "")
 
@@ -151,10 +153,12 @@ def sem_foco_nativo(janela_id):
 
 def iniciar_atalho(callback):
     """Registra Ctrl+Alt+Shift+B pelo QuickMacHotKey; devolve True se conseguiu."""
-    global _hotkey
+    global _hotkey  # noqa: PLW0603 - um único por processo (singleton de módulo)
 
     if _hotkey is not None:
         return True
+    if quickHotKey is None:
+        return False
 
     if threading.current_thread() is not threading.main_thread() or (
         app := QApplication.instance()
@@ -165,10 +169,8 @@ def iniciar_atalho(callback):
         _hotkey = quickHotKey(
             virtualKey=kVK_ANSI_B,
             modifierMask=mask(controlKey, optionKey, shiftKey),
-        )(lambda: callback())
-
+        )(callback)
         app.aboutToQuit.connect(_hotkey.unregister)
-        return True
-
-    except Exception:
+    except Exception:  # noqa: BLE001 - erros do Carbon/pyobjc não têm uma classe comum
         return False
+    return True

@@ -15,13 +15,13 @@ Sono: consolida a memória. Refaz a tabela a partir dos episódios guardados,
 pesando os recentes mais que os antigos.
 """
 
-from ..log import log
 import json
 import math
 import random
 import time
 from datetime import datetime
 
+from ..log import log
 from ..store import append_line, read_json, read_lines, write_json, write_lines
 
 ACTIONS = ["meme", "foto", "bilhete", "atravessar", "nada"]
@@ -48,7 +48,7 @@ def _episodio_valido(ep):
     if not isinstance(ep.get("acao"), str):
         return False
     v = ep.get("valencia")
-    return type(v) in (int, float) and math.isfinite(v) and -1.0 <= v <= 1.0
+    return isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v) and -1.0 <= v <= 1.0
 
 
 def _estatistica_valida(par):
@@ -134,7 +134,7 @@ class EpisodicMemory:
         self._contador += 1
         episode = {
             "id": f"{time.time_ns()}-{self._contador}",     # identidade estável (para revisar depois)
-            "quando": datetime.now().isoformat(timespec="seconds"),
+            "quando": datetime.now().astimezone().isoformat(timespec="seconds"),
             "contexto": ctx,
             "acao": action,
             "inicio": time.monotonic(),
@@ -181,8 +181,9 @@ class EpisodicMemory:
                     continue
                 if isinstance(r, dict) and r.get("id") == ep_id:
                     r["resultado"], r["valencia"] = result, round(valence, 3)
-                    line = json.dumps(r, ensure_ascii=False)
-                linhas.append(line)
+                    linhas.append(json.dumps(r, ensure_ascii=False))
+                else:
+                    linhas.append(line)
             try:
                 write_lines(self.episodes_path, linhas)
             except OSError as error:
@@ -260,7 +261,8 @@ class EpisodicMemory:
         episodes = self._read_episodes()
         if not episodes:
             return []
-        table, totals = {}, {}
+        table: dict[str, dict[str, list[float]]] = {}
+        totals: dict[str, list[float]] = {}
         newest = len(episodes)
         for i, ep in enumerate(episodes):
             w = 0.5 ** ((newest - 1 - i) / RECENCY_HALF_LIFE)

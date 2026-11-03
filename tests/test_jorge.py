@@ -13,14 +13,14 @@ from unittest.mock import Mock
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-import numpy as np  # noqa: E402
-from PySide6.QtWidgets import QApplication  # noqa: E402
+import numpy as np
+from PySide6.QtWidgets import QApplication
 
-from pestinha import config  # noqa: E402
-from pestinha.core.nervous_system import CONNECTIONS, MOTOR_SPEC, SENSORY_SPEC, LIFBrain  # noqa: E402
-from pestinha.core.protesto import DEFAULT_SIGNS, load_signs  # noqa: E402
-from pestinha.paths import Paths  # noqa: E402
-from pestinha.settings_store import SettingsStore  # noqa: E402
+from pestinha import config
+from pestinha.core.nervous_system import CONNECTIONS, MOTOR_SPEC, SENSORY_SPEC, LIFBrain
+from pestinha.core.protesto import DEFAULT_SIGNS, load_signs
+from pestinha.paths import Paths
+from pestinha.settings_store import SettingsStore
 
 PATHS = Paths(root=ROOT)
 POOLS = {post for _pre, post, _w, _d in CONNECTIONS}
@@ -37,7 +37,7 @@ def frases(pet_id):
 
 
 def test_jorge_existe_e_e_selecionavel():
-    assert config.list_pets(PATHS) == ["bryan", "jorge"]
+    assert config.list_pets(PATHS) == ["bryan", "clawd", "jorge"]
     jorge = config.load_pet(PATHS, "jorge")
     assert jorge["nome"] == "Jorge" and jorge["seed"] != config.load_pet(PATHS, "bryan")["seed"]
     assert len(jorge["temperamento"]) >= 8                   # nenhum campo descartado por tipo errado
@@ -73,7 +73,7 @@ def test_jorge_tem_conteudo_proprio_completo():
     c = PATHS.conteudo("jorge")
     placas = load_signs(c.signs)
     with open(c.signs, encoding="utf-8") as f:
-        secoes = set(re.findall(r"^\[(\w+)\]", f.read(), re.M))
+        secoes = set(re.findall(r"^\[(\w+)\]", f.read(), re.MULTILINE))
     assert secoes == set(DEFAULT_SIGNS)                          # não cai no neutro em nenhuma seção
     assert all(placas[s] for s in DEFAULT_SIGNS)
     assert config.Notes(c.notes).pick() and config.Notes(c.notes_sad).pick()
@@ -97,12 +97,13 @@ def test_nada_exclusivo_de_um_aparece_no_outro():
 def test_satira_sem_nada_de_verdade():
     """Nada de link, chave de PIX, e-mail ou valor para pagar: é só piada."""
     for texto in frases("jorge"):
-        assert not re.search(r"https?://|www\.|\.com\b|R\$\s*\d|chave pix|@\w+\.\w+", texto, re.I), texto
+        assert not re.search(r"https?://|www\.|\.com\b|R\$\s*\d|chave pix|@\w+\.\w+", texto, re.IGNORECASE), texto
 
 
 def test_jorge_no_app(tmp_path, monkeypatch):
     QApplication.instance() or QApplication([])
     import shutil
+
     import pestinha.app as app_mod
     shutil.copytree(PATHS.pets, tmp_path / "pets")
     shutil.copytree(PATHS.comum, tmp_path / "assets" / "comum")
@@ -114,7 +115,7 @@ def test_jorge_no_app(tmp_path, monkeypatch):
         timer.stop()
     jorge = frases("jorge")
     assert app.nome == "Jorge" and app.pet_paths == paths.pet("jorge")
-    assert app.tray.icon.toolTip().startswith("Pestinha · Jorge")
+    assert app.tray.icon.toolTip().startswith("Claude Super Power · Jorge")
     assert app.revolucao.sprite is not None                     # atira panfletos
     assert app.mischief.notes.pick() in jorge
     assert set(app.castigo.cartazes) <= jorge and set(app.castigo.xingamentos) <= jorge

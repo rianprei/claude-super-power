@@ -15,8 +15,8 @@ import time
 from PySide6.QtCore import QObject, Signal
 
 from .. import config
-from .objetos import ImageThing, NoteThing
 from ..ajustes import TAMANHO_MEME as MEME_MAX, TAMANHO_MEME_CANTO as CORNER_MAX
+from .objetos import ImageThing, NoteThing
 
 CORNER_MARGIN = 18
 
@@ -56,13 +56,13 @@ class MischiefEngine(QObject):
             trabalho = perms["memes"] and bool(config.list_images(self.paths.memes_trabalho))
             return ["meme_trabalho", "nada"] if trabalho else []
         memes = perms["memes"] and config.meme_for(self.paths.memes, emotion) is not None
-        notes = perms["bilhetes"] and bool(self.notes.lines or self.notes.pick())
+        notes = perms["bilhetes"] and self.notes.has_lines()        # só consulta: não gasta o sorteio
         if emotion == "bravo":
             options = ((["meme_canto", "meme"] if memes else []) + (["bilhete_canto"] if notes else []))
-            return options + ["nada"] if options else []
+            return [*options, "nada"] if options else []
         photos = perms["fotos"] and config.random_photo(self.paths.fotos) is not None
         options = (["meme"] if memes else []) + (["foto"] if photos else []) + (["bilhete"] if notes else [])
-        return options + ["atravessar", "nada"] if options else []
+        return [*options, "atravessar", "nada"] if options else []
 
     def plan(self, action, emotion):
         """
@@ -84,6 +84,7 @@ class MischiefEngine(QObject):
 
     def _make(self, kind, emotion, small):
         """Monta o objeto da travessura: imagem, bilhete ou foto, conforme o tipo e a emoção."""
+        thing: ImageThing | NoteThing | None
         if kind == "meme":
             path = config.meme_for(self.paths.memes, emotion)
             thing = ImageThing(path, CORNER_MAX if small else MEME_MAX) if path else None
@@ -118,7 +119,7 @@ class MischiefEngine(QObject):
         ]
         free = [
             c for c in corners
-            if all(math.hypot(c[0] - t.x, c[1] - t.y) > 80 for t in self.things)
+            if all(math.hypot(c[0] - t.cx, c[1] - t.cy) > 80 for t in self.things)
             and math.hypot(c[0] - cursor[0], c[1] - cursor[1]) > 250
         ]
         if not free:
@@ -145,7 +146,7 @@ class MischiefEngine(QObject):
     def follow(self, thing, anchor_x, anchor_y, dt):
         """Objeto arrastado segue o pet com atraso (mola), parecendo ter peso."""
         k = 1.0 - math.exp(-dt / 0.12)
-        thing.place(thing.x + (anchor_x - thing.x) * k, thing.y + (anchor_y - thing.y) * k)
+        thing.place(thing.cx + (anchor_x - thing.cx) * k, thing.cy + (anchor_y - thing.cy) * k)
 
     def _add(self, thing):
         """Põe um objeto na lista e o mostra."""

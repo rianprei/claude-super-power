@@ -11,6 +11,8 @@ Os perfis de tempo (teste e normal) ficam em `pestinha/config.py`.
 # ---------------------------------------------------------------------------
 # Interação com o mouse
 # ---------------------------------------------------------------------------
+import itertools
+
 COOLDOWN_CUTUCADA = 0.25        # s entre cutucadas que contam
 TEMPO_MAX_CUTUCADA_MS = 350     # ms: clique mais longo que isso não é cutucada
 DISTANCIA_INICIO_ARRASTE = 5    # px que o mouse precisa andar para virar arraste
@@ -70,7 +72,6 @@ INTERVALO_CURSOR = 0.25         # s: o cursor não chuta a bolinha de novo logo 
 ALCANCE_BRINCADEIRA = 240       # px: a bolinha precisa estar perto dele
 TEMPO_VOO_ARREMESSO = 0.7       # s de voo do arremesso até o cursor
 INTERVALO_BRINCADEIRA = (2.5, 5.0)   # s entre tentativas de brincar
-INTERVALO_PAPEL = 0.45          # s entre bolinhas de papel na revolução
 
 # ---------------------------------------------------------------------------
 # Protesto (raiva) e tristeza
@@ -101,7 +102,7 @@ ESPERA_FOGOS = 40.0             # s entre um fogo e outro
 EUFORIA_MAXIMA = 1.5
 
 # ---------------------------------------------------------------------------
-# Mesa (notebook)
+# Mesa (notebook)  # noqa: ERA001 - cabeçalho de seção, não código
 # ---------------------------------------------------------------------------
 FOCO_MAXIMO_HZ = 6.0           # taxa da população FOCUS que vale foco 1,0
 FRACAO_ESCONDIDA_NOTEBOOK = 0.45  # fração da altura do pet escondida atrás da tampa do notebook
@@ -176,7 +177,6 @@ _LIMITES = {
     "INTERVALO_CURSOR": (float, 0.0, 10.0),
     "ALCANCE_BRINCADEIRA": (int, 1, 5000),
     "TEMPO_VOO_ARREMESSO": (float, 0.05, 10.0),
-    "INTERVALO_PAPEL": (float, 0.05, 60.0),
     "HISTERESE": (float, 0.0, 1.0),
     "INSATISFACAO_MAXIMA": (float, 0.1, 10.0),
     "ALIVIO_CARINHO": (float, 0.0, 10.0),
@@ -234,7 +234,7 @@ def validar():
         if not (isinstance(par, tuple) and len(par) == 2 and 0 < par[0] <= par[1] <= 600):
             erros.append(f"{nome}: deveria ser (mínimo, máximo) com 0 < mínimo <= máximo <= 600")
     limites = atuais["LIMITES_ESTAGIO"]
-    if not (len(limites) == 4 and all(0 < a < b for a, b in zip(limites, limites[1:]))):
+    if not (len(limites) == 4 and all(0 < a < b for a, b in itertools.pairwise(limites))):
         erros.append("LIMITES_ESTAGIO: deveria ter 4 valores crescentes e positivos")
     if erros:
         raise ValueError("ajustes inválidos:\n  " + "\n  ".join(erros))

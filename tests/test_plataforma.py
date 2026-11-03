@@ -13,18 +13,18 @@ import pytest
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from pestinha import plataforma  # noqa: E402
-from pestinha.plataforma import linux  # noqa: E402
-from pestinha.sense.senses import detect_activity  # noqa: E402
+from pestinha import plataforma
+from pestinha.plataforma import linux
+from pestinha.sense.senses import detect_activity
 
 # Backends nativos só podem ser importados no seu próprio sistema.
 # Isso evita carregar pywin32 no macOS e QuickMacHotKey no Windows/Linux.
 macos = None
 windows = None
 if sys.platform == "darwin":
-    from pestinha.plataforma import macos  # noqa: E402
+    from pestinha.plataforma import macos
 elif sys.platform == "win32":
-    from pestinha.plataforma import windows  # noqa: E402
+    from pestinha.plataforma import windows
 
 FUNCOES = ["ocioso_segundos", "processo_ativo", "retangulo_ativo", "tela_cheia",
            "janelas_visiveis", "sem_foco_nativo", "iniciar_atalho"]
@@ -55,13 +55,7 @@ def test_geometria_do_xdotool():
 
 
 def test_wmctrl_pula_o_proprio_pet_pequenas_e_excluidas():
-    saida = "\n".join([
-        "0x01a00003  0 2222  10 20 1280 720 host Tela de um documento privado",
-        "0x01b00004  0 4444  0 0 1920 1080 host Pestinha (o próprio pet)",
-        "0x01c00005  0 3333  0 0 80 40 host janelinha pequena",
-        "0x01d00006  0 5555  30 40 500 300 host Terminal - bash",
-        "0x01e00007  0 6666  0 0 900 700 host excluída pelo app",
-    ])
+    saida = "0x01a00003  0 2222  10 20 1280 720 host Tela de um documento privado\n0x01b00004  0 4444  0 0 1920 1080 host Pestinha (o próprio pet)\n0x01c00005  0 3333  0 0 80 40 host janelinha pequena\n0x01d00006  0 5555  30 40 500 300 host Terminal - bash\n0x01e00007  0 6666  0 0 900 700 host excluída pelo app"
     achadas = linux.parse_wmctrl(saida, meu_pid=4444, excluir={0x01e00007})
     assert achadas == [
         (0x01a00003, (10, 20, 1290, 740), False),

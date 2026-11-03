@@ -17,9 +17,7 @@ from ..ajustes import (
     REPRESSAO as REPRESSION,
 )
 from ..mathutil import valor_real
-from ..store import read_json, write_json
-
-
+from ..store import preservar, read_json, read_lines, write_json
 
 STAGE_NAMES = {0: "em paz", 1: "reclamação", 2: "manifestação", 3: "greve", 4: "revolução"}
 
@@ -49,21 +47,18 @@ SAD_STYLE = {1: "sad", 2: "sad", 3: "sad"}     # azul e sem vermelho: não se co
 def load_signs(path):
     """cartazes.txt: seções [nome] com uma frase por linha; # é comentário."""
     signs = {k: list(v) for k, v in DEFAULT_SIGNS.items()}
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            section, found = None, {}
-            for raw in f:
-                line = raw.strip()
-                if not line or line.startswith("#"):
-                    continue
-                if line.startswith("[") and line.endswith("]"):
-                    section = line[1:-1].strip().lower()
-                    found.setdefault(section, [])
-                elif section:
-                    found[section].append(line)
-        signs.update({k: v for k, v in found.items() if v})
-    except OSError:
-        pass
+    section: str | None = None
+    found: dict[str, list[str]] = {}
+    for raw in read_lines(path):                    # UTF-8, UTF-8 com BOM ou ANSI; ausente vira vazio
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("[") and line.endswith("]"):
+            section = line[1:-1].strip().lower()
+            found.setdefault(section, [])
+        elif section:
+            found[section].append(line)
+    signs.update({k: v for k, v in found.items() if v})
     return signs
 
 
@@ -126,10 +121,7 @@ class Protesto:
 
     def scale(self):
         """Tamanho da bandeira: cresce a cada revolução."""
-        if self.stage == 4:
-            base = 1.0 + FLAG_GROWTH * (self.revolutions - 1)
-        else:
-            base = 1.0
+        base = 1.0 + FLAG_GROWTH * (self.revolutions - 1) if self.stage == 4 else 1.0
         return min(MAX_SCALE, base * (1.0 + 0.15 * self.repressions))
 
     def pick(self, section):
@@ -173,6 +165,7 @@ class Protesto:
             grievance = valor_real(data.get("grievance", 0.0), 0.0, MAX_GRIEVANCE)
             revolutions = int(valor_real(data.get("revolutions", 0), 0.0, 1e9))
         except (TypeError, ValueError):
-            return                                  # estado com tipos errados: começa do zero
+            preservar(self.state_path, "descartado", copiar=True)   # tipos errados: guarda o arquivo e começa do zero
+            return
         self.grievance = max(0.0, grievance - elapsed / prof["grievance_down"])
         self.revolutions = revolutions

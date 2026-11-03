@@ -7,7 +7,16 @@ pestinha/mind/mesa.py; aqui só mostramos se ele está trabalhando (borda acesa)
 """
 
 from PySide6.QtCore import QRectF, Qt
-from PySide6.QtGui import QColor, QGuiApplication, QLinearGradient, QPainter, QPen, QPixmap
+from PySide6.QtGui import (
+    QColor,
+    QGuiApplication,
+    QLinearGradient,
+    QPainter,
+    QPen,
+    QPixmap,
+)
+
+from ..body.desenho_rosto import LARANJA
 from .arrastavel import FloatingWidget
 
 NOTEBOOK_W, NOTEBOOK_H = 110, 70     # tamanho do desenho de reserva
@@ -28,7 +37,7 @@ def load_notebook_sprite(path):
     pixmap = QPixmap(str(path))
     if pixmap.isNull():
         return None
-    return pixmap.scaledToWidth(SPRITE_W, Qt.SmoothTransformation)
+    return pixmap.scaledToWidth(SPRITE_W, Qt.TransformationMode.SmoothTransformation)
 
 
 class Notebook(FloatingWidget):
@@ -39,8 +48,8 @@ class Notebook(FloatingWidget):
         self.sprite = load_notebook_sprite(app.conteudo.notebook)
         size = (self.sprite.width(), self.sprite.height()) if self.sprite else (NOTEBOOK_W, NOTEBOOK_H)
         super().__init__(app, "notebook", f"Notebook do {app.nome}", size, size, _default_position(size))
-        self.setAttribute(Qt.WA_TranslucentBackground)
-        self.setAttribute(Qt.WA_ShowWithoutActivating)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
         self.working = False
 
     def set_working(self, working):
@@ -59,23 +68,23 @@ class Notebook(FloatingWidget):
     def _paint_sprite(self):
         """Desenha a imagem do notebook suavizada."""
         p = QPainter(self)
-        p.setRenderHint(QPainter.SmoothPixmapTransform)
+        p.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
         p.drawPixmap(0, 0, self.sprite)
-        if self.working:                                   # trabalhando: contorno verde
-            p.setPen(QPen(QColor("#63e56f"), 2))
-            p.setBrush(Qt.NoBrush)
+        if self.working:                                   # trabalhando: contorno laranja (tema)
+            p.setPen(QPen(QColor(LARANJA), 2))
+            p.setBrush(Qt.BrushStyle.NoBrush)
             p.drawRoundedRect(QRectF(self.rect()).adjusted(1, 1, -1, -1), 6, 6)
         p.end()
 
     def _paint_desenho(self):
         """Verso da tampa, como na foto de referência: cinza fosco, sem logo, base prateada embaixo."""
         p = QPainter(self)
-        p.setRenderHint(QPainter.Antialiasing)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
         tampa = QRectF(4, 3, NOTEBOOK_W - 8, NOTEBOOK_H - 14)
         gradiente = QLinearGradient(tampa.topLeft(), tampa.bottomLeft())
         gradiente.setColorAt(0.0, QColor("#5d6165"))
         gradiente.setColorAt(1.0, QColor("#3b3e41"))
-        borda = QColor("#63e56f") if self.working else QColor("#24272a")
+        borda = QColor(LARANJA) if self.working else QColor("#24272a")
         p.setPen(QPen(borda, 2.5 if self.working else 1.2))
         p.setBrush(gradiente)
         p.drawRoundedRect(tampa, 6, 6)

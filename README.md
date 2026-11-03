@@ -91,14 +91,16 @@ Configurações.
 ### Modo teste
 
 Desligado por padrão. Ligado, os tempos ficam curtos (emoções, travessuras e protesto acontecem em
-segundos), os painéis de desenvolvimento ficam na tela (monitor neural e painel de protesto) e o
-terminal mostra as decisões.
+segundos) e o terminal mostra as decisões. Os painéis de desenvolvimento (monitor neural e painel de
+protesto) nunca abrem sozinhos: abra pelo menu do pet ou pela bandeja e feche no × do canto, clicando de
+novo no item do menu ou em "Fechar painéis" na bandeja.
 
 ## Privacidade
 
 Ele roda só no seu computador e não envia nada para a internet. Lê o **nome** do programa em primeiro
 plano, o tempo sem usar teclado e mouse, a posição do cursor e a geometria das janelas. **Nunca** lê
-conteúdo nem título de janela. Tudo o que ele grava fica em `memory/` e pode ser apagado pela tela de
+conteúdo de janela e nunca guarda nem usa o título (no Linux e no macOS ele vem junto na lista de
+janelas e é descartado na hora). Tudo o que ele grava fica em `memory/` e pode ser apagado pela tela de
 configurações. Detalhes em [PRIVACIDADE.md](PRIVACIDADE.md).
 
 ## Personalizar

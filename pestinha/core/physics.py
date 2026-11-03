@@ -7,18 +7,18 @@ que envolve o corpo girado. Plataformas são as barras de título das janelas.
 """
 
 import math
+
 from ..ajustes import (
-    GRAVIDADE as GRAVITY,
-    QUICA as RESTITUTION,
-    ATRITO_CHAO as GROUND_FRICTION,
+    AMORTECIMENTO_ENDIREITAR as RIGHTING_DAMP,
     ARRASTO_AR as AIR_DRAG,
     ARRASTO_GIRO_AR as ANGULAR_DRAG,
-    MOLA_ENDIREITAR as RIGHTING_K,
-    AMORTECIMENTO_ENDIREITAR as RIGHTING_DAMP,
-    GIRO_MAXIMO as MAX_SPIN,
+    ATRITO_CHAO as GROUND_FRICTION,
     BOTOES_JANELA as CLOSE_BUTTONS,
+    GIRO_MAXIMO as MAX_SPIN,
+    GRAVIDADE as GRAVITY,
+    MOLA_ENDIREITAR as RIGHTING_K,
+    QUICA as RESTITUTION,
 )
-
 
 
 def wrap_angle(deg):
@@ -31,8 +31,8 @@ def _area_em(areas, x, y):
     return next((a for a in areas if a[0] <= x < a[2] and a[1] <= y < a[3]), None)
 
 
-def _tem_vizinha(areas, atual, lado, coordenada, extensao, monitores=None):
-    """Diz se há outro monitor encostado naquele lado e se o corpo cabe na abertura."""
+def _tem_vizinha(areas, atual, lado, coordenada, monitores=None):
+    """Diz se há outro monitor encostado naquele lado e se o centro do corpo está na faixa compartilhada."""
     monitores = monitores or areas
     indice = areas.index(atual) if atual in areas else 0
     left, top, right, bottom = monitores[indice]
@@ -131,17 +131,17 @@ class Body:
         left, top, right, bottom = atual
 
         # paredes: uma borda compartilhada com outro monitor é uma passagem
-        if self.x - ex < left and not _tem_vizinha(areas, atual, "left", self.y, ey, monitors):
+        if self.x - ex < left and not _tem_vizinha(areas, atual, "left", self.y, monitors):
             self.x = left + ex
             self.impacts.append(abs(self.vx))
             self.vx = abs(self.vx) * RESTITUTION
             self.omega += self.vy * 0.15
-        elif self.x + ex > right and not _tem_vizinha(areas, atual, "right", self.y, ey, monitors):
+        elif self.x + ex > right and not _tem_vizinha(areas, atual, "right", self.y, monitors):
             self.x = right - ex
             self.impacts.append(abs(self.vx))
             self.vx = -abs(self.vx) * RESTITUTION
             self.omega -= self.vy * 0.15
-        if self.y - ey < top and not _tem_vizinha(areas, atual, "top", self.x, ex, monitors):
+        if self.y - ey < top and not _tem_vizinha(areas, atual, "top", self.x, monitors):
             self.y = top + ey
             self.impacts.append(abs(self.vy))
             self.vy = abs(self.vy) * RESTITUTION
@@ -176,7 +176,7 @@ class Body:
                 return
 
         # chão (acima da barra de tarefas)
-        if self.y + ey >= bottom and not _tem_vizinha(areas, atual, "bottom", self.x, ex, monitors):
+        if self.y + ey >= bottom and not _tem_vizinha(areas, atual, "bottom", self.x, monitors):
             self._land(bottom, ey, None)
 
     def _land(self, surface, ey, platform):

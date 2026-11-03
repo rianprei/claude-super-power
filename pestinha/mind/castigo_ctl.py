@@ -15,10 +15,11 @@ import math
 import random
 
 from PySide6.QtCore import QPointF, QRectF, Qt
-from PySide6.QtGui import QColor, QFont, QFontMetrics, QGuiApplication, QPainter, QPen
+from PySide6.QtGui import QColor, QFontMetrics, QGuiApplication, QPainter, QPen
 
-from ..core.protesto import load_signs
 from ..ajustes import CARGA_FUGA_HZ_S, GANHO_CARTAZ, LIMIAR_FUGA_HZ
+from ..body.desenho_rosto import fonte_cartaz
+from ..core.protesto import load_signs
 from ..log import log
 from ..mathutil import valor_real
 from ..store import read_json, write_json
@@ -62,16 +63,16 @@ class PlaquinhaCanto(FloatingWidget):
         padrao = (screen.x() + 10, screen.bottom() - PLAQUINHA_H + 1)
         super().__init__(app, "castigo", "Cantinho do castigo", (PLAQUINHA_W, PLAQUINHA_H),
                          (PLAQUINHA_W, PLAQUINHA_H), padrao)
-        self.setAttribute(Qt.WA_TranslucentBackground)
-        self.setAttribute(Qt.WA_ShowWithoutActivating)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
 
     def paintEvent(self, _event):
         """Desenha a placa com pernas e o texto (cores e tamanho fixos)."""
         p = QPainter(self)
-        p.setRenderHint(QPainter.Antialiasing)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
         w, h = self.width(), self.height()
         placa = QRectF(8, 8, w - 16, 100)
-        p.setPen(QPen(CONTORNO, 5, Qt.SolidLine, Qt.RoundCap))         # pernas
+        p.setPen(QPen(CONTORNO, 5, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))         # pernas
         p.drawLine(QPointF(45, 104), QPointF(34, h - 4))
         p.drawLine(QPointF(w - 45, 104), QPointF(w - 34, h - 4))
         p.setPen(QPen(CONTORNO, 4))
@@ -81,11 +82,11 @@ class PlaquinhaCanto(FloatingWidget):
         p.setPen(QColor("#c0392b"))
         area = placa.adjusted(8, 6, -8, -6)
         tamanho = 16
-        while tamanho > 7 and QFontMetrics(QFont("Arial Black", tamanho)).boundingRect(
-                area.toRect(), Qt.AlignCenter | Qt.TextWordWrap, TEXTO_PLAQUINHA).height() > area.height():
+        while tamanho > 7 and QFontMetrics(fonte_cartaz(tamanho)).boundingRect(
+                area.toRect(), Qt.AlignmentFlag.AlignCenter | Qt.TextFlag.TextWordWrap, TEXTO_PLAQUINHA).height() > area.height():
             tamanho -= 1
-        p.setFont(QFont("Arial Black", tamanho))
-        p.drawText(area, Qt.AlignCenter | Qt.TextWordWrap, TEXTO_PLAQUINHA)
+        p.setFont(fonte_cartaz(tamanho))
+        p.drawText(area, Qt.AlignmentFlag.AlignCenter | Qt.TextFlag.TextWordWrap, TEXTO_PLAQUINHA)
         p.end()
 
 
@@ -156,8 +157,11 @@ class CastigoController:
 
     # ---------------- menu e cena ----------------
 
-    def toggle(self, bounds):
-        """Liga ou desliga o cantinho: mostra a placa e prende/solta o pet conforme o estado."""
+    def toggle(self, _bounds=None):
+        """Liga ou desliga o cantinho: mostra a placa e prende/solta o pet conforme o estado.
+
+        `_bounds` fica por compatibilidade com quem chama: a placa guarda a própria posição.
+        """
         self.ativo = not self.ativo
         if self.ativo:
             self._mostrar_plaquinha()
@@ -190,9 +194,12 @@ class CastigoController:
     def _zona(self, bounds):
         """Caixa do canto: a largura da placa, da base dela até ALTURA_CANTO para cima (segue a placa)."""
         _left, _top, _right, bottom = bounds
-        x0 = self.plaquinha.x()
-        base = min(bottom, self.plaquinha.y() + self.plaquinha.height() + FOLGA_BASE)
-        return x0, x0 + self.plaquinha.width(), base - ALTURA_CANTO, base
+        placa = self.plaquinha
+        if placa is None:                            # sem placa não há canto: zona vazia
+            return 0, 0, 0, 0
+        x0 = placa.x()
+        base = min(bottom, placa.y() + placa.height() + FOLGA_BASE)
+        return x0, x0 + placa.width(), base - ALTURA_CANTO, base
 
     def _no_canto(self, body, bounds):
         """Diz se o pet está dentro da área do canto (perto da placa, na base da tela)."""

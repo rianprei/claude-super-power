@@ -16,8 +16,9 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+from ..body.desenho_rosto import LARANJA
 from ..config import APP_NOME
-from .ui import STYLE, face_icon
+from .ui import STYLE
 
 DEV_NOTICE = (
     "Este é um projeto em desenvolvimento. Algumas coisas podem não funcionar direito, "
@@ -25,32 +26,38 @@ DEV_NOTICE = (
     "Obrigado por testar!"
 )
 
+# quem se apresenta na segunda tela, conforme o corpo do pet (pets/<pet>.json)
+APRESENTACAO = {
+    "tela": "Sou uma telinha com dois olhinhos que mora no seu monitor principal.",
+    "clawd3d": ("Sou o mascote do Claude Code, em blocos 3D, e moro no seu monitor principal. Pelo botão "
+                "direito eu viro Super Saiyajin 1."),
+}
+
 PAGES = [
     ("Projeto em desenvolvimento",
      DEV_NOTICE),
     ("Oi, eu sou o {nome}",
-     "Sou uma telinha com dois olhinhos que mora no seu monitor principal. Eu caio, quico, "
+     ("{quem} Eu caio, quico, "
      "pouso nas janelas, fico tristinho, brinco com a bolinha e, às vezes, apronto com "
      "post-its e memes.\n\nVocê pode me cutucar, me dar carinho, me jogar e abrir meu menu "
-     "com o botão direito."),
+     "com o botão direito.")),
     ("O que eu vejo (e o que não vejo)",
-     "Eu vejo o nome do programa em primeiro plano, o tempo sem usar o teclado ou o mouse, "
+     ("Eu vejo o nome do programa em primeiro plano, o tempo sem usar o teclado ou o mouse, "
      "e a posição das janelas para pousar nelas.\n\nNunca leio o conteúdo de nenhuma janela, "
-     "página, documento ou conversa. Os detalhes estão em PRIVACIDADE.md."),
+     "página, documento ou conversa. Os detalhes estão em PRIVACIDADE.md.")),
     ("Agora você escolhe",
-     "Na próxima tela você decide o que eu posso fazer: travessuras, bolinha, carinho e "
+     ("Na próxima tela você decide o que eu posso fazer: travessuras, bolinha, carinho e "
      "mais. Tudo pode ser mudado depois, pelo menu da bandeja ou pelo botão direito em mim.\n\n"
-     "Atalho de pânico: Ctrl + Alt + Shift + B desliga tudo na hora."),
+     "Atalho de pânico: Ctrl + Alt + Shift + B desliga tudo na hora.")),
 ]
 
 
 class Onboarding(QDialog):
     """Passo a passo da primeira vez: aviso de projeto em desenvolvimento, o que o pet é, o que ele vê e o que você escolhe."""
-    def __init__(self, nome):
-        """Monta as telas com o nome do personagem escolhido."""
+    def __init__(self, nome, corpo="tela"):
+        """Monta as telas com o nome e o jeito (corpo) do personagem escolhido."""
         super().__init__()
         self.setWindowTitle(f"{APP_NOME} · primeira vez")
-        self.setWindowIcon(face_icon())
         self.setStyleSheet(STYLE)
         self.setMinimumWidth(480)
         self.index = 0
@@ -58,14 +65,15 @@ class Onboarding(QDialog):
         root = QVBoxLayout(self)
         self.stack = QStackedWidget()
         for title, body in PAGES:
-            title = title.format(nome=nome)     # quem se apresenta é o pet escolhido
+            titulo = title.format(nome=nome)    # quem se apresenta é o pet escolhido
+            texto = body.replace("{quem}", APRESENTACAO.get(corpo, APRESENTACAO["tela"]))
             page = QLabel(
-                f"<h3 style='color:#63e56f'>{title}</h3>"
-                f"<p style='font-size:13px'>{body.replace(chr(10), '<br>')}</p>"
+                f"<h3 style='color:{LARANJA}'>✻ {titulo}</h3>"
+                f"<p style='font-size:13px'>{texto.replace(chr(10), '<br>')}</p>"
             )
             page.setWordWrap(True)
-            page.setTextFormat(Qt.RichText)
-            page.setAlignment(Qt.AlignTop)
+            page.setTextFormat(Qt.TextFormat.RichText)
+            page.setAlignment(Qt.AlignmentFlag.AlignTop)
             self.stack.addWidget(page)
         root.addWidget(self.stack, 1)
 

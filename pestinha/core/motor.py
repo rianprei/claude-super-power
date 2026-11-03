@@ -34,7 +34,7 @@ class MotorTone:
     """Tom dos motores: suaviza a atividade de cada motor e transforma em chances de gestos (pular, girar, balançar)."""
     def __init__(self):
         """Começa todos os motores em zero."""
-        self.r = {m: 0.0 for m in REFERENCE_HZ}
+        self.r = dict.fromkeys(REFERENCE_HZ, 0.0)
 
     def update(self, motor_activity, dt):
         """Suaviza a atividade dos motores (sobe e desce aos poucos, sem saltos)."""

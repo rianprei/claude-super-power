@@ -11,7 +11,11 @@ O Pestinha roda só no seu computador. Ele não envia nada para a internet.
 - Se uma janela cobre a tela inteira (para não aparecer em jogos ou apresentações).
 - A posição e o tamanho das janelas abertas, para ele poder pousar nas barras de título.
 
-Ele **não** lê o conteúdo nem o título de nenhuma janela, página, documento ou conversa.
+Ele **não** lê o conteúdo de nenhuma janela, página, documento ou conversa, e **não** guarda nem usa o
+título de nenhuma janela. Um detalhe: no Linux (`wmctrl -l`) e no macOS (lista de janelas do Quartz),
+a lista que dá a posição das janelas pode trazer o título junto; o Pestinha usa só a posição e o
+tamanho e descarta o resto na hora, sem gravar, mostrar nem registrar no log. No Windows o título nem
+é pedido ao sistema.
 
 ## O que ele grava (tudo em `memory/`)
 

@@ -7,16 +7,18 @@ pelo que deu certo antes naquele contexto. A dispensa alimenta a rede (raiva),
 a memória (episódio negativo) e o aprendizado (penalidade de 1 s).
 """
 
-from ..log import log
 import random
 from collections import deque
 
-VALIDADE_PEDIDO_S = 10.0    # s: "fazer uma travessura agora" vale por este tempo
-
+from ..ajustes import (
+    DISPENSA_RAPIDA as QUICK_DISMISS,
+    GANHO_TRAVESSURA,
+    PENALIDADE_DISPENSA as PENALTY_SECONDS,
+)
 from ..core.emotion import PRIORITY
-from ..ajustes import (DISPENSA_RAPIDA as QUICK_DISMISS, PENALIDADE_DISPENSA as PENALTY_SECONDS,
-                       GANHO_TRAVESSURA)
+from ..log import log
 
+VALIDADE_PEDIDO_S = 10.0    # s: "fazer uma travessura agora" vale por este tempo
 
 
 class MischiefController:
@@ -30,7 +32,7 @@ class MischiefController:
         self.behavior = behavior
         self.emotion = emotion
         self.debug = debug
-        self.dismiss_times = deque()
+        self.dismiss_times: deque[float] = deque()
         self.postit_weight = 0.5     # quanto o pet gosta de colar post-its (ligado pelo app)
         self.penalty_until = 0.0
         self.pedido_forcado = False     # "fazer uma travessura agora": ignora o sorteio uma vez

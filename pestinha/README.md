@@ -15,8 +15,8 @@ core  <  sense  <  body  <  world  <  mind  <  ui  <  controle  <  app.py
 | Pasta | Papel |
 |---|---|
 | `core/` | Cérebro e regras puras: rede neural, emoção, homeostase, memória, condicionamento, física e protesto. Sem Qt e sem API do sistema, para ser testável em qualquer lugar. |
-| `plataforma/` | Tudo que depende do sistema operacional: programa em primeiro plano, tempo ocioso, janelas, tela cheia, foco e o atalho de pânico. Um módulo por sistema (Windows, macOS, Linux). Só nome de programa e geometria; nunca conteúdo nem título de janela. |
-| `sense/` | Sentidos: o que as leituras da plataforma significam (atividade, tela cheia, janela para pousar) e registro da rotina. Nunca conteúdo nem título de janela. |
+| `plataforma/` | Tudo que depende do sistema operacional: programa em primeiro plano, tempo ocioso, janelas, tela cheia, foco e o atalho de pânico. Um módulo por sistema (Windows, macOS, Linux). Só nome de programa e geometria; nunca conteúdo de janela, e o título (se vier junto) é descartado. |
+| `sense/` | Sentidos: o que as leituras da plataforma significam (atividade, tela cheia, janela para pousar) e registro da rotina. Nunca conteúdo de janela nem título. |
 | `body/` | O corpo do pet: a janela com o rosto, o estado que ele mostra, o comportamento (movimento) e a bolinha. |
 | `world/` | Objetos que aparecem na tela: post-its, memes, cartazes, notebook, fogos e a janela arrastável base. |
 | `mind/` | Controladores de decisão: ligam o que a rede decide à cena (sono, mesa, protesto, travessuras, festa, revolução, cantinho do castigo). |

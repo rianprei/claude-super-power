@@ -7,6 +7,7 @@ Como o sistema é lido fica em plataforma/; aqui fica só o que isso significa. 
 
 import math
 import time
+from typing import ClassVar
 
 from .. import plataforma
 from ..mathutil import clamp
@@ -57,8 +58,7 @@ def detect_activity(app, idle_seconds, away_after):
     if idle_seconds >= away_after:
         return "AWAY"
     nome = app.lower()
-    if nome.endswith(".exe"):
-        nome = nome[:-4]
+    nome = nome.removesuffix(".exe")
     for activity, apps in ACTIVITY_APPS.items():
         if nome in apps:
             return activity
@@ -129,12 +129,12 @@ class ComputerSenses:
     Só descreve o que está acontecendo; não decide NADA sobre o que fazer.
     """
 
-    PULSE_TAU = {"MOTION": 2.0, "NOVELTY": 3.0, "POKE": 1.5, "DISMISS": 6.0, "THROW": 2.0, "IMPACT": 4.0,
+    PULSE_TAU: ClassVar[dict[str, float]] = {"MOTION": 2.0, "NOVELTY": 3.0, "POKE": 1.5, "DISMISS": 6.0, "THROW": 2.0, "IMPACT": 4.0,
                  "TOY_TAKEN": 4.0}
 
     def __init__(self):
         """Estado dos sentidos: pulsos que decaem, níveis de atividade e se você está arrastando ou fazendo carinho."""
-        self.pulse = {name: 0.0 for name in self.PULSE_TAU}
+        self.pulse = dict.fromkeys(self.PULSE_TAU, 0.0)
         self.level = {"WORK": 0.0, "PLAY": 0.0, "SOUND": 0.0, "SOCIAL": 0.0, "WEB": 0.0}
         self.typing = 0.0
         self.drag = 0.0

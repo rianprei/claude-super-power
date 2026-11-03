@@ -1,5 +1,6 @@
 """
 DESENHO DO ROSTO - só o que se desenha do pet: moldura, olhos, brilho, acessórios e os Zzz.
+Também guarda o que o resto do visual compartilha: as fontes com reserva e as cores do tema.
 
 Não tem estado nem decisão: recebe a forma dos olhos, a direção do olhar e a aparência do pet
 (cores e acessórios, de pets/<pet>.json) e pinta. Os acessórios são uma camada por cima do rosto:
@@ -21,6 +22,43 @@ SHELL = QColor("#101512")
 SCREEN = QColor("#171e19")
 EYE = QColor("#3ee877")
 SHINE = QColor("#c8ffd8")
+
+# Famílias com reserva: a primeira é a do Windows; as outras valem no Linux e no macOS.
+MONO = ("Consolas", "DejaVu Sans Mono", "Menlo", "monospace")
+CARTAZ = ("Arial Black", "DejaVu Sans", "Helvetica Neue", "sans-serif")      # sempre no peso Black
+MANUSCRITA = ("Segoe Print", "Comic Neue", "Chalkboard SE", "Comic Sans MS", "sans-serif")
+
+
+# Tema das janelas, menus e painéis: o do Claude Code (fundo escuro quente, texto creme e o laranja
+# do Claude). Em #rrggbb para servir tanto ao QColor quanto às folhas de estilo do Qt.
+FUNDO = "#1f1e1d"
+SUPERFICIE = "#262624"
+SUPERFICIE_ALTA = "#30302e"
+BORDA = "#3d3c39"
+TEXTO = "#ebe9e1"
+TEXTO_FORTE = "#faf9f5"
+APAGADO = "#9c9a92"
+DESLIGADO = "#5c5b56"
+LARANJA = "#d97757"
+LARANJA_CLARO = "#e5896b"
+
+
+def fonte(familias, tamanho, negrito=False, peso=None):
+    """QFont com famílias de reserva (o Qt usa a primeira instalada) no tamanho em pontos."""
+    f = QFont()
+    f.setFamilies(list(familias))
+    f.setPointSize(max(1, int(tamanho)))
+    if peso is not None:
+        f.setWeight(peso)
+    elif negrito:
+        f.setBold(True)
+    return f
+
+
+def fonte_cartaz(tamanho):
+    """Letra grossa dos cartazes e da bandeira (Arial Black ou o equivalente)."""
+    return fonte(CARTAZ, tamanho, peso=QFont.Weight.Black)
+
 
 ACESSORIOS = ("oculos", "gravata")
 COR_HEX = re.compile(r"^#[0-9a-fA-F]{6}$")
@@ -75,7 +113,7 @@ def draw_face(p, shape, gaze=(0.0, 0.0), blink=1.0, emotion="observando", carinh
     p.setPen(QPen(a.moldura, 5))
     p.setBrush(a.casca)
     p.drawRoundedRect(QRectF(-BODY_W / 2, -BODY_H / 2, BODY_W, BODY_H), 20, 20)
-    p.setPen(Qt.NoPen)
+    p.setPen(Qt.PenStyle.NoPen)
     p.setBrush(a.tela)
     p.drawRoundedRect(QRectF(-BODY_W / 2 + 11, -BODY_H / 2 + 11, BODY_W - 22, BODY_H - 22), 12, 12)
     for nome, cor in a.acessorios:
@@ -84,12 +122,12 @@ def draw_face(p, shape, gaze=(0.0, 0.0), blink=1.0, emotion="observando", carinh
 
     if carinho:
         # carinho: olhinhos fechados de felicidade, em arco para cima (^ ^)
-        p.setPen(QPen(a.olho, 5, Qt.SolidLine, Qt.RoundCap))
-        p.setBrush(Qt.NoBrush)
+        p.setPen(QPen(a.olho, 5, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
+        p.setBrush(Qt.BrushStyle.NoBrush)
         for side in (-1, 1):
             cx, cy = side * 24, shape["dy"]
             p.drawArc(QRectF(cx - 15, cy - 8, 30, 22), 0, 180 * 16)
-        p.setPen(Qt.NoPen)
+        p.setPen(Qt.PenStyle.NoPen)
     else:
         _olhos(p, shape, gaze, blink, emotion, a)
     for nome, cor in a.acessorios:
@@ -147,20 +185,20 @@ def _olhos(p, shape, gaze, blink, emotion, a):
 def _oculos(p, cor):
     """Armação por cima dos olhos: aro grosso em cima, fino embaixo, e a ponte no meio."""
     p.save()
-    p.setBrush(Qt.NoBrush)
+    p.setBrush(Qt.BrushStyle.NoBrush)
     for side in (-1, 1):
         lente = QRectF(side * 24 - 21, -25, 42, 52)
         vidro = QColor(cor)
         vidro.setAlpha(22)                              # um reflexo leve: o olho continua aparecendo
-        p.setPen(Qt.NoPen)
+        p.setPen(Qt.PenStyle.NoPen)
         p.setBrush(vidro)
         p.drawRoundedRect(lente, 10, 10)
-        p.setBrush(Qt.NoBrush)
+        p.setBrush(Qt.BrushStyle.NoBrush)
         p.setPen(QPen(cor, 2))
         p.drawRoundedRect(lente, 10, 10)
-        p.setPen(QPen(cor, 5, Qt.SolidLine, Qt.RoundCap))
+        p.setPen(QPen(cor, 5, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
         p.drawLine(QPointF(lente.left() + 4, lente.top()), QPointF(lente.right() - 4, lente.top()))
-    p.setPen(QPen(cor, 3, Qt.SolidLine, Qt.RoundCap))
+    p.setPen(QPen(cor, 3, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
     p.drawLine(QPointF(-3, -18), QPointF(3, -18))       # ponte
     p.restore()
 
@@ -198,6 +236,6 @@ def draw_zzz(p, cx, cy, now, cor=EYE):
         p.translate(x, y)
         p.rotate(-12 + 10 * math.sin(t * math.tau))
         p.setPen(color)
-        p.setFont(QFont("Consolas", int(size), QFont.Bold))
-        p.drawText(QRectF(-20, -20, 40, 40), Qt.AlignCenter, "Z")
+        p.setFont(fonte(MONO, size, negrito=True))
+        p.drawText(QRectF(-20, -20, 40, 40), Qt.AlignmentFlag.AlignCenter, "Z")
         p.restore()

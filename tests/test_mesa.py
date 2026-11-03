@@ -5,8 +5,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from pestinha.ajustes import FOCO_MAXIMO_HZ, LIMIAR_LEVANTAR_HZ, LIMIAR_SENTAR_HZ  # noqa: E402
-from pestinha.mind.mesa import DeskController, distraction_level, focus_level  # noqa: E402
+from pestinha.ajustes import FOCO_MAXIMO_HZ, LIMIAR_LEVANTAR_HZ, LIMIAR_SENTAR_HZ
+from pestinha.mind.mesa import DeskController, distraction_level, focus_level
 
 
 def test_senta_quando_o_neuronio_dispara_forte():

@@ -17,7 +17,7 @@ COMPARTILHADOS = {"ajustes", "config", "store", "log", "mathutil", "paths", "set
 
 def camada_de(partes):
     """('bryan', 'world', 'notebook') -> 'world'; ('bryan', 'app') -> 'app'."""
-    return partes[1] if len(partes) > 2 else partes[1]
+    return partes[1]
 
 
 def importacoes(arquivo):

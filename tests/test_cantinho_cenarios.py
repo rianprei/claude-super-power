@@ -3,11 +3,11 @@
 python -m pytest tests/test_cantinho_cenarios.py -q
 Os atributos obtido/esperado ficam no JUnit via record_property.
 """
-import os
-import sys
 import json
 import math
+import os
 import random
+import sys
 import time
 from pathlib import Path
 from types import SimpleNamespace
@@ -16,18 +16,19 @@ from unittest.mock import Mock
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-import pytest  # noqa: E402
-import numpy as np  # noqa: E402
-from PySide6.QtCore import QTimer  # noqa: E402
-from PySide6.QtWidgets import QApplication  # noqa: E402
-from pestinha import config, log as log_module  # noqa: E402
-from pestinha.app import PestinhaApp  # noqa: E402
-from pestinha.paths import Paths  # noqa: E402
-from pestinha.settings_store import SettingsStore  # noqa: E402
-from pestinha.body.pet_state import PetState  # noqa: E402
-from pestinha.body.behavior import Behavior  # noqa: E402
-from pestinha.core.physics import Body  # noqa: E402
-from pestinha.mind.castigo_ctl import CastigoController, LIMIAR_FUGA_HZ  # noqa: E402
+import numpy as np
+import pytest
+from PySide6.QtCore import QTimer
+from PySide6.QtWidgets import QApplication
+
+from pestinha import config, log as log_module
+from pestinha.app import PestinhaApp
+from pestinha.body.behavior import Behavior
+from pestinha.body.pet_state import PetState
+from pestinha.core.physics import Body
+from pestinha.mind.castigo_ctl import LIMIAR_FUGA_HZ, CastigoController
+from pestinha.paths import Paths
+from pestinha.settings_store import SettingsStore
 
 BOUNDS = (0, 0, 1000, 700)
 GROUPS = {
@@ -42,7 +43,7 @@ GROUPS = {
     "prioridades": ["sem_protesto", "reclamacao", "manifestacao", "greve", "revolucao", "motor_canto", "missao_antiga", "dormindo", "carinho", "no_notebook"],
     "rede": ["preso_ativo", "livre", "opcao_desligada", "memoria_zero", "memoria_uma", "memoria_quatro", "memoria_cinco", "memoria_saturada", "apos_fuga_salva", "apos_esconder"],
 }
-SCENARIOS = [dict(id=i * 10 + j + 1, group=g, name=name, variant=j)
+SCENARIOS = [{"id": i * 10 + j + 1, "group": g, "name": name, "variant": j}
              for i, (g, names) in enumerate(GROUPS.items()) for j, name in enumerate(names)]
 assert len(SCENARIOS) == 100
 
@@ -110,12 +111,12 @@ def tick(s, now=1., motors=None):
 
 def take(s):
     c = s.c
-    return dict(dentro=c.dentro, marcado=s.state.castigo, ativo=c.ativo,
-                fuga=c.fuga, vitorias=c.vitorias["fugir"], memoria=c.memoria_fuga(),
-                vx=round(s.body.vx, 5), posicao=[round(s.body.x, 4), round(s.body.y, 4)],
-                cartaz=c.cartaz is not None, placa_visivel=c.plaquinha.isVisible(),
-                cartaz_posicao=[round(c.cartaz.x, 4), round(c.cartaz.y, 4)] if c.cartaz else None,
-                memoria_gravada=c.path.exists())
+    return {"dentro": c.dentro, "marcado": s.state.castigo, "ativo": c.ativo,
+                "fuga": c.fuga, "vitorias": c.vitorias["fugir"], "memoria": c.memoria_fuga(),
+                "vx": round(s.body.vx, 5), "posicao": [round(s.body.x, 4), round(s.body.y, 4)],
+                "cartaz": c.cartaz is not None, "placa_visivel": c.plaquinha.isVisible(),
+                "cartaz_posicao": [round(c.cartaz.cx, 4), round(c.cartaz.cy, 4)] if c.cartaz else None,
+                "memoria_gravada": c.path.exists()}
 
 
 def result(observed, expected):
@@ -127,14 +128,22 @@ def scenario_entry(s, i, monkeypatch):
     if i == 2:
         tick(s)
     else:
-        if i == 3: s.body.x = -1
-        if i == 4: s.body.x = 191
-        if i == 5: s.body.y = 459
-        if i == 6: s.body.y = 701
-        if i == 7: s.body.x = 0
-        if i == 8: s.body.x = 190
-        if i == 9: s.c.toggle(BOUNDS)
-        if i == 1: s.body.grounded = False
+        if i == 3:
+            s.body.x = -1
+        if i == 4:
+            s.body.x = 191
+        if i == 5:
+            s.body.y = 459
+        if i == 6:
+            s.body.y = 701
+        if i == 7:
+            s.body.x = 0
+        if i == 8:
+            s.body.x = 190
+        if i == 9:
+            s.c.toggle(BOUNDS)
+        if i == 1:
+            s.body.grounded = False
         enter(s)
         if i == 1:
             s.body.grounded = True
@@ -144,16 +153,26 @@ def scenario_entry(s, i, monkeypatch):
 
 def scenario_exit(s, i, monkeypatch):
     enter(s)
-    if i == 0: s.body.x = -1
-    if i == 1: s.body.x = 191
-    if i == 2: s.body.y = 459
-    if i == 3: s.body.y = 701
-    if i == 4: s.body.held = True
-    if i == 5: s.c.toggle(BOUNDS)
-    if i == 6: s.c.pausar(s.state)
-    if i == 8: s.c.plaquinha.move(500, 550)
-    if i == 9: s.body.grounded = False
-    if i not in (5, 6): tick(s)
+    if i == 0:
+        s.body.x = -1
+    if i == 1:
+        s.body.x = 191
+    if i == 2:
+        s.body.y = 459
+    if i == 3:
+        s.body.y = 701
+    if i == 4:
+        s.body.held = True
+    if i == 5:
+        s.c.toggle(BOUNDS)
+    if i == 6:
+        s.c.pausar(s.state)
+    if i == 8:
+        s.c.plaquinha.move(500, 550)
+    if i == 9:
+        s.body.grounded = False
+    if i not in (5, 6):
+        tick(s)
     return result([s.c.dentro, s.state.castigo], [i == 7, i == 7])
 
 
@@ -161,14 +180,16 @@ def scenario_gaze(s, i, monkeypatch):
     cursor = (500, 500)
     motors = {}
     expected = (0., .9)
-    if i == 1: motors = {"WATCH": 2.99}
+    if i == 1:
+        motors = {"WATCH": 2.99}
     if i in (2, 3, 4, 5):
         motors = {"WATCH": 3. if i == 2 else 8.}
         cursor = {2: (500, 500), 3: (0, 600), 4: (100, 400), 5: (100, 700)}[i]
         dx, dy = cursor[0] - s.body.x, cursor[1] - s.body.y
         distance = math.hypot(dx, dy)
         expected = (dx / distance, dy / distance)
-    if i == 6: motors = {"ANGRY": 2.99}
+    if i == 6:
+        motors = {"ANGRY": 2.99}
     if i in (7, 8, 9):
         motors = {"ANGRY": 3. if i == 7 else 7., "WATCH": 7. if i == 8 else 0.}
         expected = (-1., 0.)
@@ -198,7 +219,7 @@ def scenario_signs(s, i, monkeypatch):
     spawn(s, monkeypatch)
     if i == 6:
         sign = s.c.cartaz
-        return result([sign.x == s.body.x, sign.y < s.body.y and sign.y > 400], [True, True])
+        return result([sign.cx == s.body.x, sign.cy < s.body.y and sign.cy > 400], [True, True])
     if i == 7:
         first = s.c.cartaz
         spawn(s, monkeypatch, 10)        # contrato novo: cada cartaz fica pelo menos 8 s antes de trocar
@@ -208,14 +229,18 @@ def scenario_signs(s, i, monkeypatch):
         return result(s.c.cartaz is None, True)
     s.body.x = 150
     tick(s, 1.1)
-    return result(s.c.cartaz.x, 150)
+    return result(s.c.cartaz.cx, 150)
 
 
 def scenario_escape_start(s, i, monkeypatch):
-    if i != 5: enter(s)
-    if i == 4: s.c.toggle(BOUNDS)
-    if i == 6: s.body.held = True
-    if i == 7: s.body.grounded = False
+    if i != 5:
+        enter(s)
+    if i == 4:
+        s.c.toggle(BOUNDS)
+    if i == 6:
+        s.body.held = True
+    if i == 7:
+        s.body.grounded = False
     hz = 0 if i == 0 else LIMIAR_FUGA_HZ - .001 if i == 1 else LIMIAR_FUGA_HZ if i == 2 else 10.
     # contrato novo: a fuga sai da vontade acumulada (FUGIR acima do limiar ao longo do tempo).
     # Aqui a vontade já está quase cheia; um tick acima do limiar completa, no limiar não acumula.
@@ -235,12 +260,14 @@ def scenario_escape_end(s, i, monkeypatch):
     s.c.fuga = 0.
     s.body.x = [100, 230, 231, 900, -100, 231, 100, 300, 100, 300][i]
     now = 31. if i in (5, 6) else 1.
-    if i == 7: s.body.held = True
+    if i == 7:
+        s.body.held = True
     if i == 8:
         s.c.plaquinha.move(-500, 550)
     # Exercita o caminho público do quadro, que verifica a fuga antes da posse.
     tick(s, now)
-    if i == 9: s.c._checar_fuga(2, s.body)
+    if i == 9:
+        s.c._checar_fuga(2, s.body)
     expected = 1. if i in (2, 3, 9) else 0.
     return result(s.c.vitorias["fugir"], expected)
 
@@ -269,14 +296,16 @@ def scenario_persistence(s, i, monkeypatch):
 def scenario_session(s, i, monkeypatch):
     b = s.app
     enter(s, time.monotonic())
-    if i == 0: b.panic()
+    if i == 0:
+        b.panic()
     if i == 1:
         b.hidden = True
         b.update_visibility()
     if i == 2:
         b.fullscreen = True
         b.update_visibility()
-    if i == 3: b.apply_perms(dict(b.perms, ativo=False))
+    if i == 3:
+        b.apply_perms(dict(b.perms, ativo=False))
     if i == 4:
         b.toggle_pause()
         before = b.brain.time_ms
@@ -292,7 +321,8 @@ def scenario_session(s, i, monkeypatch):
         b.hidden = False
         b.update_visibility()
         return result([s.c.dentro, s.c.plaquinha.isVisible()], [False, True])
-    if i == 7: s.c.toggle(BOUNDS)
+    if i == 7:
+        s.c.toggle(BOUNDS)
     if i == 8:
         b.apply_perms(dict(b.perms, modo_teste=True))
         return result(s.c.dentro, True)
@@ -301,7 +331,7 @@ def scenario_session(s, i, monkeypatch):
         b.pet_state.emotion = "dormindo"
         b.behavior.emotion = "dormindo"
         s.body.y = 700 - s.body.extents()[1]
-        rates = {motor: 0. for motor in b.brain.motor_names}
+        rates = dict.fromkeys(b.brain.motor_names, 0.0)
         rates["FUGIR"] = 10.
         monkeypatch.setattr(b.brain, "motor_activity", lambda: rates)
         b.last_frame = time.monotonic() - .016
@@ -315,20 +345,28 @@ def scenario_priority(s, i, monkeypatch):
     s.body.x = 150
     enter(s)
     s.state.protest_stage = i if i < 5 else 0
-    if i == 5: s.behavior.canto = True
-    if i == 6: s.behavior.mission = ("cross", 900, 100)
-    if i == 7: s.behavior.emotion = "dormindo"
-    if i == 8: s.state.mark_caress(1.)
-    if i == 9: s.state.at_desk = True
+    if i == 5:
+        s.behavior.canto = True
+    if i == 6:
+        s.behavior.mission = ("cross", 900, 100)
+    if i == 7:
+        s.behavior.emotion = "dormindo"
+    if i == 8:
+        s.state.mark_caress(1.)
+    if i == 9:
+        s.state.at_desk = True
     s.behavior.tick(.016, 1., (500, 500), BOUNDS, config.PROFILES["normal"])
     return result(s.body.vx, 0.)
 
 
 def scenario_neural(s, i, monkeypatch):
     b = s.app
-    if i in (0, 2): enter(s, time.monotonic())
-    if i == 2: s.c.toggle(BOUNDS)
-    if i in (3, 4, 5, 6, 7): s.c.vitorias["fugir"] = [0, 1, 4, 5, 100][i - 3]
+    if i in (0, 2):
+        enter(s, time.monotonic())
+    if i == 2:
+        s.c.toggle(BOUNDS)
+    if i in (3, 4, 5, 6, 7):
+        s.c.vitorias["fugir"] = [0, 1, 4, 5, 100][i - 3]
     if i == 8:
         enter(s, time.monotonic())
         s.c._iniciar_fuga(time.monotonic(), BOUNDS)
@@ -346,10 +384,10 @@ def scenario_neural(s, i, monkeypatch):
     return result(b.intensities["LEMBRA_FUGA"], [0., .2, .8, 1., 1.][i - 3])
 
 
-RUNNERS = dict(entrada=scenario_entry, saida=scenario_exit, olhar=scenario_gaze,
-               cartazes=scenario_signs, iniciar_fuga=scenario_escape_start,
-               concluir_fuga=scenario_escape_end, persistencia=scenario_persistence,
-               sessao=scenario_session, prioridades=scenario_priority, rede=scenario_neural)
+RUNNERS = {"entrada": scenario_entry, "saida": scenario_exit, "olhar": scenario_gaze,
+               "cartazes": scenario_signs, "iniciar_fuga": scenario_escape_start,
+               "concluir_fuga": scenario_escape_end, "persistencia": scenario_persistence,
+               "sessao": scenario_session, "prioridades": scenario_priority, "rede": scenario_neural}
 
 
 @pytest.mark.parametrize("scene", SCENARIOS,
@@ -361,4 +399,4 @@ def test_cenario_cantinho(scene, monkeypatch, record_property):
     record_property("observado", json.dumps(observed, ensure_ascii=False))
     record_property("esperado", json.dumps(expected, ensure_ascii=False))
     record_property("estado_final", json.dumps(take(scene), ensure_ascii=False))
-    assert observed == expected, dict(cenario=case, observado=observed, esperado=expected)
+    assert observed == expected, {"cenario": case, "observado": observed, "esperado": expected}

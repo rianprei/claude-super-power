@@ -6,8 +6,8 @@ apoiado, sem ser segurado, sem voar, sem missão e fora de protesto ativo
 (indignado não dorme). Ao adormecer, consolida a memória episódica.
 """
 
-from ..log import log
 from ..core.emotion import PRIORITY
+from ..log import log
 
 
 class SleepController:

@@ -12,11 +12,11 @@ from pathlib import Path
 RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ))
 
-import numpy as np  # noqa: E402
+import numpy as np
 
-from pestinha import ajustes  # noqa: E402
-from pestinha.core import nervous_system as ns  # noqa: E402
-from pestinha.ui.rotulos import CANAIS_SENSORIAIS, INTERNEURONIOS, MOTORES  # noqa: E402
+from pestinha import ajustes
+from pestinha.core import nervous_system as ns
+from pestinha.ui.rotulos import CANAIS_SENSORIAIS, INTERNEURONIOS, MOTORES
 
 FONTE = (RAIZ / "pestinha" / "core" / "nervous_system.py").read_text(encoding="utf-8")
 
@@ -46,9 +46,9 @@ def main():
         "",
         "> Gerado por `ferramentas/gerar_doc_rede.py` a partir do código. Não edite à mão: rode o script.",
         "",
-        f"A rede tem **{brain.N} neurônios** de integração e disparo com vazamento (LIF), "
+        (f"A rede tem **{brain.N} neurônios** de integração e disparo com vazamento (LIF), "
         f"**{int(np.count_nonzero(brain.W))} sinapses**, **{len(ns.SENSORY_SPEC)} canais sensoriais**, "
-        f"**{len(ns.INTER_SPEC)} populações de interneurônios** e **{len(ns.MOTOR_SPEC)} populações motoras**.",
+        f"**{len(ns.INTER_SPEC)} populações de interneurônios** e **{len(ns.MOTOR_SPEC)} populações motoras**."),
         "",
         "## Como o sinal anda",
         "",
@@ -68,10 +68,10 @@ def main():
         "- **Habituação:** cada canal perde eficácia a cada disparo (`d`) e recupera em `tau_rec` segundos.",
         "- **Temperamento:** `pets/*.json` multiplica as sinapses que saem dos sentidos (o mesmo estímulo pesa diferente em cada pet).",
         "- **Inibição lateral:** motores competem só dentro do seu grupo (expressão com expressão, decisão com decisão).",
-        "- **Aprendizado por carinho:** regra de três fatores entre canais sensoriais e PLAYFUL/CALM/FRUSTRATION/GLOOM, "
-        "com recompensa (+ carinho, − dispensa e castigo).",
-        "- **Condicionamento:** Rescorla–Wagner fora da rede (`core/conditioning.py`); a força prevista entra como "
-        "`ANTICIPATE` (cutucada/arraste) e `ANTECIPA_PLACA` (cantinho).",
+        ("- **Aprendizado por carinho:** regra de três fatores entre canais sensoriais e PLAYFUL/CALM/FRUSTRATION/GLOOM, "
+        "com recompensa (+ carinho, − dispensa e castigo)."),
+        ("- **Condicionamento:** Rescorla–Wagner fora da rede (`core/conditioning.py`); a força prevista entra como "
+        "`ANTICIPATE` (cutucada/arraste) e `ANTECIPA_PLACA` (cantinho)."),
         "",
         "## Canais sensoriais",
         "",
@@ -88,7 +88,7 @@ def main():
                       f"| {n} | {entradas_de(nome)} |")
     linhas += ["", "## Motores", "", "| Motor | Grupo | Nome no monitor | Entradas (peso) | Para que serve |",
                "|---|---|---|---|---|"]
-    for nome, n, *_ in ns.MOTOR_SPEC:
+    for nome, _n, *_ in ns.MOTOR_SPEC:
         grupo = "decisão" if nome in ns.DECISION_MOTORS else "expressão"
         linhas.append(f"| `{nome}` | {grupo} | {MOTORES.get(nome, '')} | {entradas_de(nome)} | {com_m.get(nome, '')} |")
     linhas += [
@@ -107,8 +107,8 @@ def main():
         f"| Cartazes do castigo | por segundo: taxa de `CARTAZ` × {ajustes.GANHO_CARTAZ:g} (cada um fica ao menos 8 s). |",
         f"| Bolinhas de papel | por segundo: taxa de `PAPEL` × {ajustes.GANHO_PAPEL:g} (só na revolução). |",
         "",
-        "Regras que ainda não são da rede: as condições do corpo (dormindo, segurado, no ar), os estágios do "
-        "protesto (acúmulo com limiar), o sono pela energia e a escolha do tipo de travessura (memória episódica).",
+        ("Regras que ainda não são da rede: as condições do corpo (dormindo, segurado, no ar), os estágios do "
+        "protesto (acúmulo com limiar), o sono pela energia e a escolha do tipo de travessura (memória episódica)."),
         "",
     ]
     destino = RAIZ / "docs" / "REDE_NEURAL.md"

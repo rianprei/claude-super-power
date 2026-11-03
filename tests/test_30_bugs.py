@@ -12,13 +12,13 @@ from unittest.mock import Mock
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-import pytest  # noqa: E402
-from PySide6.QtCore import Qt  # noqa: E402
-from PySide6.QtWidgets import QApplication  # noqa: E402
+import pytest
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QApplication
 
-from pestinha import config  # noqa: E402
-from pestinha.paths import Paths  # noqa: E402
-from pestinha.settings_store import SettingsStore  # noqa: E402
+from pestinha import config
+from pestinha.paths import Paths
+from pestinha.settings_store import SettingsStore
 
 
 @pytest.fixture
@@ -106,9 +106,9 @@ def test_05_guardar_bolinha_no_meio_do_arraste_larga(mundo):
 
 
 # 06
-def test_06_abrir_painel_com_bandeja_escondida_fica_aberto(mundo):
+def test_06_abrir_painel_depois_de_fechar_pela_bandeja_fica_aberto(mundo):
     b = mundo.b
-    b.toggle_floating()
+    b.fechar_paineis()
     b.floats.open("neural")
     b.update_visibility()
     assert b.floats.window("neural").isVisible()
@@ -181,7 +181,7 @@ def test_12_monitor_tem_rotulo_em_portugues_para_tudo():
 # 13
 def test_13_foco_maximo_tem_uma_fonte_so():
     import pestinha.ajustes as aj
-    import pestinha.mind.mesa as mesa
+    from pestinha.mind import mesa
     assert mesa.FOCO_MAXIMO_HZ is aj.FOCO_MAXIMO_HZ
 
 
@@ -189,7 +189,7 @@ def test_13_foco_maximo_tem_uma_fonte_so():
 def test_14_ajustes_sem_constante_morta():
     texto = (ROOT / "pestinha" / "ajustes.py").read_text(encoding="utf-8")
     codigo = "".join(p.read_text(encoding="utf-8") for p in (ROOT / "pestinha").rglob("*.py") if p.name != "ajustes.py")
-    mortas = [n for n in re.findall(r"^([A-Z][A-Z_]*) = ", texto, flags=re.M) if n not in codigo]
+    mortas = [n for n in re.findall(r"^([A-Z][A-Z_]*) = ", texto, flags=re.MULTILINE) if n not in codigo]
     assert mortas == []
 
 
@@ -251,7 +251,7 @@ def test_23_tela_inicial_grava_a_escolha(monkeypatch, tmp_path):
     monkeypatch.setattr(main_mod, "SettingsDialog", Dialogo)
     monkeypatch.setattr(main_mod, "Paths", lambda: paths)
     monkeypatch.setattr(main_mod, "PestinhaApp", lambda store, p: None)
-    monkeypatch.setattr(main_mod, "Onboarding", lambda nome: SimpleNamespace(exec=lambda: 1))
+    monkeypatch.setattr(main_mod, "Onboarding", lambda nome, corpo="tela": SimpleNamespace(exec=lambda: 1))
     monkeypatch.setattr(main_mod, "QApplication", lambda argv: SimpleNamespace(
         setQuitOnLastWindowClosed=lambda v: None, setWindowIcon=lambda i: None, exec=lambda: 0))
     monkeypatch.setattr(sys, "argv", ["main.py"])
@@ -274,7 +274,7 @@ def test_24_tela_inicial_apagar_tudo_funciona(monkeypatch, tmp_path):
 
     monkeypatch.setattr(main_mod, "SettingsDialog", Dialogo)
     monkeypatch.setattr(main_mod, "Paths", lambda: paths)
-    monkeypatch.setattr(main_mod, "Onboarding", lambda nome: SimpleNamespace(exec=lambda: 1))
+    monkeypatch.setattr(main_mod, "Onboarding", lambda nome, corpo="tela": SimpleNamespace(exec=lambda: 1))
     monkeypatch.setattr(main_mod, "QApplication", lambda argv: SimpleNamespace(
         setQuitOnLastWindowClosed=lambda v: None, setWindowIcon=lambda i: None, exec=lambda: 0))
     monkeypatch.setattr(sys, "argv", ["main.py"])

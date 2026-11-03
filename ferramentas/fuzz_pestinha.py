@@ -21,16 +21,16 @@ from unittest.mock import Mock
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import numpy as np  # noqa: E402
-from PySide6.QtWidgets import QApplication  # noqa: E402
+import numpy as np
+from PySide6.QtWidgets import QApplication
 
 QT = QApplication.instance() or QApplication([])
 QT.setQuitOnLastWindowClosed(False)
 
-import pestinha.app as A  # noqa: E402
-from pestinha import config  # noqa: E402
-from pestinha.paths import Paths  # noqa: E402
-from pestinha.settings_store import SettingsStore  # noqa: E402
+import pestinha.app as A
+from pestinha import config
+from pestinha.paths import Paths
+from pestinha.settings_store import SettingsStore
 
 A.PanicHotkey = lambda: SimpleNamespace(ok=True, pressed=Mock())
 A.senses.list_windows = lambda exclude, *args, **kwargs: []
@@ -99,7 +99,7 @@ ACOES = OrderedDict([
     ("cutucar_menu", lambda b, r: b.menu_poke()),
     ("carinho", lambda b, r: b.menu_caress()),
     ("carinho_longo", lambda b, r: [b.pet_state.mark_caress() or rodar(b, 0.2) for _ in range(20)]),
-    ("arrastar", lambda b, r: soltar(b, r)),
+    ("arrastar", soltar),
     ("arremessar", lambda b, r: soltar(b, r, arremesso=True)),
     ("soltar_na_placa", soltar_na_placa),
     ("castigo_toggle", lambda b, r: b.castigo.toggle(b.bounds())),
@@ -200,7 +200,7 @@ def main(rodadas=30, acoes=60, semente=0):
         rng = random.Random(semente + k)
         try:
             b = novo_app(rng)
-        except Exception:
+        except Exception:  # noqa: BLE001 - o fuzzer existe para registrar QUALQUER exceção do app
             excecoes.setdefault("criar app", traceback.format_exc())
             continue
         historico = []
@@ -210,7 +210,7 @@ def main(rodadas=30, acoes=60, semente=0):
             try:
                 ACOES[nome](b, rng)
                 rodar(b, 0.3)
-            except Exception:
+            except Exception:  # noqa: BLE001 - o fuzzer existe para registrar QUALQUER exceção do app
                 tb = traceback.format_exc().strip().splitlines()
                 chave = f"exceção em {nome}: {tb[-1]}"
                 excecoes.setdefault(chave, (list(historico), "\n".join(tb[-8:])))

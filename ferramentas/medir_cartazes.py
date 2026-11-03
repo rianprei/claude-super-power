@@ -13,12 +13,12 @@ from pathlib import Path
 RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ))
 
-from PySide6.QtCore import QRectF, Qt  # noqa: E402
-from PySide6.QtGui import QFont, QFontMetrics, QGuiApplication  # noqa: E402
+from PySide6.QtCore import QRectF, Qt
+from PySide6.QtGui import QFont, QFontMetrics, QGuiApplication
 
-from pestinha import config  # noqa: E402
-from pestinha.core.protesto import load_signs  # noqa: E402
-from pestinha.paths import Paths  # noqa: E402
+from pestinha import config
+from pestinha.core.protesto import load_signs
+from pestinha.paths import Paths
 
 # seção -> (largura, altura, letra inicial) da placa onde ela aparece (world/cartazes.py)
 PLACA = {

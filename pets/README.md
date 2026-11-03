@@ -15,6 +15,7 @@ Um pet são duas coisas com o mesmo nome:
 | `brincadeira` | Pesos de cada jeito de brincar: `bola` (chuta), `arremesso` (joga no cursor), `postit` (cola post-its). Peso 0 desliga. |
 | `temperamento` | Ganhos que multiplicam estímulos antes de chegarem aos interneurônios. Ex.: `"DISMISS->FRUSTRATION": 1.3` deixa o pet mais irritado quando você dispensa coisas. Os nomes estão em [docs/REDE_NEURAL.md](../docs/REDE_NEURAL.md). |
 | `reacao_notebook` | `"bravo"` ou `"triste"`: o que ele sente quando arrancam o notebook dele. |
+| `corpo` | `"tela"` (padrão: o rosto na telinha) ou `"clawd3d"` (o mascote do Claude Code em blocos 3D, com o modo Super Saiyajin 1 no menu do botão direito). |
 | `aparencia` | Opcional. Cores `#rrggbb` de `moldura`, `casca`, `tela`, `olho` e `brilho`, e `acessorios` com a cor de cada um: `{"oculos": "#f2f2f2", "gravata": "#b3261e"}`. Sem o campo, o visual original. |
 
 Campos com tipo errado são ignorados e ficam com o valor padrão (não derrubam o app).
@@ -43,6 +44,10 @@ de outro pet.
   com atenção, desesperado quando dispensam as coisas dele e quase nunca triste. O panfleto que ele atira
   (`jorge/bolinha_papel.png`) é desenhado por `ferramentas/gerar_panfleto.py`. Moldura e olhos dourados
   e gravata vermelha. Memes felizes, contentes, curiosos e bravos próprios em `jorge/memes/feliz/`, `contente/`, `curioso/` e `bravo/`; as outras emoções ainda sem memes.
+- **Claude** (`clawd.json`): o mascote do Claude Code em 3D (`"corpo": "clawd3d"`). Gira para o lado do
+  olhar, faz `> <` no carinho e vira Super Saiyajin 1 (cabelo dourado, olhos verdes e aura) pelo menu do
+  botão direito ou em Configurações › Brincadeira; fica salvo. Sem pasta própria: usa o conteúdo neutro de
+  `assets/comum/`.
 
 ## Criar outro pet
 

@@ -1,8 +1,12 @@
 """Windows: a API do sistema (user32, dwmapi) via ctypes e pywin32. Retângulos em pixels físicos."""
 
 import ctypes
+import sys
 import threading
 from ctypes import wintypes
+
+if sys.platform != "win32":
+    raise ImportError("plataforma/windows.py só funciona no Windows")
 
 import psutil
 import pywintypes
@@ -59,7 +63,7 @@ def tela_cheia():
         left, top, right, bottom = win32gui.GetWindowRect(hwnd)
         monitor = win32api.MonitorFromWindow(hwnd, win32con.MONITOR_DEFAULTTONEAREST)
         m_left, m_top, m_right, m_bottom = win32api.GetMonitorInfo(monitor)["Monitor"]
-    except Exception:
+    except Exception:  # noqa: BLE001 - pywin32/ctypes: janela pode sumir no meio da leitura e o erro não tem classe comum
         return False
     return left <= m_left and top <= m_top and right >= m_right and bottom >= m_bottom
 
@@ -71,7 +75,7 @@ def _is_cloaked(hwnd):
         ctypes.windll.dwmapi.DwmGetWindowAttribute(
             wintypes.HWND(hwnd), 14, ctypes.byref(cloaked), ctypes.sizeof(cloaked)
         )
-    except Exception:
+    except Exception:  # noqa: BLE001 - pywin32/ctypes: janela pode sumir no meio da leitura e o erro não tem classe comum
         return False
     return cloaked.value != 0
 
@@ -84,13 +88,14 @@ def _frame_rect(hwnd):
             wintypes.HWND(hwnd), 9, ctypes.byref(rect), ctypes.sizeof(rect)
         ) == 0:
             return rect.left, rect.top, rect.right, rect.bottom
-    except Exception:
+    except Exception:  # noqa: BLE001, S110 - pywin32/ctypes: janela pode sumir no meio da leitura e o erro não tem classe comum  # nosec B110
         pass
     return win32gui.GetWindowRect(hwnd)
 
 
 def janelas_visiveis(excluir, escala=1.0):
     """Janelas visíveis em ordem de z (de cima para baixo): [(hwnd, (l, t, r, b), maximizada)]."""
+    del escala                  # o Windows já devolve pixels físicos
     found = []
     user32 = ctypes.windll.user32
 
@@ -111,19 +116,20 @@ def janelas_visiveis(excluir, escala=1.0):
             if rect[2] - rect[0] < 120 or rect[3] - rect[1] < 60:
                 return True
             found.append((hwnd, rect, bool(user32.IsZoomed(hwnd))))
-        except Exception:
+        except Exception:  # noqa: BLE001, S110 - pywin32/ctypes: janela pode sumir no meio da leitura e o erro não tem classe comum  # nosec B110
             pass        # janela sumiu no meio da leitura
         return True
 
     try:
         win32gui.EnumWindows(callback, None)
-    except Exception as error:
+    except Exception as error:  # noqa: BLE001 - pywin32/ctypes: janela pode sumir no meio da leitura e o erro não tem classe comum
         log(f"[senses] não deu para listar janelas: {error}")
     return found
 
 
 def retangulo_ativo(escala=1.0):
     """Retângulo da janela ativa (pixels físicos), para ele olhar para ela."""
+    del escala                  # o Windows já devolve pixels físicos
     hwnd = win32gui.GetForegroundWindow()
     if not hwnd:
         return None
@@ -131,7 +137,7 @@ def retangulo_ativo(escala=1.0):
         if win32gui.GetClassName(hwnd) in SHELL_CLASSES:
             return None
         return _frame_rect(hwnd)
-    except Exception:
+    except Exception:  # noqa: BLE001 - pywin32/ctypes: janela pode sumir no meio da leitura e o erro não tem classe comum
         return None
 
 
@@ -141,7 +147,7 @@ def sem_foco_nativo(janela_id):
         style = win32gui.GetWindowLong(janela_id, win32con.GWL_EXSTYLE)
         style |= win32con.WS_EX_NOACTIVATE | win32con.WS_EX_TOOLWINDOW
         win32gui.SetWindowLong(janela_id, win32con.GWL_EXSTYLE, style)
-    except Exception:
+    except Exception:  # noqa: BLE001, S110 - pywin32/ctypes: janela pode sumir no meio da leitura e o erro não tem classe comum  # nosec B110
         pass    # sem janela nativa (ex.: teste offscreen)
 
 

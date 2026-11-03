@@ -7,20 +7,25 @@ Pausado ou desligado, as interações não mexem no estado (ver SessaoMixin._con
 Mixin de PestinhaApp: usa os atributos criados em PestinhaApp.__init__.
 """
 
-from ..log import log
 import time
+
 from PySide6.QtWidgets import QMenu
-from ..body.pet import cursor_pos
+
+from .. import config
 from ..ajustes import (
-    INSATISFACAO_NOTEBOOK,
     COOLDOWN_CUTUCADA as POKE_COOLDOWN,
     ESPERA_MEDIDA_CUTUCADA as POKE_PROBE,
     HZ_RESPOSTA_CHEIA as POKE_FULL_HZ,
+    INSATISFACAO_NOTEBOOK,
     RESPOSTA_MINIMA as POKE_MIN_RESPONSE,
 )
+from ..body.pet import cursor_pos
+from ..log import log
+from ..ui.ui import MENU_STYLE
+from .contrato import ContratoApp
 
 
-class InteracaoMixin:
+class InteracaoMixin(ContratoApp):
     """Ações do usuário sobre o pet: cutucar, arrastar, arremessar, dispensar travessuras e o menu do botão direito. Vira atributo de PestinhaApp."""
     def on_poke(self):
         """Você cutucou o pet: ele reage e a rede recebe o toque (ignorado na pausa)."""
@@ -108,6 +113,7 @@ class InteracaoMixin:
     def show_pet_menu(self, pos):
         """Mostra o menu do botão direito no pet; cada item fica desativado se não fizer sentido agora."""
         menu = QMenu()
+        menu.setStyleSheet(MENU_STYLE)
         perms = self.perms
 
         def item(text, fn, enabled=True):
@@ -127,6 +133,9 @@ class InteracaoMixin:
         item("Mostrar o notebook" if self.mesa.escondido else "Esconder o notebook",
              self.menu_alternar_notebook)
         item("Fazer uma travessura agora", self.menu_mischief, perms["travessuras"])
+        if self.pet.corpo == "clawd3d":
+            item("Desligar o Super Saiyajin" if self.pet_state.super_saiyajin_desde is not None
+                 else "Virar Super Saiyajin 1", self.menu_super_saiyajin)
         menu.addSeparator()
         item("Cantinho do castigo", lambda: self.castigo.toggle(self.bounds()))
         item("Painel de protesto", lambda: self.floats.toggle("greve"))
@@ -134,7 +143,7 @@ class InteracaoMixin:
         item("Configurações...", self.open_settings)
         menu.addSeparator()
         item("Esconder (volta pela bandeja)", self.toggle_hidden)
-        item("Fechar", self.menu_close)
+        item(f"Fechar o {config.APP_NOME}", self.quit)
         menu.exec(pos)
 
     def menu_poke(self):
@@ -175,11 +184,23 @@ class InteracaoMixin:
         self.mischief_ctl.pedir(time.monotonic())
 
     def menu_alternar_notebook(self):
-        """Menu: mostra ou esconde o notebook; sem o notebook, ele não pode sentar nele."""
+        """Menu: mostra ou esconde o notebook (fica salvo); sem o notebook, ele não pode sentar nele."""
         self.mesa.alternar_notebook()
+        self.store.update({"notebook": not self.mesa.escondido})
         self.pet_state.at_desk = self.mesa.sentado
         if not self.mesa.sentado:
             self.pet_state.desk_top = None
+
+    def menu_super_saiyajin(self):
+        """Menu: liga ou desliga o Super Saiyajin 1 (cabelo dourado e aura); fica salvo, como em Configurações."""
+        st = self.pet_state
+        ligar = st.super_saiyajin_desde is None
+        self.store.update({"super_saiyajin": ligar})
+        st.super_saiyajin_desde = time.monotonic() if ligar else None
+        if not ligar:
+            return
+        if self.pet.body.grounded:
+            self.pet.body.jump(0.0, -420.0)          # o pulinho da transformação
 
     def menu_pedir_trabalho(self):
         """Menu: 'Pedir para trabalhar' (ele pode aceitar, ou recusar com frustração)."""

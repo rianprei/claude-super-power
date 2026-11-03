@@ -5,12 +5,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-import pytest  # noqa: E402
-from PySide6.QtWidgets import QApplication  # noqa: E402
+import pytest
+from PySide6.QtWidgets import QApplication
 
-from pestinha.ajustes import LIMIAR_SENTAR_HZ, PEDIDO_VALIDADE_S  # noqa: E402
-from pestinha.mind.mesa import MesaController  # noqa: E402
-from pestinha.paths import Paths  # noqa: E402
+from pestinha.ajustes import LIMIAR_SENTAR_HZ, PEDIDO_VALIDADE_S
+from pestinha.mind.mesa import MesaController
+from pestinha.paths import Paths
 
 
 class App:

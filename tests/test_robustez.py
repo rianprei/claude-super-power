@@ -5,9 +5,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from pestinha import config  # noqa: E402
-from pestinha.paths import Paths  # noqa: E402
-from pestinha.store import read_json, write_json  # noqa: E402
+from pestinha import config
+from pestinha.paths import Paths
+from pestinha.store import read_json, write_json
 
 
 def test_arquivo_corrompido_vira_copia_e_volta_padrao(tmp_path):

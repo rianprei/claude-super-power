@@ -1,8 +1,9 @@
 """Contratos dos 30 bugs da auditoria (docs/auditorias/AUDITORIA_30_BUGS.md). Todos passam desde a correção.
 Sem escrita na memória pessoal do pet.
 """
-import os
+import contextlib
 import json
+import os
 import time
 from collections import Counter
 from types import SimpleNamespace
@@ -11,22 +12,21 @@ from unittest.mock import Mock
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 import pytest
-from PySide6.QtCore import QTimer, Qt
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import QApplication, QMessageBox
 
-from pestinha import config
+from pestinha import config, log as log_module
 from pestinha.app import PestinhaApp
+from pestinha.body.brincadeira import Play
+from pestinha.body.toy import RADIUS, bounce_off
+from pestinha.core.episodic import EpisodicMemory
+from pestinha.core.nervous_system import LIFBrain
+from pestinha.core.physics import Body
+from pestinha.core.protesto import Protesto
+from pestinha.mind.castigo_ctl import CastigoController
 from pestinha.paths import Paths
 from pestinha.settings_store import SettingsStore
 from pestinha.world.arrastavel import FloatingWidget
-from pestinha.body.brincadeira import Play
-from pestinha.body.toy import bounce_off, RADIUS
-from pestinha.core.physics import Body
-from pestinha.core.protesto import Protesto
-from pestinha.core.nervous_system import LIFBrain
-from pestinha.core.episodic import EpisodicMemory
-from pestinha.mind.castigo_ctl import CastigoController
-from pestinha import log as log_module
 
 
 @pytest.fixture(scope="module")
@@ -78,10 +78,8 @@ def test_01_configuracao_aberta_nao_reverte_panico(audit_buddy):
 def test_02_panico_ainda_esconde_tudo_se_disco_falhar(audit_buddy, monkeypatch):
     b = audit_buddy
     monkeypatch.setattr(b.store, "save", Mock(side_effect=OSError("disco indisponível")))
-    try:
+    with contextlib.suppress(OSError):
         b.panic()
-    except OSError:
-        pass
     assert not b.pet.isVisible()
 
 
@@ -89,10 +87,8 @@ def test_03_sair_continua_se_condicionamento_nao_puder_salvar(audit_buddy, monke
     quit_app = Mock()
     monkeypatch.setattr(QApplication, "quit", quit_app)
     monkeypatch.setattr(audit_buddy.conditioning, "save", Mock(side_effect=OSError("disco")))
-    try:
+    with contextlib.suppress(OSError):
         audit_buddy.quit()
-    except OSError:
-        pass
     quit_app.assert_called_once()
 
 
@@ -334,6 +330,7 @@ def test_30_janela_que_sumiu_no_meio_da_leitura_degrada_para_desconhecida(monkey
     if sys.platform != "win32":
         pytest.skip("caminho específico do Windows (plataforma/windows.py)")
     import pywintypes
+
     from pestinha.plataforma import windows as win_mod
     monkeypatch.setattr(win_mod.win32gui, "GetForegroundWindow", lambda: 123)
     monkeypatch.setattr(win_mod.win32process, "GetWindowThreadProcessId",

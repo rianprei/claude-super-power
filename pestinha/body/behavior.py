@@ -232,13 +232,13 @@ class Behavior:
                     return
 
         if self.state.protest_stage:
-            self._protest_move(dt, now, left, right)
+            self._protest_move(dt, left, right)
             return
 
         # brincar com a bolinha (chutar ou arremessar, conforme o estilo do pet)
-        if self.play is not None and self.ball is not None and self.emotion not in STILL and not st.at_desk:
-            if self.play.tick(now, body, self.ball, cursor, self.emotion, self.play_pull):
-                body.jump(0.0, -180.0)              # pulinho de quem acabou de chutar
+        if (self.play is not None and self.ball is not None and self.emotion not in STILL and not st.at_desk
+                and self.play.tick(now, body, self.ball, cursor, self.emotion, self.play_pull)):
+            body.jump(0.0, -180.0)                  # pulinho de quem acabou de chutar
 
         # passeio: a emoção escolhe o destino, o tom motor escolhe o jeito
         tone = self.tone
@@ -271,7 +271,7 @@ class Behavior:
         """Anda até x (usado por quem decide para onde ele vai, como a fuga do cantinho)."""
         self._slide_to(x, speed)
 
-    def _protest_move(self, dt, now, left, right):
+    def _protest_move(self, dt, left, right):
         """Marcha (2 e 4), greve no cantinho (3), ou parado encarando (1)."""
         body = self.body
         stage = self.state.protest_stage
@@ -297,9 +297,9 @@ class Behavior:
         """Escolhe um ponto de destino no chão: perto da bolinha se ele está brincando, senão ao acaso."""
         x = self.body.x
         walk_left, walk_right = self._movement_limits(left, right)
-        if self.toy and self.emotion in ("feliz", "curioso", "contente") and random.random() < 0.75:
-            if abs(self.toy[0] - x) > 40:                  # brincando: vai atrás da bolinha
-                return min(walk_right - 80, max(walk_left + 80, self.toy[0]))
+        if (self.toy and self.emotion in ("feliz", "curioso", "contente") and random.random() < 0.75
+                and abs(self.toy[0] - x) > 40):            # brincando: vai atrás da bolinha
+            return min(walk_right - 80, max(walk_left + 80, self.toy[0]))
         if self.emotion == "curioso":
             side = 1 if x > cursor[0] else -1
             return min(walk_right - 80, max(walk_left + 80, cursor[0] + side * CURIOUS_DISTANCE))

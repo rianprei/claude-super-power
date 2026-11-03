@@ -16,13 +16,12 @@ Na revolução, além da bolinha, ele arremessa bolinhas de papel no cursor.
 import math
 import random
 
-from ..core.physics import GRAVITY
 from ..ajustes import (
     ALCANCE_BRINCADEIRA as REACH,
-    TEMPO_VOO_ARREMESSO as FLIGHT_TIME,
     INTERVALO_BRINCADEIRA as PLAY_EVERY,
-    INTERVALO_PAPEL as PAPER_EVERY,
+    TEMPO_VOO_ARREMESSO as FLIGHT_TIME,
 )
+from ..core.physics import GRAVITY
 
 DEFAULT_WEIGHTS = {"bola": 1.0, "arremesso": 0.6, "postit": 0.5}
 
@@ -46,7 +45,6 @@ class Play:
         """Guarda os pesos de cada brincadeira (0 desliga) e o próximo instante permitido."""
         self.w = weights_of(weights)
         self.next_at = 0.0
-        self.next_paper = 0.0
 
     def weight(self, key):
         """Peso de uma brincadeira pelo nome (0 se não existir)."""
@@ -86,11 +84,4 @@ class Play:
         vx = max(-1400.0, min(1400.0, dx / T))
         vy = (dy - 0.5 * GRAVITY * T * T) / T
         ball.kick(vx, vy)
-        return True
-
-    def paper_due(self, now, revolution, body):
-        """Na revolução, uma bolinha de papel a cada PAPER_EVERY s, se ele ainda tiver peso para isso."""
-        if not revolution or self.weight("arremesso") <= 0 or now < self.next_paper:
-            return False
-        self.next_paper = now + PAPER_EVERY
         return True

@@ -6,7 +6,7 @@ conteúdo) em memory/timeline.csv. Fica no seu computador; o botão
 "Apagar histórico" da tela inicial remove o arquivo.
 
 Colunas:
-    inicio          início do minuto (ISO, hora local)
+    inicio          início do minuto (ISO, hora local com o fuso, ex.: 2026-11-02T22:44-03:00)
     dia_semana      0 = segunda ... 6 = domingo
     minuto_do_dia   0..1439
     atividade       categoria dominante no minuto (PROGRAMMING, BROWSING, AWAY...)
@@ -19,11 +19,13 @@ Colunas:
     emocao          emoção dominante do pet no minuto
 """
 
-from ..log import log
+import contextlib
 import csv
 import time
-from collections import Counter
+from collections import defaultdict
 from datetime import datetime
+
+from ..log import log
 
 COLUMNS = [
     "inicio", "dia_semana", "minuto_do_dia", "atividade", "ausente", "ocioso",
@@ -44,17 +46,15 @@ class TimelineRecorder:
     def discard(self):
         """Apaga o histórico gravado e o minuto que ainda estava em RAM: nada disso volta a ser gravado."""
         self._start_minute()
-        try:
+        with contextlib.suppress(OSError):
             self.path.unlink(missing_ok=True)
-        except OSError:
-            pass
 
     def _start_minute(self):
         """Começa a contar um novo minuto, zerando os acumuladores."""
-        now = datetime.now()
+        now = datetime.now().astimezone()       # hora local com fuso: sem ambiguidade no horário de verão
         self.minute = now.replace(second=0, microsecond=0)
-        self.activity = Counter()
-        self.emotion = Counter()
+        self.activity: defaultdict[str, float] = defaultdict(float)     # segundos em cada atividade
+        self.emotion: defaultdict[str, float] = defaultdict(float)      # segundos em cada emoção
         self.seconds = 0.0
         self.away = self.idle = self.typing = 0.0
         self.switches = 0
@@ -70,7 +70,7 @@ class TimelineRecorder:
         dt = min(5.0, max(0.0, now - self.last))
         self.last = now
 
-        if datetime.now().replace(second=0, microsecond=0) != self.minute:
+        if datetime.now().astimezone().replace(second=0, microsecond=0) != self.minute:
             self.flush()
             self._start_minute()
             return
@@ -107,14 +107,14 @@ class TimelineRecorder:
             self.minute.isoformat(timespec="minutes"),
             self.minute.weekday(),
             self.minute.hour * 60 + self.minute.minute,
-            self.activity.most_common(1)[0][0],
+            max(self.activity, key=self.activity.__getitem__),     # a primeira entre empatadas
             round(self.away / s, 3),
             round(self.idle / s, 3),
             round(self.typing / s, 3),
             self.switches,
             round(self.session_seconds / 60.0, 1),
             round(self.interactions, 1),
-            self.emotion.most_common(1)[0][0] if self.emotion else "",
+            max(self.emotion, key=self.emotion.__getitem__) if self.emotion else "",
         ]
         try:
             self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -136,7 +136,7 @@ class TimelineRecorder:
 def count_rows(path):
     """Quantas linhas (minutos) já estão gravadas na rotina."""
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             return max(0, sum(1 for _ in f) - 1)
     except OSError:
         return 0

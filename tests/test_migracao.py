@@ -15,12 +15,12 @@ from unittest.mock import Mock
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-import pytest  # noqa: E402
-from PySide6.QtWidgets import QApplication  # noqa: E402
+import pytest
+from PySide6.QtWidgets import QApplication
 
-from pestinha import config, migracao  # noqa: E402
-from pestinha.paths import Paths, pet_id_valido  # noqa: E402
-from pestinha.settings_store import SettingsStore  # noqa: E402
+from pestinha import config, migracao
+from pestinha.paths import Paths, pet_id_valido
+from pestinha.settings_store import SettingsStore
 
 ARQUIVOS = {
     "episodes.jsonl": b'{"contexto": "IDLE|feliz", "acao": "meme", "valencia": 0.5}\n'
@@ -63,7 +63,7 @@ def test_migra_tudo_e_confere(tmp_path):
         assert (pet_app.base / nome).read_bytes() == dados
     assert pet_app.nervous.read_bytes() == antes["bryan_nervous.json"]
     assert paths.pet("buddy").nervous.read_bytes() == antes["buddy_nervous.json"]
-    for nome in list(ARQUIVOS) + ["bryan_nervous.json"]:
+    for nome in [*ARQUIVOS, "bryan_nervous.json"]:
         assert not (paths.memory / nome).exists()
         assert (paths.legado / "bryan" / nome).read_bytes() == antes[nome]
     marcador = json.loads(pet_app.marcador.read_text(encoding="utf-8"))
@@ -236,7 +236,7 @@ def test_bryan_igual_antes_e_depois_da_migracao(tmp_path, monkeypatch):
     antes = estado(app)
     paths = app.paths
     novo, antigo = paths.pet("bryan"), paths.pet_legado("bryan")
-    for de, para in zip(novo.todos(), antigo.todos()):         # monta o formato da versão antiga
+    for de, para in zip(novo.todos(), antigo.todos(), strict=True):         # monta o formato da versão antiga
         de.replace(para)
     assert antigo.drives.exists() and antigo.nervous.name == "bryan_nervous.json"
     depois = estado(criar_app(tmp_path, monkeypatch))

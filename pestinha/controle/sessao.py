@@ -7,15 +7,17 @@ decisões (`_congelado`). Escondido ou desligado, nada fica na tela (`update_vis
 Mixin de PestinhaApp: usa os atributos criados em PestinhaApp.__init__.
 """
 
-from .. import log as log_module
-from ..log import log
 import time
+
 from PySide6.QtWidgets import QApplication, QSystemTrayIcon
-from .. import config
+
+from .. import config, log as log_module
+from ..log import log
 from ..ui.ui import SettingsDialog
+from .contrato import ContratoApp
 
 
-class SessaoMixin:
+class SessaoMixin(ContratoApp):
     """Ciclo de vida da sessão: ligar e desligar, pausar, esconder, pânico, salvar e sair. Vira atributo de PestinhaApp."""
     def _congelado(self):
         """Pausado, desligado (pânico) ou apagando os dados: nada de rede, sentidos ou decisões."""
@@ -37,11 +39,12 @@ class SessaoMixin:
         st.show_label = self.perms["modo_teste"] and self.perms["mostrar_emocao"]
         st.allow_drag = self.perms["arrastar"]
         st.allow_poke = self.perms["cutucar"]
+        if self.mesa.escondido == self.perms["notebook"]:
+            self.mesa.definir_escondido(not self.perms["notebook"])
+        ssj = self.perms["super_saiyajin"] and self.pet.corpo == "clawd3d"
+        if ssj != (st.super_saiyajin_desde is not None):
+            st.super_saiyajin_desde = time.monotonic() if ssj else None
         self.update_visibility()
-
-    def floats_allowed(self):
-        """Painéis sempre na tela: só no modo teste."""
-        return self.perms["modo_teste"] and self.floats_base()
 
     def floats_base(self):
         """Painéis abertos à mão: só some se o pet estiver desligado, escondido ou cobrido por tela cheia."""
@@ -68,7 +71,7 @@ class SessaoMixin:
         self.castigo.set_visible(visible)
         if not visible:
             self.revolucao.esconder()
-        self.floats.sync(self.floats_allowed(), self.floats_base())
+        self.floats.sync(self.floats_base())
         self.protest_ctl.set_visible(visible, self.asleep)
         self.sad_ctl.set_visible(visible, self.asleep)
         if not visible:
@@ -92,9 +95,9 @@ class SessaoMixin:
         self.settings.history_wiped.connect(self.timeline.discard)
         self.settings.show()
 
-    def toggle_floating(self):
-        """Mostra ou esconde os painéis de teste."""
-        self.floats.toggle_tray(self.floats_allowed(), self.floats_base())
+    def fechar_paineis(self):
+        """Bandeja: fecha o monitor neural e o painel de protesto."""
+        self.floats.close_all()
 
     def toggle_pause(self):
         """Pausa ou retoma: na pausa a rede e os sentidos param, e os prazos são empurrados para não 'vencerem' de uma vez."""
@@ -140,7 +143,7 @@ class SessaoMixin:
         self.update_visibility()
         self.tray.icon.showMessage(
             config.APP_NOME, f"Pânico: {config.APP_NOME} desligado. Religue em Configurações.",
-            QSystemTrayIcon.Warning, 4000,
+            QSystemTrayIcon.MessageIcon.Warning, 4000,
         )
 
     def wipe_all_data(self):
@@ -161,25 +164,21 @@ class SessaoMixin:
         """Grava o estado do pet e do app (não grava depois de 'apagar tudo')."""
         if self.wiping:
             return
-        try:
-            self.brain.save(str(self.state_file))
-        except Exception as error:
-            log(f"[app] não salvou o cérebro: {error}")
-        try:
-            self.drives.save(self.pet_paths.drives)
-        except OSError as error:
-            log(f"[app] não salvou a homeostase: {error}")
-        self.memory.save()
-        self.castigo.salvar()
-        try:
-            self.conditioning.save()
-        except OSError as error:
-            log(f"[app] não salvou o condicionamento: {error}")
-        try:
-            self.protest_ctl.save()
-            self.sad.save()
-        except OSError as error:
-            log(f"[app] não salvou o protesto: {error}")
+        # OSError: disco. ValueError: NaN/infinito recusado pelo store (nada é gravado pela metade).
+        partes = [
+            ("o cérebro", lambda: self.brain.save(str(self.state_file))),
+            ("a homeostase", lambda: self.drives.save(self.pet_paths.drives)),
+            ("a memória", self.memory.save),
+            ("o cantinho", self.castigo.salvar),
+            ("o condicionamento", self.conditioning.save),
+            ("o protesto", self.protest_ctl.save),
+            ("a tristeza", self.sad.save),
+        ]
+        for nome, gravar in partes:
+            try:
+                gravar()
+            except (OSError, ValueError) as error:
+                log(f"[app] não salvou {nome}: {error}")
         if self.perms["modo_teste"]:
             sleeping = "  (dormindo)" if self.asleep else ""
             log(f"[homeostase] {self.drives.describe()}{sleeping}")
@@ -189,19 +188,18 @@ class SessaoMixin:
                 log("[aprendizado] " + "  ".join(f"{c}->{post} {w:+.3f}" for c, post, w in learned))
 
     def quit(self):
-        """Salva tudo e fecha o programa."""
-        self.save()
-        self.mesa.fechar()
-        self.festa.fechar()
-        self.revolucao.fechar()
-        if self.wiping:
+        """Salva tudo e fecha o programa (fecha mesmo se algo falhar no caminho)."""
+        try:
+            self.save()
+            self.mesa.fechar()
+            self.festa.fechar()
+            self.revolucao.fechar()
+            if not self.wiping:
+                self.protest_ctl.drop_sign()
+                self.sad_ctl.drop_sign()
+                if self.perms["rotina"]:
+                    self.timeline.close()
+                self.mischief.clear()
+        finally:
             self.tray.icon.hide()
             QApplication.quit()
-            return
-        self.protest_ctl.drop_sign()
-        self.sad_ctl.drop_sign()
-        if self.perms["rotina"]:
-            self.timeline.close()
-        self.mischief.clear()
-        self.tray.icon.hide()
-        QApplication.quit()

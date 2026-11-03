@@ -8,9 +8,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from pestinha.core.homeostasis import Drives  # noqa: E402
-from pestinha.core.protesto import Protesto  # noqa: E402
-from pestinha.body.toy import FAR, NEAR, ToyTracker  # noqa: E402
+from pestinha.body.toy import FAR, NEAR, ToyTracker
+from pestinha.core.homeostasis import Drives
+from pestinha.core.protesto import Protesto
 
 
 def test_levar_a_bolinha_conta_uma_vez_e_rearma_ao_voltar():

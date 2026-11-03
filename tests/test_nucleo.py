@@ -12,13 +12,13 @@ from types import SimpleNamespace
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-import numpy as np  # noqa: E402
-import pytest  # noqa: E402
+import numpy as np
+import pytest
 
-from pestinha.core.emotion import EmotionState, classify  # noqa: E402
-from pestinha.core.homeostasis import Drives  # noqa: E402
-from pestinha.core.motor import MotorTone  # noqa: E402
-from pestinha.core.nervous_system import LIFBrain as _LIFBrain  # noqa: E402
+from pestinha.core.emotion import EmotionState, classify
+from pestinha.core.homeostasis import Drives
+from pestinha.core.motor import MotorTone
+from pestinha.core.nervous_system import LIFBrain as _LIFBrain
 
 
 def LIFBrain(seed=7, temperament=None):
@@ -26,9 +26,9 @@ def LIFBrain(seed=7, temperament=None):
     brain = _LIFBrain(seed=seed, temperament=temperament)
     brain.rng = np.random.default_rng(123)
     return brain
-from pestinha.core.physics import Body  # noqa: E402
-from pestinha.body.behavior import Behavior, CROSS_SCREEN_SPEED  # noqa: E402
-from pestinha.body.pet_state import PetState  # noqa: E402
+from pestinha.body.behavior import CROSS_SCREEN_SPEED, Behavior
+from pestinha.body.pet_state import PetState
+from pestinha.core.physics import Body
 
 PROFILE = {
     "emotion_tau": 1.5, "emotion_dwell": 0.6,
@@ -273,7 +273,7 @@ def test_habituacao_enfraquece_a_cutucada():
             brain.stimulate({})
             brain.step(100)
         first = None
-        for n in range(12):
+        for _ in range(12):
             before = brain.motor_activity()["CHEER"]
             for i in range(5):
                 brain.stimulate({"POKE": 0.8 * math.exp(-i * 0.1 / 1.5)})

@@ -12,17 +12,25 @@ from unittest.mock import Mock
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from PySide6.QtGui import QColor, QImage, QPainter  # noqa: E402
-from PySide6.QtWidgets import QApplication  # noqa: E402
+from PySide6.QtGui import QColor, QImage, QPainter
+from PySide6.QtWidgets import QApplication
 
-from pestinha import config  # noqa: E402
-from pestinha.body.desenho_rosto import (  # noqa: E402
-    BODY_H, EYE, FRAME, PADRAO, SCREEN, SHELL, SHINE, aparencia_de, draw_face,
+from pestinha import config
+from pestinha.body.desenho_rosto import (
+    BODY_H,
+    EYE,
+    FRAME,
+    PADRAO,
+    SCREEN,
+    SHELL,
+    SHINE,
+    aparencia_de,
+    draw_face,
 )
-from pestinha.body.pet import CX, CY, WIN  # noqa: E402
-from pestinha.core.emotion import EYE_SHAPES  # noqa: E402
-from pestinha.paths import Paths  # noqa: E402
-from pestinha.settings_store import SettingsStore  # noqa: E402
+from pestinha.body.pet import CX, CY, WIN
+from pestinha.core.emotion import EYE_SHAPES
+from pestinha.paths import Paths
+from pestinha.settings_store import SettingsStore
 
 PATHS = Paths(root=ROOT)
 
@@ -88,6 +96,7 @@ def test_jorge_desenha_toda_expressao_com_gravata():
 def test_aparencia_chega_na_janela_do_pet(tmp_path, monkeypatch):
     QApplication.instance() or QApplication([])
     import shutil
+
     import pestinha.app as app_mod
     shutil.copytree(PATHS.pets, tmp_path / "pets")
     paths = Paths(root=tmp_path)

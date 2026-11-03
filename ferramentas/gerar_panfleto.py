@@ -11,8 +11,8 @@ from pathlib import Path
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
-from PySide6.QtCore import QPointF, Qt  # noqa: E402
-from PySide6.QtGui import QColor, QGuiApplication, QImage, QPainter, QPainterPath, QPen  # noqa: E402
+from PySide6.QtCore import QPointF, Qt
+from PySide6.QtGui import QColor, QGuiApplication, QImage, QPainter, QPainterPath, QPen
 
 LADO = 360
 DESTINO = Path(__file__).resolve().parent.parent / "pets" / "jorge" / "bolinha_papel.png"

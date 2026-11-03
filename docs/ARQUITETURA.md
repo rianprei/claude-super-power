@@ -144,7 +144,7 @@ Toda leitura e escrita passa por `store.py`:
 - Nenhum pet move nem clica o cursor de verdade.
 - Ele nunca tira o foco da janela que você está usando.
 - Fechar, dispensar, pausar e o pânico sempre funcionam.
-- Nada de ler conteúdo ou título de janela.
+- Nada de ler conteúdo de janela, nem de guardar ou usar título de janela (se a lista do sistema trouxer o título, ele é descartado na leitura).
 - Nada de culpar, pressionar ou bloquear a pessoa para ela usar mais o app.
 
 ## Como a decisão funciona

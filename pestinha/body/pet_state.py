@@ -15,10 +15,9 @@ Assim nenhum dos três precisa conhecer os outros atributos da janela.
 
 import time
 
+from ..ajustes import DURACAO_CARINHO as CARESS_HOLD, FELIZ_APOS_CARINHO
 from ..core.emotion import EYE_SHAPES
 from ..core.motor import MotorTone
-from ..ajustes import DURACAO_CARINHO as CARESS_HOLD, FELIZ_APOS_CARINHO
-
 
 
 class PetState:
@@ -42,6 +41,7 @@ class PetState:
         self.at_desk = False
         self.desk_top = None        # y (na tela) da tampa do notebook quando ele está sentado: o corpo para ali
         self.castigo = False        # no cantinho do castigo: parado, sem passear
+        self.super_saiyajin_desde = None    # monotonic da transformação (só o corpo clawd3d); None = normal
 
     def mark_caress(self, now=None):
         """Marca que ele está recebendo carinho agora (dura um instante)."""

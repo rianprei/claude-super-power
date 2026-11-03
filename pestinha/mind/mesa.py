@@ -15,11 +15,11 @@ DeskController é a decisão pura. MesaController liga a decisão ao notebook.
 from ..ajustes import (
     ALCANCE_NOTEBOOK,
     FOCO_MAXIMO_HZ,
-    LIMIAR_LEVANTAR_HZ,
+    FRACAO_ESCONDIDA_NOTEBOOK,
     JANELA_PEDIDOS_S,
+    LIMIAR_LEVANTAR_HZ,
     LIMIAR_SENTAR_HZ,
     PEDIDO_VALIDADE_S,
-    FRACAO_ESCONDIDA_NOTEBOOK,
 )
 from ..log import log
 from ..mathutil import clamp
@@ -173,7 +173,11 @@ class MesaController:
 
     def alternar_notebook(self):
         """Esconde ou mostra o notebook pelo menu. Escondido, ele não senta."""
-        self.escondido = not self.escondido
+        self.definir_escondido(not self.escondido)
+
+    def definir_escondido(self, escondido):
+        """Esconde ou mostra o notebook (menu ou Configurações). Escondido, ele não senta."""
+        self.escondido = escondido
         if self.escondido and self.sentado:          # sem notebook não dá para trabalhar: levanta na hora
             self.decisao.at_desk = False
             self.ancora = None

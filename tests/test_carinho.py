@@ -5,7 +5,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from pestinha.body.pet_state import PetState  # noqa: E402
+from pestinha.body.pet_state import PetState
 
 
 def test_feliz_fechado_aparece_depois_do_carinho_e_some():

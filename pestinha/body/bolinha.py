@@ -22,7 +22,7 @@ def load_sprite(path):
     pixmap = QPixmap(str(path))
     if pixmap.isNull():
         return None
-    return pixmap.scaled(RADIUS * 2, RADIUS * 2, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+    return pixmap.scaled(RADIUS * 2, RADIUS * 2, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
 
 
 class Ball(QWidget):
@@ -32,8 +32,8 @@ class Ball(QWidget):
         self.kind = kind            # "bola" (brinquedo) ou "papel" (bolinha de papel da revolução)
         self.sprite = sprite        # foto da bolinha (load_sprite); None usa o desenho de reserva
         super().__init__(None, overlay_flags())
-        self.setAttribute(Qt.WA_TranslucentBackground)
-        self.setAttribute(Qt.WA_ShowWithoutActivating)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
         self.setFixedSize(RADIUS * 2 + 8, RADIUS * 2 + 8)
         self.body = Body(x, y, RADIUS, RADIUS)
         self.angle = 0.0
@@ -76,7 +76,7 @@ class Ball(QWidget):
     def paintEvent(self, _event):
         """Desenha a bolinha (imagem ou desenho de reserva) girando com o ângulo atual."""
         p = QPainter(self)
-        p.setRenderHint(QPainter.Antialiasing)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
         c = QPointF(self.width() / 2, self.height() / 2)
         if self.sprite is not None:
             p.translate(c)
@@ -124,7 +124,7 @@ class Ball(QWidget):
 
     def mousePressEvent(self, event):
         """Começa a pegar a bolinha, se o clique foi sobre ela."""
-        if event.button() != Qt.LeftButton:
+        if event.button() != Qt.MouseButton.LeftButton:
             return
         pos = event.globalPosition()
         if self._inside(pos):
@@ -144,7 +144,7 @@ class Ball(QWidget):
         self.body.x = pos.x() - self._grab[0]
         self.body.y = pos.y() - self._grab[1]
         now = time.monotonic()
-        self._samples = [s for s in self._samples + [(now, pos.x(), pos.y())] if now - s[0] < 0.12]
+        self._samples = [s for s in [*self._samples, (now, pos.x(), pos.y())] if now - s[0] < 0.12]
         self.place()
 
     def mouseReleaseEvent(self, event):

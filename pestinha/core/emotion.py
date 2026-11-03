@@ -34,15 +34,15 @@ STARTLE_SECONDS = 1.2
 #   smile       olho "sorrindo" (corta a parte de baixo em arco)
 #   dy          desloca os olhos para baixo
 EYE_SHAPES = {
-    "observando": dict(w=30, h=40, inner=0.14, outer=0.0, smile=0.0, dy=0.0),
-    "contente":   dict(w=32, h=34, inner=0.0, outer=0.0, smile=0.36, dy=1.0),
-    "feliz":      dict(w=34, h=36, inner=0.0, outer=0.0, smile=0.55, dy=-2.0),
-    "curioso":    dict(w=30, h=46, inner=0.0, outer=0.08, smile=0.0, dy=-2.0),
-    "bravo":      dict(w=34, h=36, inner=0.55, outer=0.0, smile=0.0, dy=2.0),
-    "triste":     dict(w=28, h=34, inner=0.0, outer=0.5, smile=0.0, dy=7.0),
-    "assustado":  dict(w=26, h=50, inner=0.0, outer=0.0, smile=0.0, dy=-3.0),
-    "dramatico":  dict(w=38, h=52, inner=0.0, outer=0.22, smile=0.0, dy=0.0),
-    "dormindo":   dict(w=32, h=4, inner=0.0, outer=0.0, smile=0.0, dy=8.0),     # olhinhos fechados
+    "observando": {"w": 30, "h": 40, "inner": 0.14, "outer": 0.0, "smile": 0.0, "dy": 0.0},
+    "contente":   {"w": 32, "h": 34, "inner": 0.0, "outer": 0.0, "smile": 0.36, "dy": 1.0},
+    "feliz":      {"w": 34, "h": 36, "inner": 0.0, "outer": 0.0, "smile": 0.55, "dy": -2.0},
+    "curioso":    {"w": 30, "h": 46, "inner": 0.0, "outer": 0.08, "smile": 0.0, "dy": -2.0},
+    "bravo":      {"w": 34, "h": 36, "inner": 0.55, "outer": 0.0, "smile": 0.0, "dy": 2.0},
+    "triste":     {"w": 28, "h": 34, "inner": 0.0, "outer": 0.5, "smile": 0.0, "dy": 7.0},
+    "assustado":  {"w": 26, "h": 50, "inner": 0.0, "outer": 0.0, "smile": 0.0, "dy": -3.0},
+    "dramatico":  {"w": 38, "h": 52, "inner": 0.0, "outer": 0.22, "smile": 0.0, "dy": 0.0},
+    "dormindo":   {"w": 32, "h": 4, "inner": 0.0, "outer": 0.0, "smile": 0.0, "dy": 8.0},     # olhinhos fechados
 }
 
 

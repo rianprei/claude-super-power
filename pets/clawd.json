@@ -1,0 +1,16 @@
+{
+  "_ajuda": "Claude: o mascote do Claude Code, em blocos 3D (corpo \"clawd3d\"). Curioso com novidade, gosta de carinho e fica triste se arrancarem o notebook dele. No menu do botão direito: 'Virar Super Saiyajin 1' (cabelo dourado e aura). aparencia.olho é a cor dos Zzz e do rótulo da emoção.",
+  "nome": "Claude",
+  "seed": 2025,
+  "corpo": "clawd3d",
+  "temperamento": {
+    "NOVELTY->CURIOUS": 1.4,
+    "POKE->PLAYFUL": 1.3,
+    "CARESS->CALM": 1.3,
+    "CARESS->PLAYFUL": 1.2
+  },
+  "reacao_notebook": "triste",
+  "aparencia": {
+    "olho": "#d77757"
+  }
+}

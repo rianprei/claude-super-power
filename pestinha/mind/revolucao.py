@@ -8,8 +8,8 @@ no cursor, e some depois de 10 s. Há no máximo 40 na tela.
 
 import random
 
-from ..body.bolinha import Ball
 from ..ajustes import GANHO_PAPEL
+from ..body.bolinha import Ball
 from ..body.toy import bounce_off, push_from_cursor
 
 MAXIMO_PAPEIS = 40
@@ -39,7 +39,7 @@ class RevolucaoController:
         self.papeis.append({"bola": papel, "nascimento": now, "ultimo_empurrao": -1e9})
 
     def _mover(self, now, dt, limites, cursor, vel_cursor, obstaculos):
-        """Move as bolinhas de papel; as que acertam algo ou saem da tela são removidas."""
+        """Move as bolinhas de papel (quicam no que acertam); cada uma some depois de VIDA_PAPEL segundos."""
         vivos = []
         for papel in self.papeis:
             bola = papel["bola"]

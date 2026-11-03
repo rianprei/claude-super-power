@@ -16,13 +16,13 @@ from PySide6.QtCore import QPointF, QRectF, Qt, QTimer
 from PySide6.QtGui import QColor, QPainter
 from PySide6.QtWidgets import QWidget
 
-from ..body.pet import overlay_flags, set_no_activate
 from ..ajustes import (
+    GRAVIDADE_FOGOS as GRAVITY,
     TAMANHO_JANELA_FOGOS as WIN,
     TEMPO_FOGUETE as ROCKET_TIME,
-    GRAVIDADE_FOGOS as GRAVITY,
     VIDA_PARTICULA as LIFE,
 )
+from ..body.pet import overlay_flags, set_no_activate
 
 PALETTE = ["#ff6b6b", "#ffd84d", "#63e56f", "#6bb8ff", "#e98bff", "#ffffff"]
 
@@ -31,9 +31,9 @@ class Fireworks(QWidget):
     """Fogos de artifício: um foguete sobe e explode em pontos coloridos. Não recebe clique (passa através)."""
     def __init__(self):
         """Cria a janela transparente dos fogos, que deixa o mouse passar."""
-        super().__init__(None, overlay_flags() | Qt.WindowTransparentForInput)
-        self.setAttribute(Qt.WA_TranslucentBackground)
-        self.setAttribute(Qt.WA_ShowWithoutActivating)
+        super().__init__(None, overlay_flags() | Qt.WindowType.WindowTransparentForInput)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
         self.setFixedSize(WIN, WIN)
         self.rocket = None          # [x, y, vy, t0] enquanto sobe
         self.sparks = []            # [x, y, vx, vy, t0, cor]
@@ -105,8 +105,8 @@ class Fireworks(QWidget):
     def paintEvent(self, _event):
         """Desenha o foguete e as faíscas."""
         p = QPainter(self)
-        p.setRenderHint(QPainter.Antialiasing)
-        p.setPen(Qt.NoPen)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
+        p.setPen(Qt.PenStyle.NoPen)
         if self.rocket is not None:
             p.setBrush(QColor("#ffd84d"))
             p.drawEllipse(QPointF(self.rocket[0], self.rocket[1]), 4, 4)

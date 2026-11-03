@@ -29,9 +29,7 @@ from PySide6.QtCore import QObject, QTimer
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import QSystemTrayIcon
 
-from . import config
-from . import log as log_module
-from . import migracao
+from . import config, log as log_module, migracao, plataforma
 from .ajustes import (
     ATIVIDADE_MINIMA_VOO as REFLEX_MIN_HZ,
     BATIDA_FORTE as HARD_IMPACT,
@@ -141,6 +139,7 @@ class PestinhaApp(SessaoMixin, InteracaoMixin, QObject):
         left, top, right, _bottom = self.bounds()
         self.pet = PetWindow(right - 220, top + 120, self.pet_state)
         self.pet.aparencia = aparencia_de(pet_def.get("aparencia"))
+        self.pet.corpo = pet_def["corpo"]
         self.pet.poked.connect(self.on_poke)
         self.pet.drag_started.connect(self.on_drag_started)
         self.pet.drag_ended.connect(lambda: self.senses.set_dragging(False))
@@ -187,11 +186,11 @@ class PestinhaApp(SessaoMixin, InteracaoMixin, QObject):
 
         # ----- interface -----
         self.settings = None
-        self.tray = Tray(self.nome)
+        self.tray = Tray(self.nome, self.pet.corpo)
         self.tray.open_settings.connect(self.open_settings)
         self.tray.open_monitor.connect(lambda: self.floats.open("neural"))
         self.tray.open_panel.connect(lambda: self.floats.open("greve"))
-        self.tray.toggle_floating.connect(self.toggle_floating)
+        self.tray.fechar_paineis.connect(self.fechar_paineis)
         self.tray.toggle_pause.connect(self.toggle_pause)
         self.tray.toggle_hidden.connect(self.toggle_hidden)
         self.tray.clear_things.connect(self.clear_things)
@@ -222,13 +221,16 @@ class PestinhaApp(SessaoMixin, InteracaoMixin, QObject):
         if self.aviso_migracao:
             problems.append(self.aviso_migracao)
         if not self.hotkey.ok:
-            problems.append(f"atalho de pânico {config.PANIC_HOTKEY_TEXT} já está em uso por outro programa")
+            problems.append(f"atalho de pânico {config.PANIC_HOTKEY_TEXT} não pôde ser registrado "
+                            "(em uso por outro programa ou indisponível no sistema); use o menu da bandeja")
+        elif plataforma.LIMITACAO_ATALHO:
+            problems.append(f"atalho de pânico {config.PANIC_HOTKEY_TEXT}: {plataforma.LIMITACAO_ATALHO}")
         if problems:
-            self.tray.icon.showMessage(config.APP_NOME,"\n".join(problems), QSystemTrayIcon.Warning, 6000)
+            self.tray.icon.showMessage(config.APP_NOME,"\n".join(problems), QSystemTrayIcon.MessageIcon.Warning, 6000)
         if self.perms["ativo"]:
             self.tray.icon.showMessage(
                 self.nome, f"Estou aqui. Pânico: {config.PANIC_HOTKEY_TEXT}",
-                QSystemTrayIcon.Information, 3000,
+                QSystemTrayIcon.MessageIcon.Information, 3000,
             )
 
     def _timer(self, ms, slot):
@@ -255,13 +257,14 @@ class PestinhaApp(SessaoMixin, InteracaoMixin, QObject):
         return [(g.x(), g.y(), g.x() + g.width(), g.y() + g.height())
                 for g in (screen.geometry() for screen in QGuiApplication.screens())]
 
-    def _bounds_at(self, areas, x, y):
+    def _bounds_at(self, areas, x, y, monitores=None):
         """Área útil do monitor que contém o ponto, inclusive sobre barras reservadas pelo sistema."""
         if x is not None:
             encontrada = next((a for a in areas if a[0] <= x < a[2] and a[1] <= y < a[3]), None)
             if encontrada is not None:
                 return encontrada
-            for area, geometria in zip(areas, self.screen_geometries()):
+            geometrias = self.screen_geometries() if monitores is None else monitores
+            for area, geometria in zip(areas, geometrias, strict=False):    # um monitor pode sair no meio
                 if geometria[0] <= x < geometria[2] and geometria[1] <= y < geometria[3]:
                     return area
         g = QGuiApplication.primaryScreen().availableGeometry()
@@ -279,9 +282,8 @@ class PestinhaApp(SessaoMixin, InteracaoMixin, QObject):
         if not self.perms["pousar_janelas"] or not self.pet.isVisible():
             self.platforms = []
             return
-        screen = QGuiApplication.primaryScreen()
-        dpr = screen.devicePixelRatio()
-        g = screen.geometry()
+        dpr = QGuiApplication.primaryScreen().devicePixelRatio()
+        monitores = self.screen_geometries()
         exclude = {int(self.pet.winId())} | {int(t.winId()) for t in self.mischief.things}
         exclude |= self.floats.visible_handles()
         exclude |= {int(w.winId()) for w in self.revolucao.janelas()}
@@ -289,18 +291,19 @@ class PestinhaApp(SessaoMixin, InteracaoMixin, QObject):
         exclude |= {int(w.winId()) for w in self.sad_ctl.sign_windows()}
         if self.ball.isVisible():
             exclude.add(int(self.ball.winId()))
-        above = []
+        above: list[tuple[float, float, float, float]] = []
         platforms = []
-        for hwnd, (l, t, r, b), maximized in senses.list_windows(exclude, dpr):
-            l, t, r, b = l / dpr, t / dpr, r / dpr, b / dpr
-            mid = (l + r) / 2
-            covered = any(al <= mid <= ar and at <= t + 2 <= ab for al, at, ar, ab in above)
-            above.append((l, t, r, b))
+        for hwnd, rect_fisico, maximized in senses.list_windows(exclude, dpr):
+            esq, topo, dir_, base = (v / dpr for v in rect_fisico)
+            mid = (esq + dir_) / 2
+            covered = any(al <= mid <= ar and at <= topo + 2 <= ab for al, at, ar, ab in above)
+            above.append((esq, topo, dir_, base))
             if maximized or covered:
                 continue
-            if not (g.left() <= mid <= g.right() and g.top() + 40 <= t <= g.bottom() - 100):
+            # a barra de título precisa estar num monitor (qualquer um), longe do topo e da base dele
+            if not any(m[0] <= mid < m[2] and m[1] + 40 <= topo <= m[3] - 100 for m in monitores):
                 continue
-            platforms.append((hwnd, l + 10, r - 10, t))
+            platforms.append((hwnd, esq + 10, dir_ - 10, topo))
         self.platforms = platforms
 
     # ---------------- relógios ----------------
@@ -490,7 +493,7 @@ class PestinhaApp(SessaoMixin, InteracaoMixin, QObject):
         else:
             self.sad_ctl.drop_sign()
         self.protest_ctl.carry(now, self.asleep or preso)
-        ball_bounds = self._bounds_at(areas, self.ball.body.x, self.ball.body.y)
+        ball_bounds = self._bounds_at(areas, self.ball.body.x, self.ball.body.y, monitores)
         self.ball.step(dt, ball_bounds, areas, monitores)
         self.revolucao.tick(
             now, dt, bounds, cursor, self.cursor_vel, self.pet.body, self.pet.isVisible(),

@@ -10,10 +10,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-import numpy as np  # noqa: E402
+import numpy as np
 
-from pestinha.core.conditioning import Conditioning  # noqa: E402
-from pestinha.core.nervous_system import LIFBrain  # noqa: E402
+from pestinha.core.conditioning import Conditioning
+from pestinha.core.nervous_system import LIFBrain
 
 
 def repeat(c, n, with_outcome, start=0.0, gap=3.0):

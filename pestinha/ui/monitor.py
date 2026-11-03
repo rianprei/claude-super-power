@@ -12,22 +12,32 @@ Abre pela bandeja ("Monitor neural"). Só grava o raster enquanto está aberto.
 
 import numpy as np
 from PySide6.QtCore import QRectF, Qt, QTimer
-from PySide6.QtGui import QColor, QFont, QImage, QPainter
-from ..world.arrastavel import FloatingWidget
+from PySide6.QtGui import QColor, QImage, QPainter
 
+from ..body.desenho_rosto import (
+    APAGADO,
+    BORDA,
+    FUNDO,
+    LARANJA,
+    MONO,
+    SUPERFICIE,
+    TEXTO,
+    fonte,
+)
 from ..config import EMOTION_NAMES
-from .rotulos import nome_canal
 from ..core.protesto import STAGE_NAMES
+from ..world.arrastavel import FloatingWidget
+from .rotulos import nome_canal
 
-BG = QColor("#0d110f")
-PANEL = QColor("#141b16")
-TEXT = QColor("#dcebe0")
-MUTED = QColor("#7f9886")
-GRID = QColor("#24332a")
+BG = QColor(FUNDO)
+PANEL = QColor(SUPERFICIE)
+TEXT = QColor(TEXTO)
+MUTED = QColor(APAGADO)
+GRID = QColor(BORDA)
 INPUT = QColor("#4fb3ff")
 EFFICACY = QColor("#ffb347")
 MOTOR = QColor("#ffd84d")
-GOOD = QColor("#5fe07a")
+GOOD = QColor(LARANJA)          # destaque do tema: a emoção e as necessidades
 
 # cor do disparo por tipo: 0 sensor, 1 excitatório, 2 inibitório, 3 motor
 KIND_RGB = {0: (79, 179, 255), 1: (95, 224, 122), 2: (255, 140, 90), 3: (255, 216, 77)}
@@ -70,7 +80,7 @@ class NeuralMonitor(FloatingWidget):
         """Desenha o monitor inteiro: raster, barras e painéis."""
         p = QPainter(self)
         p.fillRect(self.rect(), BG)
-        p.setRenderHint(QPainter.Antialiasing)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
         w, h = self.width(), self.height()
         split = int(w * 0.52)
         self._raster(p, QRectF(16, 16, split - 24, h - 32))
@@ -80,7 +90,7 @@ class NeuralMonitor(FloatingWidget):
     def _title(self, p, x, y, text):
         """Escreve um título de seção no monitor."""
         p.setPen(MUTED)
-        p.setFont(QFont("Consolas", 8, QFont.Bold))
+        p.setFont(fonte(MONO, 8, negrito=True))
         p.drawText(int(x), int(y), text.upper())
 
     def _raster(self, p, area):
@@ -96,19 +106,19 @@ class NeuralMonitor(FloatingWidget):
             fired = np.stack(bins, axis=1)                  # N x T
             T = fired.shape[1]
             rgb = np.zeros((brain.N, T, 3), dtype=np.uint8)
-            rgb[:] = (20, 27, 22)
+            rgb[:] = (PANEL.red(), PANEL.green(), PANEL.blue())     # fundo do raster = fundo do quadro
             for kind, color in KIND_RGB.items():
                 rows = brain.kind == kind
                 rgb[rows] = np.where(fired[rows][..., None], np.array(color, dtype=np.uint8), rgb[rows])
             data = np.ascontiguousarray(rgb)
-            img = QImage(data.data, T, brain.N, 3 * T, QImage.Format_RGB888)
+            img = QImage(data.data, T, brain.N, 3 * T, QImage.Format.Format_RGB888)
             # ancorado à direita: o "agora" fica sempre na borda direita
             width = box.width() * T / brain.raster.maxlen
             target = QRectF(box.right() - width, box.top(), width, box.height())
             p.drawImage(target, img)
 
         # nomes e divisões das populações
-        p.setFont(QFont("Consolas", 7))
+        p.setFont(fonte(MONO, 7))
         row_h = box.height() / brain.N
         for pool in brain.pools:
             y0 = box.top() + pool["start"] * row_h
@@ -116,12 +126,12 @@ class NeuralMonitor(FloatingWidget):
             p.setPen(GRID)
             p.drawLine(int(box.left()), int(y0), int(box.right()), int(y0))
             if pool["n"] * row_h >= 7:
-                color = {"sensory": INPUT, "motor": MOTOR}.get(pool["group"], TEXT)
-                p.setPen(color)
-                p.drawText(QRectF(area.left(), y0, label_w - 6, y1 - y0), Qt.AlignRight | Qt.AlignVCenter, nome_canal(pool["name"]))
+                cor = {"sensory": INPUT, "motor": MOTOR}.get(pool["group"], TEXT)
+                p.setPen(cor)
+                p.drawText(QRectF(area.left(), y0, label_w - 6, y1 - y0), Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter, nome_canal(pool["name"]))
         p.setPen(MUTED)
-        p.drawText(QRectF(box.left(), box.bottom() + 4, box.width(), 14), Qt.AlignLeft, "−3 s")
-        p.drawText(QRectF(box.left(), box.bottom() + 4, box.width(), 14), Qt.AlignRight, "agora")
+        p.drawText(QRectF(box.left(), box.bottom() + 4, box.width(), 14), Qt.AlignmentFlag.AlignLeft, "−3 s")
+        p.drawText(QRectF(box.left(), box.bottom() + 4, box.width(), 14), Qt.AlignmentFlag.AlignRight, "agora")
 
     def _bar(self, p, x, y, w, value, color, h=6):
         """Desenha uma barra de 0 a 1 (cheia = 1)."""
@@ -133,7 +143,7 @@ class NeuralMonitor(FloatingWidget):
         app = self.app
         brain = app.brain
         x, y, w = area.left(), area.top(), area.width()
-        mono = QFont("Consolas", 8)
+        mono = fonte(MONO, 8)
 
         # ---- entradas e habituação ----
         self._title(p, x, y + 10, "Entrada (azul) · eficácia sináptica / habituação (laranja)")
@@ -146,13 +156,13 @@ class NeuralMonitor(FloatingWidget):
             cy = y + (i // 2) * 22
             p.setFont(mono)
             p.setPen(TEXT)
-            p.drawText(QRectF(cx, cy, 64, 12), Qt.AlignLeft | Qt.AlignVCenter, nome_canal(name))
+            p.drawText(QRectF(cx, cy, 64, 12), Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, nome_canal(name))
             bx = cx + 66
             bw = col_w - 66 - 34
             self._bar(p, bx, cy + 1, bw, app.intensities.get(name, 0.0), INPUT, 5)
             self._bar(p, bx, cy + 8, bw, eff[name], EFFICACY, 3)
             p.setPen(MUTED)
-            p.drawText(QRectF(bx + bw + 2, cy, 32, 12), Qt.AlignRight | Qt.AlignVCenter, f"{eff[name]:.2f}")
+            p.drawText(QRectF(bx + bw + 2, cy, 32, 12), Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter, f"{eff[name]:.2f}")
         y += ((len(names) + 1) // 2) * 22 + 10
 
         # ---- motores -> corpo ----
@@ -163,20 +173,20 @@ class NeuralMonitor(FloatingWidget):
         for m in tone.r:
             p.setFont(mono)
             p.setPen(MOTOR)
-            p.drawText(QRectF(x, y, 62, 14), Qt.AlignLeft | Qt.AlignVCenter, nome_canal(m))
+            p.drawText(QRectF(x, y, 62, 14), Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, nome_canal(m))
             self._bar(p, x + 64, y + 4, w * 0.36, tone.r[m], MOTOR)
             p.setPen(TEXT)
-            p.drawText(QRectF(x + 70 + w * 0.36, y, 60, 14), Qt.AlignLeft | Qt.AlignVCenter, f"{motor[m]:5.1f} Hz")
+            p.drawText(QRectF(x + 70 + w * 0.36, y, 60, 14), Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, f"{motor[m]:5.1f} Hz")
             p.setPen(MUTED)
-            p.drawText(QRectF(x + 130 + w * 0.36, y, w, 14), Qt.AlignLeft | Qt.AlignVCenter, MOTOR_EFFECT[m])
+            p.drawText(QRectF(x + 130 + w * 0.36, y, w, 14), Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, MOTOR_EFFECT[m])
             y += 17
         y += 4
         p.setPen(TEXT)
-        p.drawText(QRectF(x, y, w, 14), Qt.AlignLeft,
+        p.drawText(QRectF(x, y, w, 14), Qt.AlignmentFlag.AlignLeft,
                    f"velocidade {tone.speed():3.0f} px/s · pulinho {tone.hop_chance():.0%} · "
                    f"altura {tone.hop_power():3.0f} · tremor {tone.shake():.1f} px")
         y += 15
-        p.drawText(QRectF(x, y, w, 14), Qt.AlignLeft,
+        p.drawText(QRectF(x, y, w, 14), Qt.AlignmentFlag.AlignLeft,
                    f"balanço {tone.sway():.1f}° · pálpebra +{tone.lid_droop():.2f} · "
                    f"fixa cursor {tone.watch():.0%} · sobe janela {tone.climb_chance():.0%}")
         y += 26
@@ -185,28 +195,28 @@ class NeuralMonitor(FloatingWidget):
         self._title(p, x, y, "Estado")
         y += 10
         emo = app.emotion
-        p.setFont(QFont("Consolas", 11, QFont.Bold))
+        p.setFont(fonte(MONO, 11, negrito=True))
         p.setPen(GOOD)
-        p.drawText(QRectF(x, y, w, 18), Qt.AlignLeft, EMOTION_NAMES.get(app.pet_state.emotion, app.pet_state.emotion))
+        p.drawText(QRectF(x, y, w, 18), Qt.AlignmentFlag.AlignLeft, EMOTION_NAMES.get(app.pet_state.emotion, app.pet_state.emotion))
         p.setFont(mono)
         p.setPen(TEXT)
-        p.drawText(QRectF(x + 140, y + 3, w, 16), Qt.AlignLeft,
+        p.drawText(QRectF(x + 140, y + 3, w, 16), Qt.AlignmentFlag.AlignLeft,
                    f"valência {emo.valence:+.2f} · ativação {emo.arousal:+.2f}")
         y += 24
         d = app.drives
         for label, value in (("energia", d.energy), ("estimulação", d.stimulation), ("carência", d.contact)):
             p.setPen(TEXT)
-            p.drawText(QRectF(x, y, 90, 12), Qt.AlignLeft | Qt.AlignVCenter, label)
+            p.drawText(QRectF(x, y, 90, 12), Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, label)
             self._bar(p, x + 92, y + 3, w * 0.4, value, GOOD)
-            p.drawText(QRectF(x + 98 + w * 0.4, y, 50, 12), Qt.AlignLeft | Qt.AlignVCenter, f"{value:.2f}")
+            p.drawText(QRectF(x + 98 + w * 0.4, y, 50, 12), Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, f"{value:.2f}")
             y += 16
         y += 6
         pr = app.protest
-        p.drawText(QRectF(x, y, w, 14), Qt.AlignLeft,
+        p.drawText(QRectF(x, y, w, 14), Qt.AlignmentFlag.AlignLeft,
                    f"insatisfação {pr.grievance:.2f} · protesto: {STAGE_NAMES[pr.stage]} · revoluções {pr.revolutions}")
         y += 16
         poke = app.last_poke_response
         poke_text = "—" if poke is None else f"{poke:.2f}"
-        p.drawText(QRectF(x, y, w, 14), Qt.AlignLeft,
+        p.drawText(QRectF(x, y, w, 14), Qt.AlignmentFlag.AlignLeft,
                    f"última cutucada: resposta {poke_text} · eficácia da cutucada {eff['POKE']:.2f}"
                    + ("   · DORMINDO" if app.asleep else ""))

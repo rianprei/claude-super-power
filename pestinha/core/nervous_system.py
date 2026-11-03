@@ -35,16 +35,17 @@ Simplificações assumidas:
 Dependência: numpy. Testes em tests/test_nucleo.py e tests/test_cantinho_rede.py.
 """
 
-from ..log import log
 import math
 import time
-from collections import deque
 from abc import ABC, abstractmethod
+from collections import deque
+from typing import Any
 
 import numpy as np
 
+from ..log import log
 from ..mathutil import valor_real
-from ..store import read_json, write_json
+from ..store import preservar, read_json, write_json
 
 # ============================================================
 # CANAIS SENSORIAIS: (neurônios, taxa máxima Hz, d, tau_rec s)
@@ -141,7 +142,7 @@ MOTOR_SPEC = [
 ]
 
 # ============================================================
-# CONEXÕES: (pré, pós, peso, densidade)
+# CONEXÕES: (pré, pós, peso, densidade)  # noqa: ERA001 - formato da tabela, não código
 # peso = salto na tensão, como fração do limiar (limiar = 1.0)
 # ============================================================
 
@@ -311,8 +312,8 @@ RASTER_BINS = 300               # 3 s de história
 
 class Brain(ABC):
     """Interface de um cérebro: recebe sensações, devolve a atividade de cada motor. Trocar a rede = criar outra classe com esta interface."""
-    sensory_names = []
-    motor_names = []
+    sensory_names: list[str]        # cada rede define os seus (por instância)
+    motor_names: list[str]
 
     @abstractmethod
     def stimulate(self, intensities):
@@ -330,13 +331,13 @@ class Brain(ABC):
     def snapshot(self):
         """Dados para visualização."""
 
+    @abstractmethod
     def save(self, path):
-        """Grava o estado do cérebro no arquivo (a rede implementa)."""
-        pass
+        """Grava o estado do cérebro no arquivo."""
 
+    @abstractmethod
     def load(self, path):
         """Lê o estado salvo. Devolve False se não há estado válido (começa do zero)."""
-        return False
 
     def describe(self):
         """Texto curto que descreve a rede (para o log e o monitor)."""
@@ -359,13 +360,13 @@ class LIFBrain(Brain):
         estímulo (ex.: DRAG) pesa diferente em cada pet.
         """
         self.seed = self.SEED if seed is None else seed
-        self.temperament = dict(temperament or {})
+        self.temperament: dict[str, float] = dict(temperament or {})
         rng = np.random.default_rng(self.seed)
         self.rng = np.random.default_rng()          # ruído: sempre diferente
 
         # ---------------- populações ----------------
-        self.pools = []                             # dicts com start/n/group
-        self._pool_index = {}
+        self.pools: list[dict[str, Any]] = []       # dicts com start/n/group
+        self._pool_index: dict[str, int] = {}
         cursor = 0
 
         def add_pool(name, group, n, kind, center):
@@ -405,17 +406,17 @@ class LIFBrain(Brain):
         s_d = np.zeros(self.Ns)
         s_tau_rec = np.ones(self.Ns)
 
-        for name, kind, n, tau, b, bt, _c in INTER_SPEC:
+        for name, _kind, _n, tau, b, bt, _c in INTER_SPEC:
             p = self.pool(name)
             sl = slice(p["start"], p["start"] + p["n"])
             tau_m[sl], adapt_b[sl], adapt_tau[sl] = tau, b, bt
 
-        for name, n, tau, b, bt in MOTOR_SPEC:
+        for name, _n, tau, b, bt in MOTOR_SPEC:
             p = self.pool(name)
             sl = slice(p["start"], p["start"] + p["n"])
             tau_m[sl], adapt_b[sl], adapt_tau[sl] = tau, b, bt
 
-        for name, (n, rate, d, rec) in SENSORY_SPEC.items():
+        for name, (_n, rate, d, rec) in SENSORY_SPEC.items():
             p = self.pool(name)
             sl = slice(p["start"], p["start"] + p["n"])
             s_rate[sl], s_d[sl], s_tau_rec[sl] = rate, d, rec
@@ -445,17 +446,16 @@ class LIFBrain(Brain):
             block = weight * strength * mask
             W[a["start"]:a["start"] + a["n"], b["start"]:b["start"] + b["n"]] += block
 
-        for pre, post, weight, density in CONNECTIONS:
-            if pre in SENSORY_SPEC:
-                weight *= self.temperament.get(f"{pre}->{post}", self.temperament.get(post, 1.0))
-            connect(pre, post, weight, density)
+        for pre, post, peso_base, density in CONNECTIONS:
+            ganho = self.temperament.get(f"{pre}->{post}", self.temperament.get(post, 1.0)) if pre in SENSORY_SPEC else 1.0
+            connect(pre, post, peso_base * ganho, density)
 
         motors = [m[0] for m in MOTOR_SPEC]
-        for a in motors:
-            for b in motors:
+        for m_pre in motors:
+            for m_pos in motors:
                 # motores de expressão (corpo) e de decisão (sentar, fugir...) competem só dentro do seu grupo
-                if a != b and (a in DECISION_MOTORS) == (b in DECISION_MOTORS):
-                    connect(a, b, -(STARTLE_INHIBITION if a == "STARTLE" else LATERAL_INHIBITION), 0.7)
+                if m_pre != m_pos and (m_pre in DECISION_MOTORS) == (m_pos in DECISION_MOTORS):
+                    connect(m_pre, m_pos, -(STARTLE_INHIBITION if m_pre == "STARTLE" else LATERAL_INHIBITION), 0.7)
 
         self.W = W
         self.W_base = W.copy()
@@ -477,6 +477,7 @@ class LIFBrain(Brain):
         self._levels = np.zeros(len(self.sensory_names))
 
         self.W_lif = np.ascontiguousarray(W[:, Ns:])
+        self._zero_drive = np.zeros(self.N - Ns)
         self.n_synapses = int((W != 0).sum())
 
         # ---------------- estado ----------------
@@ -484,16 +485,16 @@ class LIFBrain(Brain):
         self.a = np.zeros(self.Nl)
         self.ref = np.zeros(self.Nl, dtype=int)
         self.spikes = np.zeros(self.N)
+        self._ativos = np.zeros(0, dtype=np.intp)   # índices que dispararam no último ms
 
         self.pre_gain = np.ones(self.N)             # eficácia sináptica de saída
         self.p = self.pre_gain[:Ns]                 # view: p dos receptores
 
         self.trace = np.zeros(self.N)
 
-        onehot = np.zeros((self.N, len(self.pools)))
+        self._pool_de = np.zeros(self.N, dtype=np.intp)   # neurônio -> índice do pool
         for i, p in enumerate(self.pools):
-            onehot[p["start"]:p["start"] + p["n"], i] = 1.0
-        self.onehot = onehot
+            self._pool_de[p["start"]:p["start"] + p["n"]] = i
         self.pool_sizes = np.array([p["n"] for p in self.pools], dtype=float)
         self.pool_counts = np.zeros(len(self.pools))
         self.pool_rate = np.zeros(len(self.pools))
@@ -511,22 +512,22 @@ class LIFBrain(Brain):
                 pos[idx, 1] = cy + rng.normal(0, 0.026, p["n"])
         self.pos = np.clip(pos, 0.01, 0.99)
 
-        kind = np.zeros(self.N, dtype=int)          # 0 sens 1 exc 2 inh 3 motor
+        tipos = np.zeros(self.N, dtype=int)         # 0 sens 1 exc 2 inh 3 motor
         for p in self.pools:
             sl = slice(p["start"], p["start"] + p["n"])
             if p["group"] == "sensory":
-                kind[sl] = 0
+                tipos[sl] = 0
             elif p["group"] == "motor":
-                kind[sl] = 3
+                tipos[sl] = 3
             else:
-                kind[sl] = 2 if p["kind"] == "inh" else 1
-        self.kind = kind
+                tipos[sl] = 2 if p["kind"] == "inh" else 1
+        self.kind = tipos
 
         self.time_ms = 0.0
 
         # raster para o Neural Monitor (só grava quando alguém está olhando)
         self.recording = False
-        self.raster = deque(maxlen=RASTER_BINS)
+        self.raster: deque[np.ndarray] = deque(maxlen=RASTER_BINS)
         self._bin = np.zeros(self.N, dtype=bool)
 
     # ----------------------------------------------------------
@@ -553,7 +554,10 @@ class LIFBrain(Brain):
         rng = self.rng
         Ns = self.Ns
 
-        drive = (self.spikes * self.pre_gain) @ self.W_lif
+        # ~1 neurônio dispara por ms: trabalha só com os índices dos que dispararam
+        # (mesmo resultado da multiplicação densa, a uma fração do custo)
+        anteriores = self._ativos
+        drive = self.pre_gain[anteriores] @ self.W_lif[anteriores] if anteriores.size else self._zero_drive
 
         v = self.v
         v *= self.decay
@@ -565,24 +569,29 @@ class LIFBrain(Brain):
         self.ref[in_ref] -= 1
         np.maximum(v, -0.5, out=v)
 
-        fired = v >= (1.0 + self.a)
-        v[fired] = 0.0
-        self.ref[fired] = T_REF
+        disparou = np.flatnonzero(v >= 1.0 + self.a)
         self.a *= self.adapt_decay
-        self.a[fired] += self.adapt_b[fired]
+        if disparou.size:
+            v[disparou] = 0.0
+            self.ref[disparou] = T_REF
+            self.a[disparou] += self.adapt_b[disparou]
 
-        s_fired = rng.random(Ns) < self.s_prob
+        receptores = np.flatnonzero(rng.random(Ns) < self.s_prob)
 
         # HABITUAÇÃO: depressão sináptica + recuperação lenta
-        self.p[s_fired] *= (1.0 - self.s_d[s_fired])
+        if receptores.size:
+            self.p[receptores] *= 1.0 - self.s_d[receptores]
         self.p += (1.0 - self.p) * self.s_rec
 
-        self.spikes[:Ns] = s_fired
-        self.spikes[Ns:] = fired
+        ativos = np.concatenate((receptores, disparou + Ns))
+        self.spikes[anteriores] = 0.0
+        self.spikes[ativos] = 1.0
+        self._ativos = ativos
 
         self.trace *= TRACE_DECAY
-        self.trace[self.spikes > 0] = 1.0
-        self.pool_counts += self.spikes @ self.onehot
+        if ativos.size:
+            self.trace[ativos] = 1.0
+            self.pool_counts += np.bincount(self._pool_de[ativos], minlength=len(self.pools))
 
     def step(self, dt_ms):
         """Avança a rede `dt_ms` milissegundos (em passos de 1 ms, no máximo 400 por chamada)."""
@@ -704,11 +713,20 @@ class LIFBrain(Brain):
         """
         Restaura a habituação e o aprendizado. Tudo é validado antes de aplicar: versão,
         forma das matrizes, valores finitos e dentro do domínio. Se algo falhar, nada é
-        alterado e a rede segue como estava.
+        alterado e a rede segue como estava; o arquivo recusado é guardado como .descartado
+        (outra semente, outra versão ou valores fora do domínio), para o próximo save não apagá-lo.
         """
         data = read_json(path, default=None)
-        if not isinstance(data, dict):
-            return False
+        if data is None:
+            return False                        # sem arquivo (ou ilegível: o store já guardou .corrompido)
+        if isinstance(data, dict) and self._restaurar(data):
+            return True
+        guardado = preservar(path, "descartado", copiar=True)
+        log(f"[nervous] estado salvo não serve para esta rede; guardado em {guardado}; começando do zero")
+        return False
+
+    def _restaurar(self, data):
+        """Valida e aplica o estado salvo de uma vez. Devolve False (sem mudar nada) se algo não servir."""
         try:
             if data.get("version") != 1 or data.get("seed") != self.seed:
                 return False
@@ -749,11 +767,11 @@ class LIFBrain(Brain):
             for name, valores in recuperado.items():
                 p = self.pool(name)
                 self.p[p["start"]:p["start"] + p["n"]] = valores
-            self.restored_after = elapsed
-            return True
-        except Exception as error:
-            log(f"[nervous] estado ilegível ({error}); começando do zero")
+        except (TypeError, ValueError, KeyError, AttributeError) as error:
+            log(f"[nervous] estado ilegível ({error})")
             return False
+        self.restored_after = elapsed
+        return True
 
 # ============================================================
 # DECODIFICADOR MOTOR
@@ -819,7 +837,7 @@ class MotorDecoder:
 
 def _run(brain, intensities, seconds):
     """Roda a rede com estímulos fixos por alguns segundos e devolve o pico de cada motor (usado na demonstração)."""
-    peak = {m: 0.0 for m in brain.motor_names}
+    peak = dict.fromkeys(brain.motor_names, 0.0)
     for _ in range(int(seconds * 10)):
         brain.stimulate(intensities)
         brain.step(100)

@@ -22,6 +22,7 @@ import os
 import re
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 
 from .log import log
 from .paths import pet_id_valido
@@ -47,7 +48,7 @@ class Resultado:
 
     def resumo(self):
         """Uma linha por motivo (o mesmo erro em dez arquivos vira uma linha só)."""
-        por_motivo = {}
+        por_motivo: dict[str, list[str]] = {}
         for p, a, m in self.conflitos + self.erros:
             por_motivo.setdefault(m, []).append(f"{p}/{a}")
         return "; ".join(f"{', '.join(arquivos)}: {m}" if len(arquivos) <= 2
@@ -98,7 +99,7 @@ def _gravar_atomico(destino, dados):
         f.write(dados)
         f.flush()
         os.fsync(f.fileno())
-    os.replace(tmp, destino)
+    tmp.replace(destino)
 
 
 def _mover_para_legado(origem, pasta_legado):
@@ -109,7 +110,7 @@ def _mover_para_legado(origem, pasta_legado):
     while alvo.exists():
         alvo = pasta_legado / f"{origem.stem}.{n}{origem.suffix}"
         n += 1
-    os.replace(origem, alvo)
+    origem.replace(alvo)
     return alvo
 
 
@@ -117,7 +118,7 @@ def _mover_para_legado(origem, pasta_legado):
 
 def fontes_antigas(paths, dono):
     """{pet: [(origem, nome no destino)]} do que ainda está no formato antigo."""
-    fontes = {}
+    fontes: dict[str, list[tuple[Path, str]]] = {}
     if not paths.memory.exists():
         return fontes
     for nome in ARQUIVOS_DE_MEMORIA:
@@ -189,11 +190,15 @@ def _migrar_pet(paths, pet_id, lista, resultado):
 
 
 def restaurar(paths, pet_id):
-    """Desfaz a migração: restaura a geração mais recente e preserva backups anteriores no legado."""
+    """
+    Desfaz a migração: restaura a geração mais recente e preserva backups anteriores no legado.
+    A pasta nova do pet (memory/pets/<pet>/) vai para memory/legado/<pet>/pasta-nova-<quando>/:
+    nada é apagado, e a próxima migração não esbarra nela (antes, virava conflito para sempre).
+    """
     pasta = paths.legado / pet_id
     devolvidos = []
     if pasta.exists():
-        recentes = {}
+        recentes: dict[str, tuple[int, Path]] = {}
         for arquivo in pasta.iterdir():
             if not arquivo.is_file():
                 continue
@@ -205,9 +210,18 @@ def restaurar(paths, pet_id):
         for nome, (_geracao, arquivo) in sorted(recentes.items()):
             alvo = paths.memory / nome
             if not alvo.exists():
-                os.replace(arquivo, alvo)
+                arquivo.replace(alvo)
                 devolvidos.append(alvo.name)
     marcador = paths.pet(pet_id).marcador
     if marcador.exists():
-        os.replace(marcador, marcador.with_name(".migrado.desfeito"))
+        marcador.replace(marcador.with_name(".migrado.desfeito"))
+    pasta_nova = paths.pet(pet_id).base
+    if devolvidos and pasta_nova.is_dir():
+        guarda = paths.legado / pet_id / f"pasta-nova-{time.strftime('%Y%m%d-%H%M%S')}"
+        n = 2
+        while guarda.exists():
+            guarda = guarda.with_name(f"{guarda.name.split('.')[0]}.{n}")
+            n += 1
+        guarda.parent.mkdir(parents=True, exist_ok=True)
+        pasta_nova.replace(guarda)
     return devolvidos

@@ -29,8 +29,10 @@ app inteiro usam um relógio virtual: avançam o tempo sem esperar.
 | `test_castigo_bugs_rede.py` | Reproduções diagnósticas: asserções descrevem o comportamento esperado. |
 | `test_castigo_integracao.py` | Cantinho do castigo dentro do app: o castigo vence a mesa e as travessuras, e o pânico encerra a fuga. |
 | `test_castigo_real.py` | Cantinho no app inteiro, com relógio virtual: soltar no ar, pousar, ficar preso e reagir pela rede. |
+| `test_clawd3d.py` | Clawd: o mascote do Claude Code em blocos 3D (corpo "clawd3d") e o modo Super Saiyajin 1 do menu. |
 | `test_condicionamento.py` | Testes do condicionamento: aprender a reagir antes, extinguir, e persistir. |
 | `test_conteudo.py` | Etapa 2 do multipet: conteúdo por pet (frases, cartazes, memes, imagens). |
+| `test_correcoes_auditoria.py` | Regressões da auditoria de 2026-11: cada teste prende uma correção (o código antigo falhava nele). |
 | `test_escolha_pet.py` | Etapa 3 do multipet: escolha do personagem nas configurações e o nome certo em cada texto. |
 | `test_festa.py` | Fogos de artifício ligados à rede e brincadeira mais animada quando feliz. |
 | `test_homeostase.py` | Homeostase: trabalhar é estímulo, então o tédio não sobe enquanto ele programa. |
@@ -38,7 +40,7 @@ app inteiro usam um relógio virtual: avançam o tempo sem esperar.
 | `test_mesa.py` | Notebook: sentar e levantar pelo disparo do neurônio SENTAR. |
 | `test_migracao.py` | Etapa 1 do multipet: memória por pet (memory/pets/<pet>/) e a migração da versão antiga. |
 | `test_nucleo.py` | Testes dos módulos puros: nada de Qt, nada de Windows. |
-| `test_paineis.py` | Painéis do menu (monitor neural e painel de protesto): abrir à mão deve manter o painel na tela. |
+| `test_paineis.py` | Painéis do menu (monitor neural e painel de protesto): só abrem quando você pede e fecham fácil. |
 | `test_pedido.py` | Pedir para trabalhar: o neurônio SENTAR decide. |
 | `test_plataforma.py` | Plataforma: cada sistema expõe as mesmas funções, e as leituras de texto (wmctrl, xdotool, ioreg, janelas do Quartz) são testadas com saídas de exemplo, em qualquer sistema. |
 | `test_robustez.py` | Robustez: arquivo corrompido, assets faltando, log em arquivo. |

@@ -2,35 +2,49 @@
 PET - a telinha com olhinhos: janela transparente, desenho e mouse.
 
 A janela é um quadrado transparente maior que o corpo, para caber o corpo
-girado. Pixels transparentes deixam o clique passar para o que está embaixo.
+girado. Só o corpo recebe o mouse: no Windows e no macOS o próprio sistema deixa
+o clique passar nos pixels transparentes; no X11 a região de entrada é recortada
+no corpo (plataforma.regiao_de_clique), sem cortar o desenho.
 A janela nunca pega o foco (o teclado continua no seu programa).
 """
 
+import contextlib
+import itertools
 import math
 import random
 import time
 
 from PySide6.QtCore import QRect, QRectF, Qt, Signal
-from PySide6.QtGui import QCursor, QFont, QPainter
+from PySide6.QtGui import QCursor, QPainter
 from PySide6.QtWidgets import QWidget
 
+from .. import plataforma
+from ..ajustes import (
+    DESLOCAMENTO_CARINHO as RUB_MIN_TRAVEL,
+    DISTANCIA_INICIO_ARRASTE as DRAG_START_PX,
+    JANELA_CARINHO as RUB_WINDOW,
+    LADO_JANELA_PET as WIN,
+    TEMPO_MAX_CUTUCADA_MS as POKE_MAX_MS,
+    TROCAS_CARINHO as RUB_REVERSALS,
+    VELOCIDADE_ARREMESSO as THROW_MIN_SPEED,
+)
 from ..config import EMOTION_NAMES
 from ..core.emotion import EYE_SHAPES
 from ..core.physics import Body
-from .. import plataforma
-from ..ajustes import (
-    LADO_JANELA_PET as WIN,
-    TEMPO_MAX_CUTUCADA_MS as POKE_MAX_MS,
-    DISTANCIA_INICIO_ARRASTE as DRAG_START_PX,
-    VELOCIDADE_ARREMESSO as THROW_MIN_SPEED,
-    JANELA_CARINHO as RUB_WINDOW,
-    TROCAS_CARINHO as RUB_REVERSALS,
-    DESLOCAMENTO_CARINHO as RUB_MIN_TRAVEL,
+from .clawd3d import JANELA_SSJ, draw_clawd
+from .desenho_rosto import (
+    BODY_H,
+    BODY_W,
+    MONO,
+    PADRAO,
+    draw_face,
+    draw_zzz,
+    fonte,
+    lerp_shape,
 )
 
-from .desenho_rosto import BODY_H, BODY_W, PADRAO, draw_face, draw_zzz, lerp_shape
-
 CX, CY = WIN / 2, WIN / 2 - 6   # centro do corpo dentro da janela
+CLIQUE_FOLGA = 12               # px de folga em volta do corpo que ainda recebem o mouse (tremor, balanço)
 
 
 
@@ -39,19 +53,17 @@ CX, CY = WIN / 2, WIN / 2 - 6   # centro do corpo dentro da janela
 
 def set_no_activate(widget):
     """Garante que clicar/mostrar a janela não rouba o foco do programa atual (onde o sistema permite)."""
-    try:
+    with contextlib.suppress(RuntimeError):     # janela já destruída pelo Qt
         plataforma.sem_foco_nativo(int(widget.winId()))
-    except Exception:
-        pass    # sem janela nativa (ex.: teste offscreen)
 
 
 def overlay_flags():
     """Janela sem moldura, sempre por cima, que não aparece na barra de tarefas nem recebe foco ao aparecer."""
     return (
-        Qt.FramelessWindowHint
-        | Qt.Tool
-        | Qt.WindowStaysOnTopHint
-        | Qt.WindowDoesNotAcceptFocus
+        Qt.WindowType.FramelessWindowHint
+        | Qt.WindowType.Tool
+        | Qt.WindowType.WindowStaysOnTopHint
+        | Qt.WindowType.WindowDoesNotAcceptFocus
     )
 
 
@@ -67,13 +79,15 @@ class PetWindow(QWidget):
     def __init__(self, x, y, state):
         """Janela transparente do pet: o rosto é desenhado aqui e o mouse vira gestos (cutucar, arrastar, arremessar)."""
         super().__init__(None, overlay_flags())
-        self.setAttribute(Qt.WA_TranslucentBackground)
-        self.setAttribute(Qt.WA_ShowWithoutActivating)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
         self.setFixedSize(WIN, WIN)
 
         self.body = Body(x, y, BODY_W / 2, BODY_H / 2)
         self.state = state
         self.aparencia = PADRAO      # cores e acessórios do pet (pets/<pet>.json)
+        self.corpo = "tela"          # "tela" (rosto na telinha) ou "clawd3d" (o mascote em blocos 3D)
+        self.geometria = (WIN, WIN, CX, CY)     # largura, altura e centro do corpo dentro da janela
         self.next_blink = time.monotonic() + random.uniform(2.0, 5.0)
 
         self._press = None          # (pos global, tempo)
@@ -82,6 +96,7 @@ class PetWindow(QWidget):
         self._samples = []          # (t, x, y) para a velocidade do arremesso
         self._held_angle = 0.0
         self._rub = []              # (t, x) do mouse passando sem clicar
+        self._regiao_clique = None  # última região de clique aplicada (x, y, largura, altura)
         self.setMouseTracking(True)
 
     def _track_rub(self, x):
@@ -90,7 +105,7 @@ class PetWindow(QWidget):
         self._rub.append((now, x))
         self._rub = [r for r in self._rub if now - r[0] < RUB_WINDOW]
         reversals, travel, last_dir = 0, 0.0, 0
-        for (_, x0), (_, x1) in zip(self._rub, self._rub[1:]):
+        for (_, x0), (_, x1) in itertools.pairwise(self._rub):
             step = x1 - x0
             if abs(step) < 2:
                 continue
@@ -127,13 +142,36 @@ class PetWindow(QWidget):
             sway = max(-35.0, min(35.0, -vx * 0.03))
             self.body.angle += (self._held_angle + sway - self.body.angle) * 0.25
 
-        self.move(int(self.body.x - CX), int(self.body.y - CY))
+        self._ajustar_janela()
+        _w, _h, cx, cy = self.geometria
+        self.move(int(self.body.x - cx), int(self.body.y - cy))
+        self._atualizar_regiao_de_clique()
         self.update()
+
+    def _ajustar_janela(self):
+        """Super Saiyajin no Clawd: a janela cresce para caber a juba e a aura; fora dele, o tamanho normal."""
+        ssj = self.corpo == "clawd3d" and self.state.super_saiyajin_desde is not None
+        alvo = JANELA_SSJ if ssj else (WIN, WIN, CX, CY)
+        if alvo != self.geometria:
+            self.geometria = alvo
+            self.setFixedSize(alvo[0], alvo[1])
+            self._regiao_clique = None           # a região de clique é relativa à janela: refaz
+
+    def _atualizar_regiao_de_clique(self):
+        """Só o corpo (girado) recebe o mouse; o resto do quadrado transparente deixa o clique passar."""
+        largura, altura, cx, cy = self.geometria
+        ex, ey = self.body.extents()
+        x0, y0 = max(0, int(cx - ex - CLIQUE_FOLGA)), max(0, int(cy - ey - CLIQUE_FOLGA))
+        x1, y1 = min(largura, int(cx + ex + CLIQUE_FOLGA)), min(altura, int(cy + ey + CLIQUE_FOLGA))
+        regiao = (x0, y0, x1 - x0, y1 - y0)
+        if regiao != self._regiao_clique and self.isVisible():
+            self._regiao_clique = regiao
+            plataforma.regiao_de_clique(int(self.winId()), [regiao])
 
     def paintEvent(self, _event):
         """Desenha o pet: corpo, olhos, acessórios e balanço; some atrás da tampa do notebook quando está sentado."""
         p = QPainter(self)
-        p.setRenderHint(QPainter.Antialiasing)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
         st = self.state
         if st.desk_top is not None:
             # sentado: o corpo some atrás da tampa do notebook (corta no nível dela, não depende da ordem das janelas)
@@ -150,27 +188,34 @@ class PetWindow(QWidget):
         if st.emotion == "dormindo":
             jitter_y += 1.5 * math.sin(time.monotonic() * 1.6)     # respirando devagar
 
+        largura, altura, cx, cy = self.geometria
         p.save()
-        p.translate(CX + jitter_x, CY + jitter_y)
+        p.translate(cx + jitter_x, cy + jitter_y)
         p.rotate(self.body.angle + sway)
         blink = 0.08 if time.monotonic() < st.blink_until else 1.0
-        draw_face(p, st.shape, st.gaze, blink, st.emotion, carinho=st.feliz_fechado(), aparencia=self.aparencia)
+        if self.corpo == "clawd3d":
+            agora = time.monotonic()
+            ssj = None if st.super_saiyajin_desde is None else agora - st.super_saiyajin_desde
+            draw_clawd(p, st.shape, st.gaze, blink, st.emotion, carinho=st.feliz_fechado(), ssj=ssj, now=agora)
+        else:
+            draw_face(p, st.shape, st.gaze, blink, st.emotion, carinho=st.feliz_fechado(), aparencia=self.aparencia)
         p.restore()
 
         if st.emotion == "dormindo":
-            draw_zzz(p, CX + jitter_x, CY + jitter_y, time.monotonic(), self.aparencia.olho)
+            draw_zzz(p, cx + jitter_x, cy + jitter_y, time.monotonic(), self.aparencia.olho)
 
         if st.show_label:
             p.setPen(self.aparencia.olho)
-            p.setFont(QFont("Consolas", 9, QFont.Bold))
-            p.drawText(QRectF(0, WIN - 22, WIN, 20), Qt.AlignCenter, EMOTION_NAMES.get(st.emotion, st.emotion))
+            p.setFont(fonte(MONO, 9, negrito=True))
+            topo_rotulo = min(cy + 84, altura - 22)       # embaixo dele, sempre dentro da janela
+            p.drawText(QRectF(0, topo_rotulo, largura, 20), Qt.AlignmentFlag.AlignCenter, EMOTION_NAMES.get(st.emotion, st.emotion))
         p.end()
 
     # ---------------- mouse ----------------
 
     def mousePressEvent(self, event):
         """Início de um gesto: guarda onde o botão foi apertado (clique esquerdo)."""
-        if event.button() != Qt.LeftButton:
+        if event.button() != Qt.MouseButton.LeftButton:
             return
         pos = event.globalPosition()
         self.state.pressing = math.hypot(pos.x() - self.body.x, pos.y() - self.body.y) < 90
@@ -217,7 +262,7 @@ class PetWindow(QWidget):
 
     def mouseReleaseEvent(self, event):
         """Fim do gesto: se foi um clique, é cutucada; se foi um arremesso, a velocidade vira força do lance."""
-        if event.button() != Qt.LeftButton or self._press is None:
+        if event.button() != Qt.MouseButton.LeftButton or self._press is None:
             return
         self.state.pressing = False
         held_ms = (time.monotonic() - self._press[1]) * 1000.0

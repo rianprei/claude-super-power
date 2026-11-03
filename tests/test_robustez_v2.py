@@ -6,18 +6,18 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-import numpy as np  # noqa: E402
-import pytest  # noqa: E402
-from PySide6.QtWidgets import QApplication  # noqa: E402
+import numpy as np
+import pytest
+from PySide6.QtWidgets import QApplication
 
-from pestinha import config  # noqa: E402
-from pestinha.app import PestinhaApp  # noqa: E402
-from pestinha.core.episodic import EpisodicMemory  # noqa: E402
-from pestinha.core.homeostasis import Drives  # noqa: E402
-from pestinha.core.nervous_system import LIFBrain  # noqa: E402
-from pestinha.paths import Paths  # noqa: E402
-from pestinha.settings_store import SettingsStore  # noqa: E402
-from pestinha.store import read_json, write_json  # noqa: E402
+from pestinha import config
+from pestinha.app import PestinhaApp
+from pestinha.core.episodic import EpisodicMemory
+from pestinha.core.homeostasis import Drives
+from pestinha.core.nervous_system import LIFBrain
+from pestinha.paths import Paths
+from pestinha.settings_store import SettingsStore
+from pestinha.store import read_json, write_json
 
 
 @pytest.fixture(scope="module")
@@ -34,7 +34,7 @@ def pet_app(qapp, tmp_path):
     store.update(dict(config.DEFAULT_PERMISSIONS, travessuras=True))
     app = PestinhaApp(store, paths)
     yield app
-    app.floats.hidden_by_tray = True
+    app.floats.close_all()
     for w in list(app.floats.windows.values()):
         w.close()
 
@@ -61,7 +61,7 @@ def test_painel_nao_abre_com_o_bryan_desligado(pet_app):
     assert not pet_app.floats.window("neural").isVisible()
 
 
-def test_cartaz_de_tristeza_some_no_pânico(pet_app):
+def test_cartaz_de_tristeza_some_no_panico(pet_app):
     pet_app.sad_ctl.protest.sign = None
     pet_app.panic()
     assert pet_app.sad_ctl.protest.sign is None
