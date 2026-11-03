@@ -32,6 +32,10 @@ jobs:
           echo "JAVA_HOME=$JAVA_HOME_17_X64" >> "$GITHUB_ENV"
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;$NDK" \
             "platforms;android-35" "build-tools;35.0.0" "platform-tools" >/dev/null
+          # o buildozer procura o sdkmanager em <sdk>/tools/bin; o runner tem em cmdline-tools/latest
+          sudo mkdir -p "$ANDROID_HOME/tools"
+          sudo ln -sfn "$ANDROID_HOME/cmdline-tools/latest/bin" "$ANDROID_HOME/tools/bin"
+          sudo ln -sfn "$ANDROID_HOME/cmdline-tools/latest/lib" "$ANDROID_HOME/tools/lib"
       - name: PySide6 de desktop (a ferramenta) e as rodas do Android
         run: |
           # jinja2, pkginfo e tqdm: a ferramenta usa e não declara
