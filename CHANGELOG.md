@@ -2,6 +2,19 @@
 
 ## Claude Super Power
 
+- Windows:
+  - No Super Saiyajin, a aura semitransparente não bloqueia mais o clique no que está atrás dela.
+    Com o cursor fora do corpo, o clique atravessa a janela (WS_EX_TRANSPARENT).
+  - Com DPI misto (notebook a 150% e monitor a 100%), o pouso nas barras de título e o olhar para a janela
+    ativa erravam a posição nas outras telas. Agora cada tela usa a própria escala.
+  - Salvar não falha mais quando o antivírus, o indexador ou o OneDrive estão com o arquivo aberto: a troca
+    tenta de novo por até meio segundo.
+  - Numa pasta sem permissão de gravação (Arquivos de Programas), a memória vai para
+    `%LOCALAPPDATA%\Claude Super Power\memory`. Antes, nada era salvo.
+  - O executável leva `assets/` e `pets/` dentro dele: baixado sozinho, ele já tem todos os pets. As pastas ao
+    lado continuam valendo e têm prioridade.
+  - CI no Windows mais novo, no 2022 e no Windows 11 ARM64, com um teste que abre uma janela de verdade.
+    O executável agora também sai em ARM64.
 - O programa aparece como **Claude Super Power** (janelas, bandeja, menus e textos). Por dentro nada muda:
   o pacote continua `pestinha/`, o log `memory/logs/pestinha.log` e a memória no mesmo lugar.
 - Novo personagem: **Claude**, o mascote do Claude Code em blocos 3D (`pets/clawd.json`,

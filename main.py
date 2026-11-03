@@ -18,7 +18,7 @@ from PySide6.QtWidgets import QApplication, QDialog, QMessageBox
 
 from pestinha import config
 from pestinha.app import PestinhaApp
-from pestinha.paths import Paths
+from pestinha.paths import Paths, memoria_gravavel
 from pestinha.settings_store import SettingsStore
 from pestinha.ui.onboarding import Onboarding
 from pestinha.ui.ui import SettingsDialog, face_icon
@@ -41,7 +41,7 @@ def main():
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)
 
-    paths = Paths()
+    paths = Paths(memoria=memoria_gravavel())
     store = SettingsStore(paths)
     perms = store.perms
     pet = config.load_pet(paths, config.escolher_pet(paths, perms["pet"]))

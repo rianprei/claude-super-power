@@ -199,7 +199,7 @@ def test_log_aguenta_terminal_fechado(tmp_path, monkeypatch):
     monkeypatch.setattr("builtins.print", Mock(side_effect=OSError(5, "EIO")))
     log_module.log("ainda grava")
     log_module.desligar_arquivo()
-    assert arquivo.read_bytes().endswith(b"ainda grava\n")
+    assert arquivo.read_text(encoding="utf-8").endswith("ainda grava\n")     # modo texto: \r\n no Windows
 
 
 # ---------------- Linux ----------------

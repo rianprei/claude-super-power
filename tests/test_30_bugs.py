@@ -249,7 +249,8 @@ def test_23_tela_inicial_grava_a_escolha(monkeypatch, tmp_path):
             return 1
 
     monkeypatch.setattr(main_mod, "SettingsDialog", Dialogo)
-    monkeypatch.setattr(main_mod, "Paths", lambda: paths)
+    monkeypatch.setattr(main_mod, "Paths", lambda **_kw: paths)
+    monkeypatch.setattr(main_mod, "memoria_gravavel", lambda: None)    # não toca a memory/ de verdade
     monkeypatch.setattr(main_mod, "PestinhaApp", lambda store, p: None)
     monkeypatch.setattr(main_mod, "Onboarding", lambda nome, corpo="tela": SimpleNamespace(exec=lambda: 1))
     monkeypatch.setattr(main_mod, "QApplication", lambda argv: SimpleNamespace(
@@ -273,7 +274,8 @@ def test_24_tela_inicial_apagar_tudo_funciona(monkeypatch, tmp_path):
             return 0
 
     monkeypatch.setattr(main_mod, "SettingsDialog", Dialogo)
-    monkeypatch.setattr(main_mod, "Paths", lambda: paths)
+    monkeypatch.setattr(main_mod, "Paths", lambda **_kw: paths)
+    monkeypatch.setattr(main_mod, "memoria_gravavel", lambda: None)    # não toca a memory/ de verdade
     monkeypatch.setattr(main_mod, "Onboarding", lambda nome, corpo="tela": SimpleNamespace(exec=lambda: 1))
     monkeypatch.setattr(main_mod, "QApplication", lambda argv: SimpleNamespace(
         setQuitOnLastWindowClosed=lambda v: None, setWindowIcon=lambda i: None, exec=lambda: 0))

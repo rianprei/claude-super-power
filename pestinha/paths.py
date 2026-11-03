@@ -15,15 +15,37 @@ Arquivos da versão antiga (tudo solto em memory/) são migrados por pestinha/mi
 originais ficam guardados em memory/legado/<pet>/.
 """
 
+import os
 import re
 import sys
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
 # Rodando como executável (PyInstaller): assets, pets e memory ficam ao lado do .exe,
 # para você poder editar as pastas sem reempacotar.
-ROOT = (Path(sys.executable).resolve().parent if getattr(sys, "frozen", False)
-        else Path(__file__).resolve().parent.parent)
+PASTA_DO_PROGRAMA = (Path(sys.executable).resolve().parent if getattr(sys, "frozen", False)
+                     else Path(__file__).resolve().parent.parent)
+# Sem pets/ ao lado (só o .exe foi baixado), vale a cópia de assets/ e pets/ que vai dentro dele.
+ROOT = (PASTA_DO_PROGRAMA if (PASTA_DO_PROGRAMA / "pets").is_dir()
+        else Path(getattr(sys, "_MEIPASS", PASTA_DO_PROGRAMA)))
+
+
+def memoria_gravavel(pasta=PASTA_DO_PROGRAMA):
+    """memory/ ao lado do programa; se lá não dá para gravar (Arquivos de Programas, pasta só de leitura),
+    a pasta de dados do usuário: %LOCALAPPDATA% no Windows, ~/.local/share nos outros.
+
+    Testa gravando de verdade: no Windows, os.access não enxerga as permissões (ACL) da pasta.
+    """
+    local = pasta / "memory"
+    try:
+        local.mkdir(exist_ok=True)
+        with tempfile.TemporaryFile(dir=local):
+            pass
+    except OSError:
+        base = os.environ.get("LOCALAPPDATA") or Path.home() / ".local" / "share"
+        return Path(base) / "Claude Super Power" / "memory"
+    return local
 
 ID_DE_PET = re.compile(r"^[a-z0-9][a-z0-9_-]{0,39}$")    # vira nome de pasta: nada de "..", "/" ou espaços
 
@@ -155,8 +177,10 @@ class ConteudoPaths:
 
 @dataclass(frozen=True)
 class Paths:
-    """Todos os caminhos do app. Por padrão, a pasta do programa (ou a do .exe, empacotado)."""
+    """Todos os caminhos do app. Por padrão, a pasta do programa (ou a do .exe, empacotado).
+    `memoria` troca a pasta memory/ (ver memoria_gravavel); sem ela, é root/memory."""
     root: Path = ROOT
+    memoria: Path | None = None
 
     # ----- conteúdo que você edita -----
 
@@ -192,7 +216,7 @@ class Paths:
     @property
     def memory(self):
         """Pasta memory/: tudo que é seu e do app, fora do código."""
-        return self.root / "memory"
+        return self.root / "memory" if self.memoria is None else self.memoria
 
     @property
     def permissions(self):

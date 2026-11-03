@@ -11,7 +11,24 @@ import json
 import os
 import shutil
 import tempfile
+import time
 from pathlib import Path
+
+TENTATIVAS_TROCA = 10       # x 50 ms: o tempo de um antivírus ou do OneDrive soltar o arquivo
+
+
+def _trocar(tmp, path):
+    """Troca o temporário pelo definitivo. No Windows a troca dá PermissionError enquanto outro programa
+    (antivírus, indexador, OneDrive) está com o arquivo aberto: tenta de novo por até meio segundo."""
+    for tentativa in range(TENTATIVAS_TROCA):
+        try:
+            Path(tmp).replace(path)
+        except PermissionError:
+            if tentativa == TENTATIVAS_TROCA - 1:
+                raise
+            time.sleep(0.05)
+        else:
+            return
 
 
 def _gravar_atomico(path, texto):
@@ -24,7 +41,7 @@ def _gravar_atomico(path, texto):
             f.write(texto)
             f.flush()
             os.fsync(f.fileno())
-        Path(tmp).replace(path)
+        _trocar(tmp, path)
     except BaseException:
         with contextlib.suppress(OSError):
             Path(tmp).unlink()

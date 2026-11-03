@@ -2,7 +2,8 @@
 PLATAFORMA - a única parte do código que conhece o sistema operacional.
 
 Cada sistema tem um módulo com as mesmas funções (windows.py, macos.py, linux.py). Este arquivo
-escolhe o certo na importação. Os retângulos são em pixels físicos (o app divide pelo dpr).
+escolhe o certo na importação. Os retângulos são em pixels físicos (o app converte para coordenadas
+lógicas pela escala de cada tela) ou, se COORDENADAS_LOGICAS, já nas coordenadas do Qt (macOS, em pontos).
 
     ocioso_segundos()            segundos desde o último teclado ou mouse
     processo_ativo()             nome (minúsculo) do programa em primeiro plano
@@ -13,6 +14,7 @@ escolhe o certo na importação. Os retângulos são em pixels físicos (o app d
     iniciar_atalho(callback)     Ctrl+Alt+Shift+B; devolve True se registrou
     LIMITACAO_ATALHO             texto se o atalho registrado só funciona em parte (ou None)
     regiao_de_clique(id, rets)   só esses retângulos da janela recebem o mouse (X11; nos outros, nada)
+    atravessar_clique(id, sim)   o clique atravessa a janela inteira (Windows; nos outros, nada)
 """
 
 import sys
@@ -34,6 +36,7 @@ janelas_visiveis = _backend.janelas_visiveis
 sem_foco_nativo = _backend.sem_foco_nativo
 iniciar_atalho = _backend.iniciar_atalho
 LIMITACAO_ATALHO = getattr(_backend, "LIMITACAO_ATALHO", None)
+COORDENADAS_LOGICAS = getattr(_backend, "COORDENADAS_LOGICAS", False)
 
 
 def _sem_regiao(janela_id, retangulos):
@@ -42,4 +45,10 @@ def _sem_regiao(janela_id, retangulos):
     return False
 
 
+def _sem_atravessar(janela_id, sim):
+    """X11 recorta a região de entrada (regiao_de_clique); no macOS fica para depois: nada a fazer."""
+    del janela_id, sim
+
+
 regiao_de_clique = getattr(_backend, "regiao_de_clique", _sem_regiao)
+atravessar_clique = getattr(_backend, "atravessar_clique", _sem_atravessar)

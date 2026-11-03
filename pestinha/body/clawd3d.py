@@ -430,7 +430,8 @@ def _aura(p, quadro, forca, escala=1.0):
     topo, base = AURA_CY - AURA_RY - LABAREDA, AURA_CY + AURA_RY
 
     def cor(rgb, alfa):
-        return QColor(*rgb, max(0, min(255, int(alfa * vivo))))
+        r, g, b = rgb
+        return QColor(r, g, b, max(0, min(255, int(alfa * vivo))))
 
     p.save()
     for camada, (k, borda, meio, alfa_borda, alfa_meio) in enumerate(CAMADAS_AURA):

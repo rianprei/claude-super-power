@@ -14,6 +14,7 @@ app inteiro usam um relógio virtual: avançam o tempo sem esperar.
 
 | Arquivo | O que faz |
 |---|---|
+| `janela_real_windows.py` | Prova, num Windows de verdade (Qt nativo, não offscreen), que o clique atravessa a aura semitransparente. |
 | `test_30_bugs.py` | Regressão dos 30 bugs encontrados na rodada de fuzzing e revisão (docs/auditorias/BUGS_30_RODADA.md). |
 | `test_aparencia.py` | Etapa 5 do multipet: cores e acessórios por pet, numa camada por cima do rosto. |
 | `test_app.py` | Testes de integração do app, com Qt em modo offscreen e tudo numa pasta temporária. |
@@ -45,3 +46,4 @@ app inteiro usam um relógio virtual: avançam o tempo sem esperar.
 | `test_plataforma.py` | Plataforma: cada sistema expõe as mesmas funções, e as leituras de texto (wmctrl, xdotool, ioreg, janelas do Quartz) são testadas com saídas de exemplo, em qualquer sistema. |
 | `test_robustez.py` | Robustez: arquivo corrompido, assets faltando, log em arquivo. |
 | `test_robustez_v2.py` | Falhas do relatório técnico (docs/auditorias/ANALISE_TECNICA.md): cada caso tem um teste que reproduz o problema. |
+| `test_windows.py` | Windows: o que só quebra lá (DPI misto, clique na aura, arquivo preso por antivírus, pasta sem permissão). |

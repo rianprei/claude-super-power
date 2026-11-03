@@ -76,6 +76,21 @@ MAX_DT = 2.0          # s: um atraso maior que isso (suspensão) não vira tempo
 SAVE_EVERY_MS = 30_000
 
 
+def retangulo_logico(rect, telas):
+    """Retângulo da plataforma (pixels físicos) em coordenadas lógicas do Qt.
+
+    `telas` = [(x, y, largura, altura, escala)] em coordenadas lógicas, a principal primeiro. O Qt mantém
+    o canto de cada tela e divide pela escala dela só o que está dentro: com DPI misto (notebook a 150% e
+    monitor a 100%, comum no Windows) dividir tudo pela escala da principal erra a posição nas outras telas.
+    A tela é a do meio da borda de cima (a barra de título); fora de todas, vale a principal.
+    """
+    esq, topo, dir_, base = rect
+    meio = (esq + dir_) / 2
+    tx, ty, _w, _h, f = next((t for t in telas
+                              if t[0] <= meio < t[0] + t[2] * t[4] and t[1] <= topo < t[1] + t[3] * t[4]), telas[0])
+    return tx + (esq - tx) / f, ty + (topo - ty) / f, tx + (dir_ - tx) / f, ty + (base - ty) / f
+
+
 class PestinhaApp(SessaoMixin, InteracaoMixin, QObject):
     """Aplicativo do pet: junta a rede neural, os sentidos, o corpo, as travessuras e a interface. Um único objeto, criado em main.py."""
     def __init__(self, store, paths=None):
@@ -257,6 +272,14 @@ class PestinhaApp(SessaoMixin, InteracaoMixin, QObject):
         return [(g.x(), g.y(), g.x() + g.width(), g.y() + g.height())
                 for g in (screen.geometry() for screen in QGuiApplication.screens())]
 
+    def telas_com_escala(self):
+        """[(x, y, largura, altura, escala)] de cada tela, a principal primeiro (ver retangulo_logico)."""
+        principal = QGuiApplication.primaryScreen()
+        telas = [principal, *(s for s in QGuiApplication.screens() if s is not principal)]
+        return [(g.x(), g.y(), g.width(), g.height(),
+                 1.0 if plataforma.COORDENADAS_LOGICAS else tela.devicePixelRatio())
+                for tela in telas for g in (tela.geometry(),)]
+
     def _bounds_at(self, areas, x, y, monitores=None):
         """Área útil do monitor que contém o ponto, inclusive sobre barras reservadas pelo sistema."""
         if x is not None:
@@ -282,7 +305,7 @@ class PestinhaApp(SessaoMixin, InteracaoMixin, QObject):
         if not self.perms["pousar_janelas"] or not self.pet.isVisible():
             self.platforms = []
             return
-        dpr = QGuiApplication.primaryScreen().devicePixelRatio()
+        telas = self.telas_com_escala()
         monitores = self.screen_geometries()
         exclude = {int(self.pet.winId())} | {int(t.winId()) for t in self.mischief.things}
         exclude |= self.floats.visible_handles()
@@ -293,8 +316,8 @@ class PestinhaApp(SessaoMixin, InteracaoMixin, QObject):
             exclude.add(int(self.ball.winId()))
         above: list[tuple[float, float, float, float]] = []
         platforms = []
-        for hwnd, rect_fisico, maximized in senses.list_windows(exclude, dpr):
-            esq, topo, dir_, base = (v / dpr for v in rect_fisico)
+        for hwnd, rect_fisico, maximized in senses.list_windows(exclude):
+            esq, topo, dir_, base = retangulo_logico(rect_fisico, telas)
             mid = (esq + dir_) / 2
             covered = any(al <= mid <= ar and at <= topo + 2 <= ab for al, at, ar, ab in above)
             above.append((esq, topo, dir_, base))
@@ -327,10 +350,10 @@ class PestinhaApp(SessaoMixin, InteracaoMixin, QObject):
                 self.activity, self.idle_seconds, events, self.tracker.session_seconds, self.keyboard_active
             )
         if "APP_CHANGED" in events:
-            dpr = QGuiApplication.primaryScreen().devicePixelRatio()
-            rect = senses.foreground_rect(dpr)
+            rect = senses.foreground_rect()
             if rect:
-                self.behavior.look_at((rect[0] + rect[2]) / 2 / dpr, (rect[1] + rect[3]) / 2 / dpr,
+                esq, topo, dir_, base = retangulo_logico(rect, self.telas_com_escala())
+                self.behavior.look_at((esq + dir_) / 2, (topo + base) / 2,
                                       time.monotonic())
         fullscreen = senses.is_fullscreen()
         if fullscreen != self.fullscreen:

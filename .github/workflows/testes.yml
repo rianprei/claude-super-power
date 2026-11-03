@@ -8,10 +8,11 @@ permissions:
 jobs:
   testes:
     # Windows, macOS e Linux. Repositórios públicos têm minutos grátis nos três.
+    # Windows: o mais novo, o 2022 (mesma base do Windows 10 21H2) e o Windows 11 em ARM64.
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
+        os: [windows-latest, windows-2022, windows-11-arm, macos-latest, ubuntu-latest]
         python: ["3.11", "3.14"]       # o mínimo suportado e o mais novo
     runs-on: ${{ matrix.os }}
     env:

@@ -151,6 +151,18 @@ def sem_foco_nativo(janela_id):
         pass    # sem janela nativa (ex.: teste offscreen)
 
 
+def atravessar_clique(janela_id, sim):
+    """Liga/desliga WS_EX_TRANSPARENT: o clique atravessa a janela inteira. Numa janela em camadas o Windows
+    só deixa o clique passar nos pixels 100% transparentes, e a aura do Super Saiyajin é semitransparente."""
+    try:
+        style = win32gui.GetWindowLong(janela_id, win32con.GWL_EXSTYLE)
+        novo = style | win32con.WS_EX_TRANSPARENT if sim else style & ~win32con.WS_EX_TRANSPARENT
+        if novo != style:
+            win32gui.SetWindowLong(janela_id, win32con.GWL_EXSTYLE, novo)
+    except Exception:  # noqa: BLE001, S110 - pywin32/ctypes: janela pode sumir no meio da leitura e o erro não tem classe comum  # nosec B110
+        pass    # sem janela nativa (ex.: teste offscreen)
+
+
 def iniciar_atalho(callback):
     """RegisterHotKey numa thread com fila de mensagens própria. Devolve True se conseguiu."""
     pronto = threading.Event()

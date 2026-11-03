@@ -2,9 +2,9 @@
 PET - a telinha com olhinhos: janela transparente, desenho e mouse.
 
 A janela é um quadrado transparente maior que o corpo, para caber o corpo
-girado. Só o corpo recebe o mouse: no Windows e no macOS o próprio sistema deixa
-o clique passar nos pixels transparentes; no X11 a região de entrada é recortada
-no corpo (plataforma.regiao_de_clique), sem cortar o desenho.
+girado. Só o corpo recebe o mouse: no X11 a região de entrada é recortada no corpo
+(plataforma.regiao_de_clique), sem cortar o desenho; no Windows, com o cursor fora do corpo,
+o clique atravessa a janela inteira (plataforma.atravessar_clique), inclusive a aura semitransparente.
 A janela nunca pega o foco (o teclado continua no seu programa).
 """
 
@@ -97,6 +97,7 @@ class PetWindow(QWidget):
         self._held_angle = 0.0
         self._rub = []              # (t, x) do mouse passando sem clicar
         self._regiao_clique = None  # última região de clique aplicada (x, y, largura, altura)
+        self._atravessa = None      # último estado aplicado de "o clique atravessa a janela"
         self.setMouseTracking(True)
 
     def _track_rub(self, x):
@@ -121,6 +122,7 @@ class PetWindow(QWidget):
         """Ao aparecer, a janela já é marcada para não roubar o foco do programa que você está usando."""
         super().showEvent(event)
         set_no_activate(self)
+        self._atravessa = None      # a janela nativa pode ter sido refeita: aplica de novo
 
     # ---------------- animação ----------------
 
@@ -167,6 +169,13 @@ class PetWindow(QWidget):
         if regiao != self._regiao_clique and self.isVisible():
             self._regiao_clique = regiao
             plataforma.regiao_de_clique(int(self.winId()), [regiao])
+        if self.isVisible() and not self.body.held:     # segurando: o arraste continua mesmo fora do corpo
+            cursor = self.mapFromGlobal(QCursor.pos())
+            x, y, w, h = regiao
+            atravessa = not (x <= cursor.x() < x + w and y <= cursor.y() < y + h)
+            if atravessa != self._atravessa:
+                self._atravessa = atravessa
+                plataforma.atravessar_clique(int(self.winId()), atravessa)
 
     def paintEvent(self, _event):
         """Desenha o pet: corpo, olhos, acessórios e balanço; some atrás da tampa do notebook quando está sentado."""

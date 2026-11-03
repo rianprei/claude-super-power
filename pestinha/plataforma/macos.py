@@ -3,7 +3,7 @@ macOS: Quartz (pyobjc) para as janelas e o tempo ocioso; AppKit para o programa 
 
 Sem pyobjc, o tempo ocioso sai do ioreg, a lista de janelas fica vazia e o atalho fica desligado.
 O atalho global usa o QuickMacHotKey.
-Os retângulos saem em pixels físicos (pontos x escala).
+Os retângulos saem em pontos, que já são as coordenadas lógicas do Qt (com escala 1, a que o app usa).
 """
 
 import os
@@ -21,6 +21,7 @@ except ImportError:                     # sem pyobjc/QuickMacHotKey: o app abre,
     quickHotKey = mask = None
     controlKey = kVK_ANSI_B = optionKey = shiftKey = None
 
+COORDENADAS_LOGICAS = True                  # o app não converte pela escala da tela
 LARGURA_MINIMA, ALTURA_MINIMA = 120, 60
 OPCOES_NA_TELA = (1 << 0) | (1 << 4)        # OnScreenOnly | ExcludeDesktopElements
 JANELA_NULA = 0

@@ -51,7 +51,8 @@ fica salvo localmente e muda o jeito dele com o tempo.
 
 ## Requisitos
 
-- Windows 10 ou 11, macOS (Quartz/pyobjc) ou Linux com X11.
+- Windows 10 (1809 ou mais novo) ou 11, em x64 ou ARM64; macOS (Quartz/pyobjc) ou Linux com X11.
+  Windows 7, 8 e 8.1 e Windows de 32 bits não rodam: o Qt 6 (PySide6) não tem versão para eles.
 - Python 3.11 ou mais novo.
 - No Linux, para as janelas e o tempo ocioso: `xdotool`, `wmctrl` e `xprintidle`. Sem eles, o pet continua
   andando, mas não enxerga as janelas.
@@ -160,16 +161,17 @@ O PyInstaller só gera o executável do sistema onde roda, por isso um Windows n
 2. Gere o executável, no Windows:
 
    ```bash
-   python -m PyInstaller --noconfirm --onefile --windowed --name Pestinha --distpath build/onefile --workpath build/work --specpath build --hidden-import win32timezone main.py
+   python -m PyInstaller --noconfirm --onefile --windowed --name Pestinha --distpath build/onefile --workpath build/work --specpath build --hidden-import win32timezone --add-data "../assets;assets" --add-data "../pets;pets" main.py
    ```
 
-   No macOS e no Linux, use o mesmo comando sem `--windowed` e sem `--hidden-import win32timezone`.
+   No macOS e no Linux, use o mesmo comando sem `--windowed` e sem `--hidden-import win32timezone`, e com `:`
+   no lugar de `;` no `--add-data`.
 
 3. O resultado fica em `build/onefile/` (`Pestinha.exe` no Windows, `Pestinha` nos outros).
 
 4. Monte a pasta de entrega: copie o executável e as pastas `assets/` e `pets/` para uma mesma pasta.
-   O programa lê o conteúdo dessas pastas ao lado do executável. A `memory/` é criada sozinha na primeira execução,
-   então não copie a sua.
+   O programa lê o conteúdo dessas pastas ao lado do executável (sem elas, usa a cópia que vai dentro dele).
+   A `memory/` é criada sozinha na primeira execução, então não copie a sua.
 
 #### Opção 2: pelo GitHub (os três sistemas de uma vez)
 
@@ -211,6 +213,7 @@ As imagens e os textos de `assets/` não estão cobertos por esta licença
   escrita e testada só nas partes de texto (ver `tests/test_plataforma.py`).
 - No macOS, o pet precisa da permissão de Acessibilidade para o atalho Ctrl+Alt+Shift+B funcionar.
 - No Linux com Wayland, o pet não enxerga janelas nem o tempo ocioso, e o atalho global não funciona.
-- Pouco testado com escala de tela acima de 100% e com vários monitores.
+- Pouco testado com escala de tela acima de 100% e com vários monitores (a conversão por tela, para DPI
+  misto no Windows, é testada só com telas simuladas).
 - Jogos em janela sem borda podem não ser detectados como tela cheia.
 - O executável não é assinado; o Windows pode avisar na primeira execução.
