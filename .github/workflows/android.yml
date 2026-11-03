@@ -27,8 +27,11 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5
         with:
           python-version: "3.12"
-      - name: SDK, NDK e JDK 17
+      - name: SDK, NDK, JDK 17 e as ferramentas de build do python-for-android
         run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends autoconf automake libtool libltdl-dev pkg-config \
+            m4 gettext cmake zlib1g-dev libffi-dev libssl-dev zip unzip
           echo "JAVA_HOME=$JAVA_HOME_17_X64" >> "$GITHUB_ENV"
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;$NDK" \
             "platforms;android-35" "build-tools;35.0.0" "platform-tools" >/dev/null
