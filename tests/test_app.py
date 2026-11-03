@@ -174,3 +174,25 @@ def test_cutucada_habitua_na_rede(buddy):
         buddy.brain.stimulate({"POKE": 0.8})
         buddy.brain.step(100)
     assert buddy.brain.efficacy()["POKE"] < before
+
+
+def test_toque_longo_parado_abre_o_menu_e_o_curto_cutuca(buddy, monkeypatch):
+    from pestinha.body import pet as pet_mod
+    pet = buddy.pet
+    menus, cutucadas = [], []
+    pet.menu_requested.connect(menus.append)
+    pet.poked.connect(lambda: cutucadas.append(1))
+    pet.state.allow_poke = True
+    centro = QPointF(pet.body.x, pet.body.y)
+    relogio = {"t": 100.0}
+    monkeypatch.setattr(pet_mod.time, "monotonic", lambda: relogio["t"])
+
+    def toque(segundos):
+        pet.mousePressEvent(QMouseEvent(QMouseEvent.MouseButtonPress, centro, centro, Qt.LeftButton, Qt.LeftButton, Qt.NoModifier))
+        relogio["t"] += segundos
+        pet.mouseReleaseEvent(QMouseEvent(QMouseEvent.MouseButtonRelease, centro, centro, Qt.LeftButton, Qt.LeftButton, Qt.NoModifier))
+
+    toque(0.1)
+    assert cutucadas == [1] and menus == []
+    toque(0.8)                                          # segurou parado: no Android não há botão direito
+    assert len(menus) == 1 and cutucadas == [1]

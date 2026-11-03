@@ -32,8 +32,8 @@ def test_poda_tira_so_as_bibliotecas_do_sistema(tmp_path):
     interno = tmp_path / "_internal"
     interno.mkdir()
     for nome in ("libfontconfig.so.1", "libstdc++.so.6", "libglib-2.0.so.0", "libxcb-cursor.so.0",
-                 "libQt6Core.so.6", "libxkbcommon.so.0"):
+                 "libQt6Core.so.6", "libxkbcommon.so.0", "libgthread-2.0.so.0"):
         (interno / nome).write_bytes(b"x")
     apagadas = podar_linux.podar(tmp_path)
     assert sorted(Path(a).name for a in apagadas) == ["libfontconfig.so.1", "libglib-2.0.so.0", "libstdc++.so.6"]
-    assert sorted(f.name for f in interno.iterdir()) == ["libQt6Core.so.6", "libxcb-cursor.so.0", "libxkbcommon.so.0"]
+    assert sorted(f.name for f in interno.iterdir()) == ["libQt6Core.so.6", "libgthread-2.0.so.0", "libxcb-cursor.so.0", "libxkbcommon.so.0"]

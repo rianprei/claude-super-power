@@ -57,6 +57,9 @@ def test_memoria_vai_para_a_pasta_do_usuario_se_o_programa_nao_pode_gravar(tmp_p
     assert paths_mod.memoria_gravavel(tmp_path, dados) == tmp_path / "memory"
     app_do_mac = tmp_path / "Pestinha.app" / "Contents" / "MacOS"     # nunca grava dentro do .app
     assert paths_mod.memoria_gravavel(app_do_mac, dados) == dados / "memory"
+    monkeypatch.setattr(plataforma, "ANDROID", True)                   # Android: a pasta do app é refeita
+    assert paths_mod.memoria_gravavel(tmp_path, dados) == dados / "memory"
+    monkeypatch.setattr(plataforma, "ANDROID", False)
 
     def negado(**_kw):
         raise PermissionError(13, "Acesso negado")      # Arquivos de Programas: os.access diria que pode

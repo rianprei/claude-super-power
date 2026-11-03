@@ -1,0 +1,90 @@
+name: android
+# Gera o APK do Android (9 ou mais novo, arm64-v8a e x86_64) e abre num emulador de verdade.
+# Roda ao criar uma tag (v1.0.0...) ou manualmente.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+# o token do workflow só lê o repositório
+permissions:
+  contents: read
+
+env:
+  PYSIDE: "6.12.0"            # o Android usa o 6.12: as rodas dele rodam com Python 3.14 no aparelho
+  NDK: "28.2.13676358"        # r28c, o que o pyside6-android-deploy pede (páginas de 16 KB do Android 15)
+
+jobs:
+  apk:
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [aarch64, x86_64]
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5
+        with:
+          python-version: "3.12"
+      - name: SDK, NDK e JDK 17
+        run: |
+          echo "JAVA_HOME=$JAVA_HOME_17_X64" >> "$GITHUB_ENV"
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;$NDK" \
+            "platforms;android-35" "build-tools;35.0.0" "platform-tools" >/dev/null
+      - name: PySide6 de desktop (a ferramenta) e as rodas do Android
+        run: |
+          pip install "PySide6==$PYSIDE" buildozer cython
+          BASE=https://download.qt.io/official_releases/QtForPython
+          mkdir rodas
+          curl -fsSL -o "rodas/pyside6.whl" "$BASE/pyside6/pyside6-$PYSIDE-$PYSIDE-cp310-abi3-android_${{ matrix.arch }}.whl"
+          curl -fsSL -o "rodas/shiboken6.whl" "$BASE/shiboken6/shiboken6-$PYSIDE-$PYSIDE-cp310-abi3-android_${{ matrix.arch }}.whl"
+          mv rodas/pyside6.whl "rodas/PySide6-$PYSIDE-cp310-abi3-android_${{ matrix.arch }}.whl"
+          mv rodas/shiboken6.whl "rodas/shiboken6-$PYSIDE-cp310-abi3-android_${{ matrix.arch }}.whl"
+      - name: Gerar o APK
+        run: |
+          python ferramentas/gerar_android.py --name ClaudeSuperPower -f \
+            --wheel-pyside rodas/PySide6-*.whl --wheel-shiboken rodas/shiboken6-*.whl \
+            --ndk-path "$ANDROID_HOME/ndk/$NDK" --sdk-path "$ANDROID_HOME"
+          mkdir entrega
+          mv ./*.apk "entrega/ClaudeSuperPower-${{ matrix.arch }}.apk"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        with:
+          name: android-${{ matrix.arch }}
+          path: entrega/
+
+  emulador:
+    # o APK x86_64 no emulador: Android 9 (o mínimo) e 15
+    needs: apk
+    strategy:
+      fail-fast: false
+      matrix:
+        api: [28, 35]
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
+        with:
+          name: android-x86_64
+          path: apk
+      - name: KVM para o emulador
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d  # v2
+        with:
+          api-level: ${{ matrix.api }}
+          arch: x86_64
+          target: ${{ matrix.api == 28 && 'default' || 'google_apis' }}
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          disable-animations: true
+          script: sh ferramentas/fumaca_android.sh apk/ClaudeSuperPower-x86_64.apk "$ANDROID_HOME/build-tools/35.0.0/aapt"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        if: always()
+        with:
+          name: android-emulador-api${{ matrix.api }}
+          path: |
+            logcat.txt
+            tela.png

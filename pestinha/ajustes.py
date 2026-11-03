@@ -15,6 +15,7 @@ import itertools
 
 COOLDOWN_CUTUCADA = 0.25        # s entre cutucadas que contam
 TEMPO_MAX_CUTUCADA_MS = 350     # ms: clique mais longo que isso não é cutucada
+TOQUE_LONGO_MS = 600            # ms: segurar parado assim abre o menu do pet (o botão direito do toque)
 DISTANCIA_INICIO_ARRASTE = 5    # px que o mouse precisa andar para virar arraste
 VELOCIDADE_ARREMESSO = 700      # px/s: soltar mais rápido que isso é arremesso
 JANELA_CARINHO = 1.2            # s analisados para reconhecer o carinho
@@ -141,6 +142,7 @@ ZZZ_PERIODO = 2.4               # s que cada Z leva para subir e sumir
 _LIMITES = {
     "COOLDOWN_CUTUCADA": (float, 0.0, 5.0),
     "TEMPO_MAX_CUTUCADA_MS": (int, 50, 2000),
+    "TOQUE_LONGO_MS": (int, 200, 5000),
     "DISTANCIA_INICIO_ARRASTE": (int, 0, 100),
     "VELOCIDADE_ARREMESSO": (float, 100.0, 5000.0),
     "JANELA_CARINHO": (float, 0.1, 10.0),

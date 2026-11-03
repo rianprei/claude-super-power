@@ -26,6 +26,7 @@ from ..ajustes import (
     JANELA_CARINHO as RUB_WINDOW,
     LADO_JANELA_PET as WIN,
     TEMPO_MAX_CUTUCADA_MS as POKE_MAX_MS,
+    TOQUE_LONGO_MS as LONG_PRESS_MS,
     TROCAS_CARINHO as RUB_REVERSALS,
     VELOCIDADE_ARREMESSO as THROW_MIN_SPEED,
 )
@@ -77,7 +78,7 @@ class PetWindow(QWidget):
     drag_started = Signal()
     drag_ended = Signal()
     thrown = Signal(float)          # velocidade do arremesso (px/s)
-    menu_requested = Signal(object) # botão direito: posição global do clique
+    menu_requested = Signal(object) # botão direito ou toque longo: posição global
 
     def __init__(self, x, y, state):
         """Janela transparente do pet: o rosto é desenhado aqui e o mouse vira gestos (cutucar, arrastar, arremessar)."""
@@ -291,6 +292,8 @@ class PetWindow(QWidget):
                 self.thrown.emit(speed)
         elif held_ms <= POKE_MAX_MS and self.state.allow_poke:
             self.poked.emit()
+        elif held_ms >= LONG_PRESS_MS:          # toque longo sem arrastar: o menu (no Android não há botão direito)
+            self.menu_requested.emit(event.globalPosition().toPoint())
         self._press = None
         self._dragging = False
 

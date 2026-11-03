@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from pestinha import plataforma
-from pestinha.plataforma import linux
+from pestinha.plataforma import android, linux
 from pestinha.sense.senses import detect_activity
 
 # Backends nativos só podem ser importados no seu próprio sistema.
@@ -33,7 +33,7 @@ FUNCOES = ["ocioso_segundos", "processo_ativo", "retangulo_ativo", "tela_cheia",
 
 
 def test_cada_sistema_expoe_as_mesmas_funcoes():
-    modulos = [linux]
+    modulos = [linux, android]
     if macos is not None:
         modulos.append(macos)
     if windows is not None:
@@ -180,3 +180,13 @@ def test_no_x11_de_verdade_o_leitor_enxerga_as_janelas():
     if r.returncode == 2:
         pytest.skip(r.stdout.strip())
     assert r.returncode == 0, r.stdout + r.stderr
+
+
+def test_android_devolve_tudo_neutro_e_o_menu_vem_pelo_toque():
+    assert android.ocioso_segundos() == 0.0
+    assert android.processo_ativo() == "unknown"
+    assert android.retangulo_ativo() is None
+    assert android.tela_cheia() is False
+    assert android.janelas_visiveis({1}) == []
+    assert android.iniciar_atalho(lambda: None) is False
+    assert "toque longo" in android.LIMITACAO_ATALHO

@@ -32,16 +32,19 @@ ROOT = (PASTA_DO_PROGRAMA if (PASTA_DO_PROGRAMA / "pets").is_dir()
 
 def memoria_gravavel(pasta=PASTA_DO_PROGRAMA, dados=None):
     """memory/ ao lado do programa; se lá não dá para gravar (Arquivos de Programas, pasta só de leitura) ou se
-    é um app do macOS (gravar dentro do Pestinha.app quebra a assinatura dele), `dados`/memory, por padrão a
+    é um app do macOS (gravar dentro do Pestinha.app quebra a assinatura dele) ou o Android (a pasta do
+    programa é refeita a cada atualização), `dados`/memory, por padrão a
     pasta do app nos dados do usuário (plataforma.pasta_de_dados).
 
     Testa gravando de verdade: no Windows, os.access não enxerga as permissões (ACL) da pasta.
     """
+    from . import plataforma
     if dados is None:
-        from .plataforma import pasta_de_dados
-        dados = pasta_de_dados()
+        dados = plataforma.pasta_de_dados()
     local = pasta / "memory"
     if pasta.name == "MacOS" and pasta.parent.name == "Contents":      # Pestinha.app/Contents/MacOS
+        return dados / "memory"
+    if plataforma.ANDROID:          # a pasta do programa é reescrita a cada atualização do app
         return dados / "memory"
     try:
         local.mkdir(exist_ok=True)

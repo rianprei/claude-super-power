@@ -1,7 +1,7 @@
 """
 PLATAFORMA - a única parte do código que conhece o sistema operacional.
 
-Cada sistema tem um módulo com as mesmas funções (windows.py, macos.py, linux.py). Este arquivo
+Cada sistema tem um módulo com as mesmas funções (windows.py, macos.py, linux.py, android.py). Este arquivo
 escolhe o certo na importação. Os retângulos são em pixels físicos (o app converte para coordenadas
 lógicas pela escala de cada tela) ou, se COORDENADAS_LOGICAS, já nas coordenadas do Qt (macOS, em pontos).
 
@@ -23,14 +23,19 @@ import os
 import sys
 from pathlib import Path
 
+# o Python do Android diz "android" a partir do 3.13; antes (python-for-android) diz "linux", mas tem isto
+ANDROID = sys.platform == "android" or hasattr(sys, "getandroidapilevel")
+
 if sys.platform == "win32":
     from . import windows as _backend
 elif sys.platform == "darwin":
     from . import macos as _backend
+elif ANDROID:
+    from . import android as _backend
 else:
-    from . import linux as _backend
+    from . import linux as _backend  # type: ignore[no-redef]  # ANDROID não é teste de plataforma para o mypy
 
-NOME_DO_SISTEMA = {"win32": "Windows", "darwin": "macOS"}.get(sys.platform, "Linux")
+NOME_DO_SISTEMA = "Android" if ANDROID else {"win32": "Windows", "darwin": "macOS"}.get(sys.platform, "Linux")
 
 ocioso_segundos = _backend.ocioso_segundos
 processo_ativo = _backend.processo_ativo
@@ -61,9 +66,11 @@ atravessar_clique = getattr(_backend, "atravessar_clique", _sem_atravessar)
 
 def pasta_de_dados():
     """Pasta do app nos dados do usuário: %LOCALAPPDATA% no Windows, ~/Library/Application Support no macOS,
-    $XDG_DATA_HOME (ou ~/.local/share) no Linux."""
+    a pasta privada do app no Android, $XDG_DATA_HOME (ou ~/.local/share) no Linux."""
     casa = Path.home()
-    if sys.platform == "win32":
+    if ANDROID:
+        base = Path(os.environ.get("ANDROID_PRIVATE") or casa)
+    elif sys.platform == "win32":
         base = Path(os.environ.get("LOCALAPPDATA") or casa / "AppData" / "Local")
     elif sys.platform == "darwin":
         base = casa / "Library" / "Application Support"

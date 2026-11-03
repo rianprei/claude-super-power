@@ -47,7 +47,7 @@ def main():
     perms = store.perms
     pet = config.load_pet(paths, config.escolher_pet(paths, perms["pet"]))
     app.setWindowIcon(face_icon(corpo=pet["corpo"]))       # o passo a passo usa este ícone
-    if not args.direto:
+    if not args.direto and not plataforma.ANDROID:    # no Android as permissões de desktop não se aplicam
         first_time = not paths.permissions.exists()
         if first_time and Onboarding(pet["nome"], pet["corpo"]).exec() != QDialog.DialogCode.Accepted:
             pass                                    # "Pular" também segue para as permissões

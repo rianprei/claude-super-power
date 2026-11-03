@@ -21,8 +21,9 @@ DO_SISTEMA = (
     "libfontconfig.so.1", "libfreetype.so.6", "libexpat.so.1", "libpng16.so.16", "libz.so.1",   # fontes
     "libX11.so.6", "libX11-xcb.so.1", "libXau.so.6", "libXext.so.6", "libxcb.so.1",         # X11
     "libGL.so.1", "libEGL.so.1", "libGLX.so.0", "libGLdispatch.so.0", "libOpenGL.so.0", "libdrm.so.2",
-    "libglib-2.0.so.0", "libgobject-2.0.so.0", "libgthread-2.0.so.0", "libdbus-1.so.3", "libuuid.so.1",
+    "libglib-2.0.so.0", "libgobject-2.0.so.0", "libdbus-1.so.3", "libuuid.so.1",
 )
+# A libgthread fica: é um invólucro fino da glib, e o openSUSE a separa num pacote que nem sempre vem.
 
 
 def podar(pasta: Path) -> list[str]:
