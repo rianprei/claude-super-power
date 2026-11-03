@@ -50,6 +50,9 @@
     verdade em Debian 11/12/13, Ubuntu 20.04/22.04/24.04, Mint 22, Kali, Fedora, Arch, openSUSE Leap e
     Tumbleweed, AlmaLinux 8 e Rocky 9.
   - Teste do leitor do X11 com uma janela de verdade (Xvfb e openbox no CI).
+- Executáveis modernos (Windows, macOS 15+, Linux x64/ARM64) com Python 3.13: no 3.11 o PySide6 6.11.3 abortava
+  ao fechar ("none_dealloc", visto no Linux ARM64 do CI). Os compatíveis seguem no 3.11 (o PySide6 6.4.3 pede)
+  e não têm o problema.
 - O programa aparece como **Claude Super Power** (janelas, bandeja, menus e textos). Por dentro nada muda:
   o pacote continua `pestinha/`, o log `memory/logs/pestinha.log` e a memória no mesmo lugar.
 - Novo personagem: **Claude**, o mascote do Claude Code em blocos 3D (`pets/clawd.json`,

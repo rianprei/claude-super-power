@@ -56,7 +56,8 @@ fica salvo localmente e muda o jeito dele com o tempo.
   Kali, openSUSE, RHEL/Alma/Rocky 8+...), em X11 ou Wayland (pelo XWayland), x64 ou ARM64.
   Linux com musl (Alpine) não roda o executável.
   Windows 7, 8 e 8.1 e Windows de 32 bits não rodam: o Qt 6 (PySide6) não tem versão para eles.
-- Python 3.11 ou mais novo. No macOS 10.14 a 14, Python 3.11 e `pip install -r requirements-compativel.txt`
+- Python 3.11 ou mais novo; com o `requirements.txt`, prefira o 3.12 ou mais novo (no 3.11 o PySide6 6.11.3 pode
+  abortar ao fechar, com "none_dealloc"; os executáveis já usam o 3.13). No macOS 10.14 a 14, Python 3.11 e `pip install -r requirements-compativel.txt`
   (o PySide6 6.11.3 pede o macOS 15, medido nos binários; o 6.4.3 é o último que abre no 10.14).
   macOS 10.13 ou mais antigo não roda: o Qt 6 não tem versão para ele. No Linux com glibc 2.28 a 2.34, o mesmo
   `requirements-compativel.txt`. No Linux, o `pip` compila o `evdev` (dependência do pynput): precisa de `gcc` e

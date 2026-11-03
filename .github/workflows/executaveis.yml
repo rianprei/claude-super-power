@@ -17,23 +17,25 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {os: windows-latest, nome: windows-x64, reqs: requirements.txt}
-          - {os: windows-11-arm, nome: windows-arm64, reqs: requirements.txt}
+          - {os: windows-latest, nome: windows-x64, reqs: requirements.txt, py: '3.13'}
+          - {os: windows-11-arm, nome: windows-arm64, reqs: requirements.txt, py: '3.13'}
           # macOS: o mínimo é conferido binário por binário (ferramentas/minimo_macos.py)
-          - {os: macos-latest, nome: macos-apple-silicon, reqs: requirements.txt, macos_min: "15.0", arch: arm64}
-          - {os: macos-15-intel, nome: macos-intel, reqs: requirements.txt, macos_min: "15.0", arch: x86_64}
+          - {os: macos-latest, nome: macos-apple-silicon, reqs: requirements.txt, py: '3.13', macos_min: "15.0", arch: arm64}
+          - {os: macos-15-intel, nome: macos-intel, reqs: requirements.txt, py: '3.13', macos_min: "15.0", arch: x86_64}
           # macOS 10.14 a 14: Intel, e Apple Silicon pelo Rosetta
-          - {os: macos-15-intel, nome: macos-compativel, reqs: requirements-compativel.txt, macos_min: "10.14", arch: x86_64}
+          - {os: macos-15-intel, nome: macos-compativel, reqs: requirements-compativel.txt, py: '3.11', macos_min: "10.14", arch: x86_64}
           # Linux: feito na distro mais antiga que o PySide6 aceita (glibc 2.35 no x64, 2.39 no ARM64);
           # para glibc 2.28 a 2.34, o job linux-compativel
-          - {os: ubuntu-22.04, nome: linux-x64, reqs: requirements.txt, glibc: "2.35"}
-          - {os: ubuntu-24.04-arm, nome: linux-arm64, reqs: requirements.txt, glibc: "2.39"}
+          - {os: ubuntu-22.04, nome: linux-x64, reqs: requirements.txt, py: '3.13', glibc: "2.35"}
+          - {os: ubuntu-24.04-arm, nome: linux-arm64, reqs: requirements.txt, py: '3.13', glibc: "2.39"}
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+      # Python 3.13 no moderno: no 3.11 o PySide6 6.11.3 aborta ao fechar ("none_dealloc", visto no Linux
+      # ARM64); do 3.12 em diante o None é imortal. O compatível fica no 3.11 (o PySide6 6.4.3 pede).
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5
         with:
-          python-version: "3.11"
+          python-version: ${{ matrix.py }}
       - run: pip install -r ${{ matrix.reqs }} pyinstaller==6.22.3
       - name: "Linux: bibliotecas do xcb que vão dentro do app (muitas distros não instalam)"
         if: runner.os == 'Linux'
@@ -50,7 +52,7 @@ jobs:
           VERSAO="$(python -c 'import numpy; print(numpy.__version__)')"
           PLATAFORMA="macosx_$(printf '%s' '${{ matrix.macos_min }}' | tr . _)_${{ matrix.arch }}"
           pip download "numpy==$VERSAO" --no-deps --only-binary=:all: --platform "$PLATAFORMA" \
-            --python-version 3.11 -d rodas
+            --python-version ${{ matrix.py }} -d rodas
           pip install --force-reinstall --no-deps rodas/numpy-*.whl
       - name: Gerar o executável
         shell: bash
