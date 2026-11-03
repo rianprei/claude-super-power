@@ -54,8 +54,8 @@ fica salvo localmente e muda o jeito dele com o tempo.
 - Windows 10 (1809 ou mais novo) ou 11, em x64 ou ARM64; macOS 10.14 (Mojave) ou mais novo, em Intel ou
   Apple Silicon; ou Linux com X11.
   Windows 7, 8 e 8.1 e Windows de 32 bits não rodam: o Qt 6 (PySide6) não tem versão para eles.
-- Python 3.11 ou mais novo. No macOS 10.14 a 12, Python 3.11 e `pip install -r requirements-macos-antigo.txt`
-  (o PySide6 mais novo pede macOS 13; o 6.4.3 é o último que abre no 10.14).
+- Python 3.11 ou mais novo. No macOS 10.14 a 14, Python 3.11 e `pip install -r requirements-macos-compativel.txt`
+  (o PySide6 6.11.3 pede o macOS 15, medido nos binários; o 6.4.3 é o último que abre no 10.14).
   macOS 10.13 ou mais antigo não roda: o Qt 6 não tem versão para ele.
 - No Linux, para as janelas e o tempo ocioso: `xdotool`, `wmctrl` e `xprintidle`. Sem eles, o pet continua
   andando, mas não enxerga as janelas.
@@ -196,9 +196,9 @@ O workflow `.github/workflows/executaveis.yml` gera Windows, macOS e Linux em m�
    |---|---|---|
    | `pestinha-windows-x64` | Windows 10 e 11 (x64; também roda no Windows 11 ARM) | `Pestinha.exe` + `assets/` + `pets/` |
    | `pestinha-windows-arm64` | Windows 11 ARM, nativo | `Pestinha.exe` + `assets/` + `pets/` |
-   | `pestinha-macos-apple-silicon` | Mac M1 ou mais novo, macOS 13 ou mais novo | `Pestinha.app` (zip) |
-   | `pestinha-macos-intel` | Mac Intel, macOS 13 ou mais novo | `Pestinha.app` (zip) |
-   | `pestinha-macos-antigo` | macOS 10.14 a 12, Intel (ou Apple Silicon pelo Rosetta) | `Pestinha.app` (zip) |
+   | `pestinha-macos-apple-silicon` | Mac M1 ou mais novo, macOS 15 ou mais novo | `Pestinha.app` (zip) |
+   | `pestinha-macos-intel` | Mac Intel, macOS 15 ou mais novo | `Pestinha.app` (zip) |
+   | `pestinha-macos-compativel` | macOS 10.14 a 14, Intel (ou Apple Silicon pelo Rosetta) | `Pestinha.app` (zip) |
    | `pestinha-linux` | Linux com X11 | `.tar.gz` com o executável + `assets/` + `pets/` |
 
    O mínimo de macOS de cada app é conferido binário por binário (`ferramentas/minimo_macos.py`), porque o

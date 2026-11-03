@@ -19,10 +19,10 @@ jobs:
           - {os: windows-latest, nome: windows-x64, reqs: requirements.txt}
           - {os: windows-11-arm, nome: windows-arm64, reqs: requirements.txt}
           # macOS: o mínimo é conferido binário por binário (ferramentas/minimo_macos.py)
-          - {os: macos-latest, nome: macos-apple-silicon, reqs: requirements.txt, macos_min: "13.0", arch: arm64}
-          - {os: macos-15-intel, nome: macos-intel, reqs: requirements.txt, macos_min: "13.0", arch: x86_64}
-          # Macs antigos (10.14 a 12): Intel, e Apple Silicon pelo Rosetta
-          - {os: macos-15-intel, nome: macos-antigo, reqs: requirements-macos-antigo.txt, macos_min: "10.14", arch: x86_64}
+          - {os: macos-latest, nome: macos-apple-silicon, reqs: requirements.txt, macos_min: "15.0", arch: arm64}
+          - {os: macos-15-intel, nome: macos-intel, reqs: requirements.txt, macos_min: "15.0", arch: x86_64}
+          # macOS 10.14 a 14: Intel, e Apple Silicon pelo Rosetta
+          - {os: macos-15-intel, nome: macos-compativel, reqs: requirements-macos-compativel.txt, macos_min: "10.14", arch: x86_64}
           - {os: ubuntu-latest, nome: linux, reqs: requirements.txt}
     runs-on: ${{ matrix.os }}
     steps:

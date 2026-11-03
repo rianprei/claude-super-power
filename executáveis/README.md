@@ -8,7 +8,7 @@ Arquivos de Programas), ela vai para `%LOCALAPPDATA%\Claude Super Power\memory`.
 | Pasta | Sistema | Como abrir |
 |---|---|---|
 | `windows/` | Windows 10 (1809+) ou 11; o de x64 também roda no Windows 11 ARM (há um nativo ARM64 no GitHub) | duplo clique em `Pestinha.exe` |
-| `macos-*` (artefato do GitHub) | macOS 13+ (Apple Silicon ou Intel) ou 10.14 a 12 (`macos-antigo`) | descompacte e abra `Pestinha.app` (na primeira vez: botão direito > Abrir); a memória fica em `~/Library/Application Support/Claude Super Power/` |
+| `macos-*` (artefato do GitHub) | macOS 15+ (`macos-apple-silicon` ou `macos-intel`) ou 10.14 a 14 (`macos-compativel`; no Apple Silicon roda pelo Rosetta) | descompacte e abra `Pestinha.app` (na primeira vez: botão direito > Abrir); a memória fica em `~/Library/Application Support/Claude Super Power/` |
 | `linux/` | Linux (X11) | no terminal, dentro da pasta: `./Pestinha` |
 
 O executável de macOS e Linux não sai daqui: é gerado pelo GitHub (workflow `executáveis`, na aba Actions,

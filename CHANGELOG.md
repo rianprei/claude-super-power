@@ -23,9 +23,11 @@
   - O clique atravessa a aura do Super Saiyajin (ignoresMouseEvents com o cursor fora do corpo), como no
     Windows.
   - O executável é um `Pestinha.app`, com a memória em `~/Library/Application Support/Claude Super Power/`
-    (gravar dentro do .app quebra a assinatura). Sai em três versões: Apple Silicon e Intel (macOS 13+) e
-    uma para Macs antigos (10.14 a 12; Apple Silicon pelo Rosetta).
-  - `requirements-macos-antigo.txt` (PySide6 6.4.3 e numpy 1.26, com Python 3.11) para o macOS 10.14 a 12.
+    (gravar dentro do .app quebra a assinatura). Sai em três versões: Apple Silicon e Intel (macOS 15+) e
+    uma compatível (10.14 a 14; Apple Silicon pelo Rosetta).
+  - O PySide6 fica no 6.11.3 nos três sistemas. A etiqueta da roda dele diz macOS 13, mas os módulos pedem
+    o 15 (medido binário por binário); o 6.12.0 pede o 26.
+  - `requirements-macos-compativel.txt` (PySide6 6.4.3 e numpy 1.26, com Python 3.11) para o macOS 10.14 a 14.
     A suíte inteira passa com essa combinação, e o CI roda com ela num Mac Intel.
   - `ferramentas/minimo_macos.py` lê o macOS mínimo de cada binário do app; o build falha se algum passar do
     alvo. A roda do numpy é forçada para a do macOS mínimo (a padrão pede o macOS 14).

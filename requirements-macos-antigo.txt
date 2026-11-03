@@ -1,9 +1,0 @@
-# macOS 10.14 a 12 (Mojave, Catalina, Big Sur e Monterey), com Python 3.11.
-# O PySide6 mais novo (requirements.txt) pede macOS 13; o 6.4.3 é o último que abre no 10.14. Ele foi
-# compilado com numpy 1.x, por isso o numpy fica no 1.26. A suíte de testes passa inteira com esta combinação.
-PySide6==6.4.3
-numpy==1.26.4
-psutil>=7.2.2
-pyobjc-framework-Quartz==12.1
-pyobjc-framework-Cocoa==12.1
-quickmachotkey==2025.7.28

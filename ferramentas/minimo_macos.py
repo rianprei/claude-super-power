@@ -3,7 +3,8 @@ Confere o macOS mínimo de cada binário de um app empacotado (Pestinha.app ou a
 
 O GitHub não tem máquinas com macOS antigo: isto lê, em cada arquivo Mach-O, a versão mínima gravada pelo
 compilador (LC_BUILD_VERSION ou LC_VERSION_MIN_MACOSX) da arquitetura pedida e falha se alguma passar do
-limite. Um binário com mínimo 14.0 não abre num macOS 13, então um só basta para o app inteiro não abrir.
+limite. Um binário com mínimo 15.0 pode usar o que não existe no macOS 14: um só basta para o app inteiro não abrir.
+A etiqueta da roda não serve: a do PySide6 6.11.3 diz macOS 13, mas os módulos dele pedem o 15.
 
     python ferramentas/minimo_macos.py dist/Pestinha.app 10.14 x86_64
 """
