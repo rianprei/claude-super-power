@@ -152,6 +152,20 @@ def sem_foco_nativo(janela_id):
     """No macOS o pet já é uma janela sem foco (Qt.WA_ShowWithoutActivating); nada a fazer aqui."""
 
 
+def atravessar_clique(janela_id, sim):
+    """Liga/desliga ignoresMouseEvents: o clique atravessa a janela inteira. O macOS só deixa o clique passar
+    nos pixels 100% transparentes, e a aura do Super Saiyajin é semitransparente."""
+    if QApplication.platformName() != "cocoa":
+        return              # offscreen (testes): o id não é um NSView, e lê-lo como ponteiro derrubaria o app
+    try:
+        import objc
+        janela = objc.objc_object(c_void_p=janela_id).window()      # no Cocoa o winId do Qt é o NSView
+        if janela is not None and bool(janela.ignoresMouseEvents()) != sim:
+            janela.setIgnoresMouseEvents_(sim)
+    except Exception:  # noqa: BLE001, S110 - pyobjc: erros do Objective-C não têm classe comum  # nosec B110
+        pass
+
+
 def iniciar_atalho(callback):
     """Registra Ctrl+Alt+Shift+B pelo QuickMacHotKey; devolve True se conseguiu."""
     global _hotkey  # noqa: PLW0603 - um único por processo (singleton de módulo)

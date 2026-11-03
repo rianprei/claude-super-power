@@ -27,6 +27,7 @@ class Thing(QWidget):
         super().__init__(None, overlay_flags())
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
+        self.setAttribute(Qt.WidgetAttribute.WA_MacAlwaysShowToolWindow)    # macOS: não some com outro app ativo
         self.setFixedSize(w, h)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setToolTip("clique para fechar")

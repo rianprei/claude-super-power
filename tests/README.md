@@ -14,6 +14,7 @@ app inteiro usam um relógio virtual: avançam o tempo sem esperar.
 
 | Arquivo | O que faz |
 |---|---|
+| `janela_real_macos.py` | Prova, num macOS de verdade (Qt Cocoa, não offscreen), que as janelas do pet ficam visíveis com outro app ativo, não têm sombra e deixam o clique atravessar a aura. |
 | `janela_real_windows.py` | Prova, num Windows de verdade (Qt nativo, não offscreen), que o clique atravessa a aura semitransparente. |
 | `test_30_bugs.py` | Regressão dos 30 bugs encontrados na rodada de fuzzing e revisão (docs/auditorias/BUGS_30_RODADA.md). |
 | `test_aparencia.py` | Etapa 5 do multipet: cores e acessórios por pet, numa camada por cima do rosto. |
@@ -38,6 +39,7 @@ app inteiro usam um relógio virtual: avançam o tempo sem esperar.
 | `test_festa.py` | Fogos de artifício ligados à rede e brincadeira mais animada quando feliz. |
 | `test_homeostase.py` | Homeostase: trabalhar é estímulo, então o tédio não sobe enquanto ele programa. |
 | `test_jorge.py` | Etapa 4 do multipet: o Jorge, segundo personagem, feito só de configuração e conteúdo. |
+| `test_macos.py` | MacOS: janelas do pet visíveis com outro app ativo, sem sombra, clique na aura e o macOS mínimo dos binários. |
 | `test_mesa.py` | Notebook: sentar e levantar pelo disparo do neurônio SENTAR. |
 | `test_migracao.py` | Etapa 1 do multipet: memória por pet (memory/pets/<pet>/) e a migração da versão antiga. |
 | `test_nucleo.py` | Testes dos módulos puros: nada de Qt, nada de Windows. |

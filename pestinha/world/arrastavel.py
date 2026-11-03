@@ -57,6 +57,7 @@ class FloatingWidget(QWidget):
         """Cria o painel com título, tamanho (e tamanho mínimo) e a posição salva (ou a padrão)."""
         super().__init__(None, Qt.WindowType.FramelessWindowHint | Qt.WindowType.Tool
                          | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.WindowDoesNotAcceptFocus)
+        self.setAttribute(Qt.WidgetAttribute.WA_MacAlwaysShowToolWindow)    # macOS: não some com outro app ativo
         self.app = app
         self.key = key
         self.setWindowTitle(title)

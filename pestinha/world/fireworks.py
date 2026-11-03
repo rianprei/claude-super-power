@@ -34,6 +34,7 @@ class Fireworks(QWidget):
         super().__init__(None, overlay_flags() | Qt.WindowType.WindowTransparentForInput)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
+        self.setAttribute(Qt.WidgetAttribute.WA_MacAlwaysShowToolWindow)    # macOS: não some com outro app ativo
         self.setFixedSize(WIN, WIN)
         self.rocket = None          # [x, y, vy, t0] enquanto sobe
         self.sparks = []            # [x, y, vx, vy, t0, cor]

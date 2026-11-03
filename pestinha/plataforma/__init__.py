@@ -14,10 +14,13 @@ lógicas pela escala de cada tela) ou, se COORDENADAS_LOGICAS, já nas coordenad
     iniciar_atalho(callback)     Ctrl+Alt+Shift+B; devolve True se registrou
     LIMITACAO_ATALHO             texto se o atalho registrado só funciona em parte (ou None)
     regiao_de_clique(id, rets)   só esses retângulos da janela recebem o mouse (X11; nos outros, nada)
-    atravessar_clique(id, sim)   o clique atravessa a janela inteira (Windows; nos outros, nada)
+    atravessar_clique(id, sim)   o clique atravessa a janela inteira (Windows e macOS; no X11, nada)
+    pasta_de_dados()             pasta do app nos dados do usuário (quando a do programa não serve)
 """
 
+import os
 import sys
+from pathlib import Path
 
 if sys.platform == "win32":
     from . import windows as _backend
@@ -46,9 +49,22 @@ def _sem_regiao(janela_id, retangulos):
 
 
 def _sem_atravessar(janela_id, sim):
-    """X11 recorta a região de entrada (regiao_de_clique); no macOS fica para depois: nada a fazer."""
+    """X11 recorta a região de entrada (regiao_de_clique): nada a fazer."""
     del janela_id, sim
 
 
 regiao_de_clique = getattr(_backend, "regiao_de_clique", _sem_regiao)
 atravessar_clique = getattr(_backend, "atravessar_clique", _sem_atravessar)
+
+
+def pasta_de_dados():
+    """Pasta do app nos dados do usuário: %LOCALAPPDATA% no Windows, ~/Library/Application Support no macOS,
+    $XDG_DATA_HOME (ou ~/.local/share) no Linux."""
+    casa = Path.home()
+    if sys.platform == "win32":
+        base = Path(os.environ.get("LOCALAPPDATA") or casa / "AppData" / "Local")
+    elif sys.platform == "darwin":
+        base = casa / "Library" / "Application Support"
+    else:
+        base = Path(os.environ.get("XDG_DATA_HOME") or casa / ".local" / "share")
+    return base / "Claude Super Power"

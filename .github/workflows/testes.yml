@@ -9,11 +9,17 @@ jobs:
   testes:
     # Windows, macOS e Linux. Repositórios públicos têm minutos grátis nos três.
     # Windows: o mais novo, o 2022 (mesma base do Windows 10 21H2) e o Windows 11 em ARM64.
+    # macOS: Apple Silicon (macos-latest) e Intel; e o conjunto dos Macs antigos (10.14 a 12) num Intel.
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, windows-2022, windows-11-arm, macos-latest, ubuntu-latest]
+        os: [windows-latest, windows-2022, windows-11-arm, macos-latest, macos-15-intel, ubuntu-latest]
         python: ["3.11", "3.14"]       # o mínimo suportado e o mais novo
+        reqs: [requirements.txt]
+        include:
+          - os: macos-15-intel
+            python: "3.11"
+            reqs: requirements-macos-antigo.txt
     runs-on: ${{ matrix.os }}
     env:
       QT_QPA_PLATFORM: offscreen
@@ -23,14 +29,14 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache: pip
-          cache-dependency-path: requirements.txt
+          cache-dependency-path: ${{ matrix.reqs }}
       - name: Instalar biblioteca EGL no Linux (PySide6)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends libegl1
       # Só o necessário para os testes: sem PyInstaller (o executável é gerado à parte).
-      - run: pip install -r requirements.txt pytest==8.4.2 pyflakes==4.1.0
+      - run: pip install -r ${{ matrix.reqs }} pytest==8.4.2 pyflakes==4.1.0
       - run: python -m pyflakes pestinha tests main.py ferramentas conftest.py
       - name: Verificar versão de PySide6 no Linux
         if: runner.os == 'Linux'

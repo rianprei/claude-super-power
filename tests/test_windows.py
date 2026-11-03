@@ -12,7 +12,7 @@ import pytest
 from PySide6.QtCore import QPoint
 from PySide6.QtWidgets import QApplication
 
-from pestinha import config, paths as paths_mod, store
+from pestinha import config, paths as paths_mod, plataforma, store
 from pestinha.app import PestinhaApp, retangulo_logico
 from pestinha.body import pet as pet_mod
 from pestinha.paths import Paths
@@ -53,16 +53,25 @@ def test_troca_espera_o_antivirus_soltar_o_arquivo(tmp_path, monkeypatch):
 
 
 def test_memoria_vai_para_a_pasta_do_usuario_se_o_programa_nao_pode_gravar(tmp_path, monkeypatch):
-    assert paths_mod.memoria_gravavel(tmp_path) == tmp_path / "memory"
+    dados = tmp_path / "AppData" / "Local" / "Claude Super Power"
+    assert paths_mod.memoria_gravavel(tmp_path, dados) == tmp_path / "memory"
+    app_do_mac = tmp_path / "Pestinha.app" / "Contents" / "MacOS"     # nunca grava dentro do .app
+    assert paths_mod.memoria_gravavel(app_do_mac, dados) == dados / "memory"
 
     def negado(**_kw):
         raise PermissionError(13, "Acesso negado")      # Arquivos de Programas: os.access diria que pode
 
     monkeypatch.setattr(paths_mod.tempfile, "TemporaryFile", negado)
-    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path / "AppData" / "Local"))
-    esperado = tmp_path / "AppData" / "Local" / "Claude Super Power" / "memory"
-    assert paths_mod.memoria_gravavel(tmp_path / "Arquivos de Programas") == esperado
-    assert Paths(root=tmp_path, memoria=esperado).permissions == esperado / "permissions.json"
+    assert paths_mod.memoria_gravavel(tmp_path / "Arquivos de Programas", dados) == dados / "memory"
+    assert Paths(root=tmp_path, memoria=dados / "memory").permissions == dados / "memory" / "permissions.json"
+
+
+def test_pasta_de_dados_e_a_do_sistema(monkeypatch):
+    monkeypatch.setenv("LOCALAPPDATA", "C:/Users/ana/AppData/Local")
+    monkeypatch.setenv("XDG_DATA_HOME", "/home/ana/.dados")
+    esperado = {"win32": Path("C:/Users/ana/AppData/Local"), "linux": Path("/home/ana/.dados"),
+                "darwin": Path.home() / "Library" / "Application Support"}
+    assert plataforma.pasta_de_dados() == esperado[sys.platform] / "Claude Super Power"
 
 
 def test_clique_atravessa_a_janela_so_fora_do_corpo(tmp_path, monkeypatch):
@@ -95,4 +104,6 @@ def test_no_windows_o_clique_atravessa_a_aura_de_verdade():
     script = Path(__file__).with_name("janela_real_windows.py")
     r = subprocess.run([sys.executable, str(script)], env=env, capture_output=True,  # noqa: S603  # nosec B603
                        text=True, timeout=60, check=False)
+    if r.returncode == 2:
+        pytest.skip(f"sem desktop interativo para testar o clique: {r.stdout.strip()}")
     assert r.returncode == 0, r.stdout + r.stderr

@@ -15,6 +15,23 @@
     lado continuam valendo e têm prioridade.
   - CI no Windows mais novo, no 2022 e no Windows 11 ARM64, com um teste que abre uma janela de verdade.
     O executável agora também sai em ARM64.
+- macOS (10.14 ou mais novo, Intel e Apple Silicon):
+  - O pet, a bolinha, os cartazes e os painéis sumiam sempre que outro app ficava ativo. O Qt esconde janelas
+    do tipo ferramenta quando o app perde o foco, e o pet nunca pega o foco. Agora ficam visíveis
+    (WA_MacAlwaysShowToolWindow).
+  - Sem sombra nas janelas transparentes: ela ficava para trás como um fantasma a cada quadro.
+  - O clique atravessa a aura do Super Saiyajin (ignoresMouseEvents com o cursor fora do corpo), como no
+    Windows.
+  - O executável é um `Pestinha.app`, com a memória em `~/Library/Application Support/Claude Super Power/`
+    (gravar dentro do .app quebra a assinatura). Sai em três versões: Apple Silicon e Intel (macOS 13+) e
+    uma para Macs antigos (10.14 a 12; Apple Silicon pelo Rosetta).
+  - `requirements-macos-antigo.txt` (PySide6 6.4.3 e numpy 1.26, com Python 3.11) para o macOS 10.14 a 12.
+    A suíte inteira passa com essa combinação, e o CI roda com ela num Mac Intel.
+  - `ferramentas/minimo_macos.py` lê o macOS mínimo de cada binário do app; o build falha se algum passar do
+    alvo. A roda do numpy é forçada para a do macOS mínimo (a padrão pede o macOS 14).
+  - O zip do macOS e o tar.gz do Linux mantêm as permissões e os links (o artefato do GitHub perdia).
+  - Teste com janelas de verdade no Mac do CI; os testes de Windows e macOS não leem mais a área de trabalho
+    de quem roda.
 - O programa aparece como **Claude Super Power** (janelas, bandeja, menus e textos). Por dentro nada muda:
   o pacote continua `pestinha/`, o log `memory/logs/pestinha.log` e a memória no mesmo lugar.
 - Novo personagem: **Claude**, o mascote do Claude Code em blocos 3D (`pets/clawd.json`,

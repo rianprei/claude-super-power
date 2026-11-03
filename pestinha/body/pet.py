@@ -3,8 +3,9 @@ PET - a telinha com olhinhos: janela transparente, desenho e mouse.
 
 A janela é um quadrado transparente maior que o corpo, para caber o corpo
 girado. Só o corpo recebe o mouse: no X11 a região de entrada é recortada no corpo
-(plataforma.regiao_de_clique), sem cortar o desenho; no Windows, com o cursor fora do corpo,
-o clique atravessa a janela inteira (plataforma.atravessar_clique), inclusive a aura semitransparente.
+(plataforma.regiao_de_clique), sem cortar o desenho;
+no Windows e no macOS, com o cursor fora do corpo, o clique atravessa a janela inteira
+(plataforma.atravessar_clique), inclusive a aura semitransparente.
 A janela nunca pega o foco (o teclado continua no seu programa).
 """
 
@@ -58,9 +59,11 @@ def set_no_activate(widget):
 
 
 def overlay_flags():
-    """Janela sem moldura, sempre por cima, que não aparece na barra de tarefas nem recebe foco ao aparecer."""
+    """Janela sem moldura, sempre por cima, que não aparece na barra de tarefas nem recebe foco ao aparecer.
+    Sem sombra: no macOS a sombra de uma janela transparente animada fica para trás como um fantasma."""
     return (
         Qt.WindowType.FramelessWindowHint
+        | Qt.WindowType.NoDropShadowWindowHint
         | Qt.WindowType.Tool
         | Qt.WindowType.WindowStaysOnTopHint
         | Qt.WindowType.WindowDoesNotAcceptFocus
@@ -81,6 +84,7 @@ class PetWindow(QWidget):
         super().__init__(None, overlay_flags())
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
+        self.setAttribute(Qt.WidgetAttribute.WA_MacAlwaysShowToolWindow)    # macOS: não some com outro app ativo
         self.setFixedSize(WIN, WIN)
 
         self.body = Body(x, y, BODY_W / 2, BODY_H / 2)

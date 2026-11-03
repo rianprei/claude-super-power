@@ -15,7 +15,6 @@ Arquivos da versão antiga (tudo solto em memory/) são migrados por pestinha/mi
 originais ficam guardados em memory/legado/<pet>/.
 """
 
-import os
 import re
 import sys
 import tempfile
@@ -31,20 +30,25 @@ ROOT = (PASTA_DO_PROGRAMA if (PASTA_DO_PROGRAMA / "pets").is_dir()
         else Path(getattr(sys, "_MEIPASS", PASTA_DO_PROGRAMA)))
 
 
-def memoria_gravavel(pasta=PASTA_DO_PROGRAMA):
-    """memory/ ao lado do programa; se lá não dá para gravar (Arquivos de Programas, pasta só de leitura),
-    a pasta de dados do usuário: %LOCALAPPDATA% no Windows, ~/.local/share nos outros.
+def memoria_gravavel(pasta=PASTA_DO_PROGRAMA, dados=None):
+    """memory/ ao lado do programa; se lá não dá para gravar (Arquivos de Programas, pasta só de leitura) ou se
+    é um app do macOS (gravar dentro do Pestinha.app quebra a assinatura dele), `dados`/memory, por padrão a
+    pasta do app nos dados do usuário (plataforma.pasta_de_dados).
 
     Testa gravando de verdade: no Windows, os.access não enxerga as permissões (ACL) da pasta.
     """
+    if dados is None:
+        from .plataforma import pasta_de_dados
+        dados = pasta_de_dados()
     local = pasta / "memory"
+    if pasta.name == "MacOS" and pasta.parent.name == "Contents":      # Pestinha.app/Contents/MacOS
+        return dados / "memory"
     try:
         local.mkdir(exist_ok=True)
         with tempfile.TemporaryFile(dir=local):
             pass
     except OSError:
-        base = os.environ.get("LOCALAPPDATA") or Path.home() / ".local" / "share"
-        return Path(base) / "Claude Super Power" / "memory"
+        return dados / "memory"
     return local
 
 ID_DE_PET = re.compile(r"^[a-z0-9][a-z0-9_-]{0,39}$")    # vira nome de pasta: nada de "..", "/" ou espaços

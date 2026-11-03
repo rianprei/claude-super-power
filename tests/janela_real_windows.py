@@ -3,7 +3,8 @@ Prova, num Windows de verdade (Qt nativo, não offscreen), que o clique atravess
 
 Roda num processo à parte, chamado por tests/test_windows.py: abre uma janela igual à do pet (sem moldura, por cima, fundo transparente),
 pintada inteira com alfa baixo como a aura, e pergunta ao Windows quem recebe o clique no meio dela.
-Sai com 0 se o clique atravessa com atravessar_clique(True) e volta para a janela com False.
+Sai com 0 se o clique atravessa com atravessar_clique(True) e volta para a janela com False; com 2 se nem uma
+janela opaca recebe o clique (sessão sem desktop interativo, como no Windows 11 ARM do CI): não dá para testar.
 """
 import sys
 import time
@@ -26,15 +27,16 @@ GA_ROOT = 2
 class Aura(QWidget):
     """Janela do tamanho da do Super Saiyajin, toda com a cor da aura em alfa baixo."""
 
-    def __init__(self):
+    def __init__(self, alfa=40):
         super().__init__(None, overlay_flags())
+        self.alfa = alfa
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
         self.setFixedSize(272, 300)
 
     def paintEvent(self, _event):
         p = QPainter(self)
-        p.fillRect(self.rect(), QColor(255, 200, 40, 40))
+        p.fillRect(self.rect(), QColor(255, 200, 40, self.alfa))
         p.end()
 
 
@@ -52,10 +54,17 @@ def quem_recebe(ponto):
 
 def main():
     app = QApplication(sys.argv)
-    janela = Aura()
+    janela, opaca = Aura(), Aura(alfa=255)
     janela.move(200, 200)
+    opaca.move(600, 200)
     janela.show()
+    opaca.show()
     esperar(1.0)
+    o_esq, o_topo, o_dir, o_base = win32gui.GetWindowRect(int(opaca.winId()))
+    if quem_recebe(((o_esq + o_dir) // 2, (o_topo + o_base) // 2)) != int(opaca.winId()):
+        print("nem a janela opaca recebe o clique: sessão sem desktop interativo")
+        return 2
+    opaca.close()
     hwnd = int(janela.winId())
     esq, topo, dir_, base = win32gui.GetWindowRect(hwnd)
     meio = ((esq + dir_) // 2, (topo + base) // 2)

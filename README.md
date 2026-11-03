@@ -51,9 +51,12 @@ fica salvo localmente e muda o jeito dele com o tempo.
 
 ## Requisitos
 
-- Windows 10 (1809 ou mais novo) ou 11, em x64 ou ARM64; macOS (Quartz/pyobjc) ou Linux com X11.
+- Windows 10 (1809 ou mais novo) ou 11, em x64 ou ARM64; macOS 10.14 (Mojave) ou mais novo, em Intel ou
+  Apple Silicon; ou Linux com X11.
   Windows 7, 8 e 8.1 e Windows de 32 bits não rodam: o Qt 6 (PySide6) não tem versão para eles.
-- Python 3.11 ou mais novo.
+- Python 3.11 ou mais novo. No macOS 10.14 a 12, Python 3.11 e `pip install -r requirements-macos-antigo.txt`
+  (o PySide6 mais novo pede macOS 13; o 6.4.3 é o último que abre no 10.14).
+  macOS 10.13 ou mais antigo não roda: o Qt 6 não tem versão para ele.
 - No Linux, para as janelas e o tempo ocioso: `xdotool`, `wmctrl` e `xprintidle`. Sem eles, o pet continua
   andando, mas não enxerga as janelas.
 - Cerca de 70 MB de RAM com ele rodando.
@@ -186,8 +189,20 @@ O workflow `.github/workflows/executaveis.yml` gera Windows, macOS e Linux em m�
    git push origin v0.8.0
    ```
 
-4. Ao terminar (alguns minutos), a execução tem três artefatos, um por sistema, com a pasta pronta
-   (executável + `assets/` + `pets/`). Baixe pela própria página da execução, na seção **Artifacts**.
+4. Ao terminar (alguns minutos), a execução tem um artefato por sistema. Baixe pela própria página da
+   execução, na seção **Artifacts**. Cada um foi aberto por 8 s na máquina do GitHub antes de virar artefato.
+
+   | Artefato | Para | O que vem |
+   |---|---|---|
+   | `pestinha-windows-x64` | Windows 10 e 11 (x64; também roda no Windows 11 ARM) | `Pestinha.exe` + `assets/` + `pets/` |
+   | `pestinha-windows-arm64` | Windows 11 ARM, nativo | `Pestinha.exe` + `assets/` + `pets/` |
+   | `pestinha-macos-apple-silicon` | Mac M1 ou mais novo, macOS 13 ou mais novo | `Pestinha.app` (zip) |
+   | `pestinha-macos-intel` | Mac Intel, macOS 13 ou mais novo | `Pestinha.app` (zip) |
+   | `pestinha-macos-antigo` | macOS 10.14 a 12, Intel (ou Apple Silicon pelo Rosetta) | `Pestinha.app` (zip) |
+   | `pestinha-linux` | Linux com X11 | `.tar.gz` com o executável + `assets/` + `pets/` |
+
+   O mínimo de macOS de cada app é conferido binário por binário (`ferramentas/minimo_macos.py`), porque o
+   GitHub não tem máquinas com macOS antigo.
 
 Para distribuir para quem não é do projeto, publique esses artefatos na aba **Releases** (use "Draft a new release"
 na tag criada), e não dentro do repositório: cada executável tem cerca de 60 MB.
@@ -195,9 +210,11 @@ na tag criada), e não dentro do repositório: cada executável tem cerca de 60 
 #### Depois de gerar
 
 - Teste o executável numa pasta separada da sua, para não gravar na sua `memory/`.
-- O executável não é assinado: o Windows e o macOS avisam na primeira execução. No macOS, a permissão de
-  Acessibilidade é necessária para o atalho Ctrl+Alt+Shift+B; no Linux, o atalho e as janelas precisam de
-  `xdotool`, `wmctrl` e `xprintidle`.
+- O executável não é assinado: o Windows e o macOS avisam na primeira execução. No macOS, clique no
+  `Pestinha.app` com o botão direito > Abrir (no macOS 15 ou mais novo: Ajustes do Sistema > Privacidade e
+  Segurança > Abrir Mesmo Assim), ou rode `xattr -dr com.apple.quarantine Pestinha.app` no Terminal.
+  No app do macOS a `memory/` fica em `~/Library/Application Support/Claude Super Power/`. No Linux, o atalho
+  e as janelas precisam de `xdotool`, `wmctrl` e `xprintidle`.
 
 ## Licença
 
