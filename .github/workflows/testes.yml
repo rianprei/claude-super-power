@@ -10,19 +10,23 @@ jobs:
     # Windows, macOS e Linux. Repositórios públicos têm minutos grátis nos três.
     # Windows: o mais novo, o 2022 (mesma base do Windows 10 21H2) e o Windows 11 em ARM64.
     # macOS: Apple Silicon (macos-latest) e Intel; e o conjunto compatível (10.14 a 14) num Intel e no macOS 14.
+    # Linux: o mais novo, o 22.04 (onde sai o executável) e o conjunto compatível (glibc 2.28 a 2.34).
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, windows-2022, windows-11-arm, macos-latest, macos-15-intel, ubuntu-latest]
+        os: [windows-latest, windows-2022, windows-11-arm, macos-latest, macos-15-intel, ubuntu-latest, ubuntu-22.04]
         python: ["3.11", "3.14"]       # o mínimo suportado e o mais novo
         reqs: [requirements.txt]
         include:
           - os: macos-15-intel
             python: "3.11"
-            reqs: requirements-macos-compativel.txt
+            reqs: requirements-compativel.txt
           - os: macos-14
             python: "3.11"
-            reqs: requirements-macos-compativel.txt
+            reqs: requirements-compativel.txt
+          - os: ubuntu-22.04
+            python: "3.11"
+            reqs: requirements-compativel.txt
     runs-on: ${{ matrix.os }}
     env:
       QT_QPA_PLATFORM: offscreen
@@ -33,16 +37,22 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: pip
           cache-dependency-path: ${{ matrix.reqs }}
-      - name: Instalar biblioteca EGL no Linux (PySide6)
+      - name: "Linux: EGL e xcb (PySide6), e um X virtual com gerenciador de janelas"
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends libegl1
+          sudo apt-get install -y --no-install-recommends libegl1 libxcb-cursor0 libxkbcommon-x11-0 \
+            libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-shape0 \
+            libxcb-xinerama0 libxcb-xkb1 xvfb openbox
+          Xvfb :99 -screen 0 1280x800x24 -nolisten tcp &
+          sleep 2
+          DISPLAY=:99 openbox &
+          echo "DISPLAY=:99" >> "$GITHUB_ENV"      # o teste do leitor do X11 abre uma janela de verdade
       # Só o necessário para os testes: sem PyInstaller (o executável é gerado à parte).
       - run: pip install -r ${{ matrix.reqs }} pytest==8.4.2 pyflakes==4.1.0
       - run: python -m pyflakes pestinha tests main.py ferramentas conftest.py
       - name: Verificar versão de PySide6 no Linux
-        if: runner.os == 'Linux'
+        if: runner.os == 'Linux' && matrix.reqs == 'requirements.txt'
         run: |
           python -c "import PySide6, shiboken6; assert PySide6.__version__ == '6.11.3' and shiboken6.__version__ == '6.11.3', (PySide6.__version__, shiboken6.__version__)"
       - run: python -m pytest -q

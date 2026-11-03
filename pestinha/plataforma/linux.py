@@ -1,23 +1,25 @@
 """
-Linux (X11): xdotool e wmctrl para as janelas, xprintidle para o tempo ocioso, e pynput para o atalho.
+Linux: o próprio X11 (python-xlib) para as janelas e o tempo ocioso, e pynput para o atalho.
 
-As leituras rodam numa thread própria (o Coletor): cada comando é um subprocesso, e chamá-los
-direto da thread do Qt travava a tela (~100 ms por segundo, com timeout de 1 s cada). As funções
-públicas só leem o último valor coletado, então nunca bloqueiam o desenho.
+Nada de comando externo: antes eram xdotool, wmctrl e xprintidle, que a maioria das distros não instala
+(sem eles o pet não via nada), e o wmctrl somava a posição da janela duas vezes. As leituras rodam numa
+thread própria (o Coletor), com uma conexão X só dela; as funções públicas só leem o último valor
+coletado, então nunca bloqueiam o desenho.
 
-A ordem de empilhamento e as janelas minimizadas vêm do próprio X11 (_NET_CLIENT_LIST_STACKING
-e _NET_WM_STATE, pelo python-xlib): o `wmctrl -l` lista na ordem em que as janelas abriram, não
-de cima para baixo. Janelas de outra área de trabalho ficam de fora.
+A ordem de empilhamento, as minimizadas e a área de trabalho vêm das propriedades padrão (EWMH):
+_NET_CLIENT_LIST_STACKING, _NET_WM_STATE, _NET_WM_DESKTOP e _NET_CURRENT_DESKTOP.
 
-Em Wayland a maior parte dessas leituras não existe: o pet continua andando, mas não enxerga as janelas
-nem o tempo ocioso (fica como se você estivesse sempre ativo). Os comandos são opcionais; se faltarem,
-a leitura correspondente vira o valor padrão. O atalho global só ouve teclas de janelas X11.
+Numa sessão Wayland o pet roda pelo XWayland (preparar_qt): no Wayland nativo uma janela não pode se
+posicionar nem ficar por cima, e ele não andaria. Pelo XWayland ele só enxerga as janelas X11. O tempo
+ocioso vem do X (MIT-SCREEN-SAVER) ou, no GNOME Wayland, do Mutter (gdbus); no KDE Wayland não há como
+ler e fica 0, como se você estivesse sempre ativo. O atalho global só ouve teclas de janelas X11.
 """
 
 import os
-import shutil
+import re
 import threading
 import time
+from typing import Any
 
 import psutil
 
@@ -25,79 +27,55 @@ from ..log import log
 from ._comum import atalho_pynput, rodar
 
 LARGURA_MINIMA, ALTURA_MINIMA = 120, 60
-INTERVALO_OCIOSO = 0.1        # s entre leituras do xprintidle (o app lê a cada 100 ms)
+INTERVALO_OCIOSO = 0.1        # s entre leituras do tempo ocioso pelo X (o app lê a cada 100 ms)
+INTERVALO_OCIOSO_GNOME = 1.0  # s entre leituras pelo gdbus (um subprocesso por leitura)
 INTERVALO_ATIVA = 0.5         # s entre leituras da janela ativa
 INTERVALO_JANELAS = 0.25      # s entre leituras da lista de janelas
 INTERVALO_TELA = 5.0          # s entre leituras do tamanho da tela
+TODAS_AS_AREAS = 0xFFFFFFFF   # _NET_WM_DESKTOP de uma janela fixa em todas as áreas de trabalho
+OCIOSO_GNOME = ["gdbus", "call", "--session", "--dest", "org.gnome.Mutter.IdleMonitor",
+                "--object-path", "/org/gnome/Mutter/IdleMonitor/Core",
+                "--method", "org.gnome.Mutter.IdleMonitor.GetIdletime"]
 
 # no Wayland o pynput só ouve as teclas de programas X11 (XWayland)
 LIMITACAO_ATALHO = ("no Wayland o atalho de pânico só funciona com janelas X11; use o menu da bandeja"
                     if os.environ.get("WAYLAND_DISPLAY") else None)
 
 
-# ---------------- leitura das saídas (puras, testadas) ----------------
+def preparar_qt():
+    """Antes do QApplication: numa sessão Wayland com XWayland, o pet abre como janela X11.
 
-def parse_geometria(texto):
-    """Retângulo (l, t, r, b) a partir de `xdotool getwindowgeometry --shell` (linhas CHAVE=valor)."""
-    campos = {}
-    for linha in (texto or "").splitlines():
-        if "=" in linha:
-            chave, valor = linha.split("=", 1)
-            campos[chave.strip()] = valor.strip()
-    try:
-        x, y = int(campos["X"]), int(campos["Y"])
-        return (x, y, x + int(campos["WIDTH"]), y + int(campos["HEIGHT"]))
-    except (KeyError, ValueError):
-        return None
-
-
-def parse_wmctrl(texto, meu_pid, excluir, desktop_atual=None):
+    No Wayland nativo uma janela não escolhe a própria posição nem fica por cima das outras: o pet não
+    andaria. Quem já escolheu a plataforma (QT_QPA_PLATFORM) é respeitado.
     """
-    [(id, (l, t, r, b), False)] de `wmctrl -lGp`: id desktop pid x y largura altura host título.
-    O título é descartado na hora (nunca sai daqui). Com `desktop_atual`, só fica a área de
-    trabalho atual e as janelas fixas em todas (desktop -1).
+    if os.environ.get("WAYLAND_DISPLAY") and os.environ.get("DISPLAY") and "QT_QPA_PLATFORM" not in os.environ:
+        os.environ["QT_QPA_PLATFORM"] = "xcb"
+
+
+# ---------------- leituras puras (testadas) ----------------
+
+def parse_ocioso_gnome(texto):
+    """Segundos ociosos a partir da resposta do Mutter, `(uint64 1234,)` em ms; None se não veio."""
+    achado = re.search(r"\(uint64 (\d+),\)", texto or "")
+    return int(achado.group(1)) / 1000.0 if achado else None
+
+
+def filtrar_janelas(janelas, meu_pid, desktop_atual):
+    """
+    [(id, (l, t, r, b), False)] das janelas de outros programas, na ordem recebida (de cima para baixo).
+    `janelas`: [(id, (l, t, r, b), pid, desktop, minimizada)]. Ficam de fora o próprio pet, as minimizadas,
+    as pequenas (menus, balões) e as de outra área de trabalho (as fixas em todas ficam).
     """
     achadas = []
-    for linha in (texto or "").splitlines():
-        partes = linha.split(None, 8)
-        if len(partes) < 8:
+    for janela_id, rect, pid, desktop, minimizada in janelas:
+        if pid == meu_pid or minimizada:
             continue
-        try:
-            janela_id, desktop, pid = int(partes[0], 16), int(partes[1]), int(partes[2])
-            x, y, largura, altura = (int(v) for v in partes[3:7])
-        except ValueError:
+        if rect[2] - rect[0] < LARGURA_MINIMA or rect[3] - rect[1] < ALTURA_MINIMA:
             continue
-        if pid == meu_pid or janela_id in excluir or largura < LARGURA_MINIMA or altura < ALTURA_MINIMA:
+        if desktop_atual is not None and desktop not in (None, desktop_atual, TODAS_AS_AREAS):
             continue
-        if desktop_atual is not None and desktop not in (-1, desktop_atual):
-            continue
-        achadas.append((janela_id, (x, y, x + largura, y + altura), False))
+        achadas.append((janela_id, rect, False))
     return achadas
-
-
-def parse_desktop_atual(texto):
-    """Índice da área de trabalho atual em `wmctrl -d` (a linha marcada com *), ou None."""
-    for linha in (texto or "").splitlines():
-        partes = linha.split()
-        if len(partes) >= 2 and partes[1] == "*":
-            try:
-                return int(partes[0])
-            except ValueError:
-                return None
-    return None
-
-
-def ordenar_pelo_x11(achadas, empilhamento, escondidas):
-    """
-    Põe as janelas de cima para baixo e tira as minimizadas, segundo o X11.
-    `empilhamento`: ids de baixo para cima (_NET_CLIENT_LIST_STACKING). Janelas que o X11 não
-    conhece (por exemplo, ids de um compositor que lista também as janelas Wayland) mantêm a
-    ordem do wmctrl, depois das conhecidas.
-    """
-    posicao = {janela: i for i, janela in enumerate(reversed(empilhamento))}      # 0 = topo
-    visiveis = [a for a in achadas if a[0] not in escondidas]
-    conhecidas = sorted((a for a in visiveis if a[0] in posicao), key=lambda a: posicao[a[0]])
-    return conhecidas + [a for a in visiveis if a[0] not in posicao]
 
 
 def cobre_algum_monitor(rect, monitores):
@@ -106,14 +84,20 @@ def cobre_algum_monitor(rect, monitores):
                for m in monitores)
 
 
-# ---------------- X11 direto (empilhamento e minimizadas) ----------------
+# ---------------- X11 direto ----------------
 
 class _X11:
-    """Conexão ao X11 só para ler o empilhamento e o estado das janelas (python-xlib, opcional)."""
+    """Conexão ao X11 (python-xlib) para as leituras; sem python-xlib ou sem servidor X, devolve vazio."""
 
-    def __init__(self):
-        """Abre a conexão; sem python-xlib ou sem servidor X, fica desligado (devolve vazio)."""
-        self.display = None
+    ATOMOS = ("_NET_CLIENT_LIST_STACKING", "_NET_WM_STATE", "_NET_WM_STATE_HIDDEN", "_NET_ACTIVE_WINDOW",
+              "_NET_WM_PID", "_NET_WM_DESKTOP", "_NET_CURRENT_DESKTOP")
+
+    def __init__(self, conectar=True):
+        """Abre a conexão (`conectar=False`: desligado, para os testes não lerem o desktop de verdade)."""
+        self.display: Any = None            # Xlib.display.Display (o python-xlib não tem tipos)
+        self.tem_ocioso = False
+        if not conectar:
+            return
         try:
             from Xlib import X, display, error
         except ImportError:
@@ -124,45 +108,94 @@ class _X11:
         except self._erros:
             self.display = None
             return
-        atom = self.display.intern_atom
-        self._empilhamento = atom("_NET_CLIENT_LIST_STACKING")
-        self._estado = atom("_NET_WM_STATE")
-        self._escondida = atom("_NET_WM_STATE_HIDDEN")
+        self.raiz = self.display.screen().root
+        self._atomo = {nome: self.display.intern_atom(nome) for nome in self.ATOMOS}
+        self.tem_ocioso = self.display.has_extension("MIT-SCREEN-SAVER")     # o XWayland não tem
 
-    def ler(self):
-        """(ids de baixo para cima, ids minimizados). Vazio se não der para ler."""
-        if self.display is None:
-            return [], set()
+    def _prop(self, janela, nome):
+        """Valores (lista de inteiros) da propriedade `nome` da janela; vazia se ela não tem."""
+        valor = janela.get_full_property(self._atomo[nome], self._X.AnyPropertyType)
+        return list(valor.value) if valor is not None else []
+
+    def _janela(self, janela_id):
+        return self.display.create_resource_object("window", janela_id)
+
+    def _retangulo(self, janela):
+        """(l, t, r, b) na tela: o canto vem de translate_coords (a geometria é relativa à moldura)."""
+        tamanho = janela.get_geometry()
+        canto = self.raiz.translate_coords(janela, 0, 0)
+        return (canto.x, canto.y, canto.x + tamanho.width, canto.y + tamanho.height)
+
+    def ocioso(self):
+        """Segundos sem teclado e mouse (MIT-SCREEN-SAVER), ou None se o servidor não informa."""
+        if self.display is None or not self.tem_ocioso:
+            return None
         try:
-            raiz = self.display.screen().root
-            prop = raiz.get_full_property(self._empilhamento, self._X.AnyPropertyType)
-            ids = [int(w) for w in prop.value] if prop else []
-            escondidas = set()
-            for janela in ids:
-                estado = self.display.create_resource_object("window", janela).get_full_property(
-                    self._estado, self._X.AnyPropertyType)
-                if estado is not None and self._escondida in estado.value:
-                    escondidas.add(janela)
+            return self.raiz.screensaver_query_info().idle / 1000.0
         except self._erros:
-            return [], set()
-        return ids, escondidas
+            return None
+
+    def ativa(self):
+        """(pid ou None, retângulo ou None) da janela ativa."""
+        if self.display is None:
+            return None, None
+        try:
+            ids = self._prop(self.raiz, "_NET_ACTIVE_WINDOW")
+            if not ids or not ids[0]:
+                return None, None
+            janela = self._janela(ids[0])
+            pids = self._prop(janela, "_NET_WM_PID")
+            return (pids[0] if pids else None), self._retangulo(janela)
+        except self._erros:
+            return None, None
+
+    def janelas(self):
+        """(área de trabalho atual, [(id, rect, pid, desktop, minimizada)] de cima para baixo)."""
+        if self.display is None:
+            return None, []
+        try:
+            atual = self._prop(self.raiz, "_NET_CURRENT_DESKTOP")
+            empilhamento = self._prop(self.raiz, "_NET_CLIENT_LIST_STACKING")      # de baixo para cima
+        except self._erros:
+            return None, []
+        lidas = []
+        for janela_id in reversed(empilhamento):
+            try:
+                janela = self._janela(janela_id)
+                pids, desktops = self._prop(janela, "_NET_WM_PID"), self._prop(janela, "_NET_WM_DESKTOP")
+                minimizada = self._atomo["_NET_WM_STATE_HIDDEN"] in self._prop(janela, "_NET_WM_STATE")
+                lidas.append((janela_id, self._retangulo(janela), pids[0] if pids else None,
+                              desktops[0] if desktops else None, minimizada))
+            except self._erros:
+                continue            # a janela fechou no meio da leitura
+        return (atual[0] if atual else None), lidas
+
+    def tela(self):
+        """(0, 0, largura, altura) da tela X inteira, ou None."""
+        if self.display is None:
+            return None
+        try:
+            g = self.raiz.get_geometry()
+        except self._erros:
+            return None
+        return (0, 0, g.width, g.height)
 
 
 # ---------------- coletor em segundo plano ----------------
 
 class Coletor:
-    """Roda os comandos do sistema numa thread própria e guarda o último resultado de cada um."""
+    """Faz as leituras numa thread própria e guarda o último resultado de cada uma."""
 
-    def __init__(self):
-        """Descobre quais comandos existem (uma vez só) e começa vazio."""
-        self.tem = {cmd: shutil.which(cmd) is not None for cmd in ("xprintidle", "xdotool", "wmctrl")}
-        self.ocioso = (0.0, time.monotonic())     # (segundos ociosos, quando foi lido)
+    def __init__(self, x11=None, gnome=None):
+        """Começa vazio. `x11` e `gnome` (ler o ocioso pelo Mutter) servem aos testes."""
+        self.ocioso = None                        # (segundos ociosos, quando foi lido); None: não há como ler
         self.processo = "unknown"
         self.retangulo = None
         self.tela = None
-        self.janelas = []                         # parse_wmctrl já ordenado, sem `excluir`
+        self.janelas = []                         # filtrar_janelas, sem `excluir`
         self._proximo = {"ocioso": 0.0, "ativa": 0.0, "janelas": 0.0, "tela": 0.0}
-        self._x11 = None
+        self._x11 = x11                           # aberto na thread do coletor (o Xlib não divide conexão)
+        self._gnome = bool(os.environ.get("WAYLAND_DISPLAY")) if gnome is None else gnome
         self._thread = None
 
     def iniciar(self):
@@ -182,61 +215,42 @@ class Coletor:
 
     def passo(self, agora):
         """Faz as leituras que já venceram."""
+        if self._x11 is None:
+            self._x11 = _X11()
         if agora >= self._proximo["ocioso"]:
-            self._proximo["ocioso"] = agora + INTERVALO_OCIOSO
-            self._ler_ocioso(agora)
+            self._proximo["ocioso"] = agora + self._ler_ocioso(agora)
         if agora >= self._proximo["tela"]:
             self._proximo["tela"] = agora + INTERVALO_TELA
-            self._ler_tela()
+            self.tela = self._x11.tela()
         if agora >= self._proximo["ativa"]:
             self._proximo["ativa"] = agora + INTERVALO_ATIVA
             self._ler_ativa()
         if agora >= self._proximo["janelas"]:
             self._proximo["janelas"] = agora + INTERVALO_JANELAS
-            self._ler_janelas()
+            atual, lidas = self._x11.janelas()
+            self.janelas = filtrar_janelas(lidas, os.getpid(), atual)
 
     def _ler_ocioso(self, agora):
-        """Tempo ocioso pelo xprintidle (sem ele: 0, como se você estivesse sempre ativo)."""
-        if not self.tem["xprintidle"]:
-            return
-        texto = (rodar(["xprintidle"]) or "").strip()
-        if texto.isdigit():
-            self.ocioso = (int(texto) / 1000.0, agora)
-
-    def _ler_tela(self):
-        """Tamanho da tela X inteira (usado só quando o Qt não informa os monitores)."""
-        if not self.tem["xdotool"]:
-            return
-        partes = (rodar(["xdotool", "getdisplaygeometry"]) or "").split()
-        if len(partes) == 2 and all(v.isdigit() for v in partes):
-            self.tela = (0, 0, int(partes[0]), int(partes[1]))
+        """Tempo ocioso pelo X ou, no GNOME Wayland, pelo Mutter. Devolve quantos segundos esperar."""
+        valor = self._x11.ocioso()
+        if valor is not None:
+            self.ocioso = (valor, agora)
+            return INTERVALO_OCIOSO
+        if self._gnome:
+            valor = parse_ocioso_gnome(rodar(OCIOSO_GNOME))
+            if valor is None:
+                self._gnome = False                 # não é GNOME (ou não respondeu): não tenta de novo
+            else:
+                self.ocioso = (valor, agora)
+        return INTERVALO_OCIOSO_GNOME
 
     def _ler_ativa(self):
         """Programa e retângulo da janela ativa."""
-        if not self.tem["xdotool"]:
-            return
-        janela = (rodar(["xdotool", "getactivewindow"]) or "").strip()
-        if not janela:
-            self.processo, self.retangulo = "unknown", None
-            return
-        pid = (rodar(["xdotool", "getwindowpid", janela]) or "").strip()
+        pid, self.retangulo = self._x11.ativa()
         try:
-            self.processo = psutil.Process(int(pid)).name().lower()
-        except (ValueError, psutil.Error):
+            self.processo = psutil.Process(pid).name().lower() if pid else "unknown"
+        except psutil.Error:
             self.processo = "unknown"
-        self.retangulo = parse_geometria(rodar(["xdotool", "getwindowgeometry", "--shell", janela]))
-
-    def _ler_janelas(self):
-        """Janelas visíveis da área de trabalho atual, de cima para baixo."""
-        if not self.tem["wmctrl"]:
-            self.janelas = []
-            return
-        desktop = parse_desktop_atual(rodar(["wmctrl", "-d"]))
-        achadas = parse_wmctrl(rodar(["wmctrl", "-lGp"]), os.getpid(), set(), desktop)
-        if self._x11 is None:
-            self._x11 = _X11()
-        empilhamento, escondidas = self._x11.ler()
-        self.janelas = ordenar_pelo_x11(achadas, empilhamento, escondidas)
 
 
 _coletor = None
@@ -271,9 +285,9 @@ def _monitores():
 # ---------------- interface da plataforma ----------------
 
 def ocioso_segundos():
-    """Segundos sem teclado e mouse (último xprintidle + o tempo desde a leitura); 0 sem xprintidle."""
+    """Segundos sem teclado e mouse (última leitura + o tempo desde ela); 0 se não há como ler."""
     dados = _dados()
-    if not dados.tem["xprintidle"]:
+    if dados.ocioso is None:
         return 0.0
     valor, quando = dados.ocioso
     return valor + max(0.0, time.monotonic() - quando)

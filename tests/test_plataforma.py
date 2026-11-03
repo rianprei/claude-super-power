@@ -5,6 +5,8 @@ janelas do Quartz) são testadas com saídas de exemplo, em qualquer sistema.
 Não há Mac nem Linux nos testes automatizados: o caminho real desses sistemas ainda precisa ser
 testado numa máquina de verdade (ver README).
 """
+import os
+import subprocess  # nosec B404 - roda o próprio Python com um script fixo dos testes
 import sys
 from pathlib import Path
 
@@ -47,26 +49,43 @@ def test_a_plataforma_escolhida_e_a_do_sistema_atual():
     assert plataforma._backend is esperado
 
 
-def test_geometria_do_xdotool():
-    texto = "WINDOW=12345\nX=100\nY=50\nWIDTH=800\nHEIGHT=600\nSCREEN=0\n"
-    assert linux.parse_geometria(texto) == (100, 50, 900, 650)
-    assert linux.parse_geometria("") is None
-    assert linux.parse_geometria("X=abc\nY=1\nWIDTH=2\nHEIGHT=3") is None
-
-
-def test_wmctrl_pula_o_proprio_pet_pequenas_e_excluidas():
-    saida = "0x01a00003  0 2222  10 20 1280 720 host Tela de um documento privado\n0x01b00004  0 4444  0 0 1920 1080 host Pestinha (o próprio pet)\n0x01c00005  0 3333  0 0 80 40 host janelinha pequena\n0x01d00006  0 5555  30 40 500 300 host Terminal - bash\n0x01e00007  0 6666  0 0 900 700 host excluída pelo app"
-    achadas = linux.parse_wmctrl(saida, meu_pid=4444, excluir={0x01e00007})
-    assert achadas == [
-        (0x01a00003, (10, 20, 1290, 740), False),
-        (0x01d00006, (30, 40, 530, 340), False),
+def test_janelas_do_x11_pulam_o_proprio_pet_pequenas_e_minimizadas():
+    lidas = [
+        (0xA, (10, 20, 1290, 740), 2222, 0, False),
+        (0xB, (0, 0, 1920, 1080), 4444, 0, False),       # o próprio pet
+        (0xC, (0, 0, 80, 40), 3333, 0, False),           # janelinha pequena
+        (0xD, (30, 40, 530, 340), 5555, 0, True),        # minimizada
+        (0xE, (30, 40, 530, 340), None, None, False),    # sem pid nem área: fica
     ]
+    assert linux.filtrar_janelas(lidas, meu_pid=4444, desktop_atual=0) == [
+        (0xA, (10, 20, 1290, 740), False), (0xE, (30, 40, 530, 340), False)]
 
 
-def test_wmctrl_nao_guarda_titulo():
-    achadas = linux.parse_wmctrl("0x01a00003  0 2222  10 20 500 300 host Senha do banco", 1, set())
-    assert achadas == [(0x01a00003, (10, 20, 510, 320), False)]
-    assert "Senha" not in repr(achadas)
+def test_janelas_de_outra_area_de_trabalho_ficam_de_fora():
+    lidas = [(1, (0, 0, 500, 400), 10, 0, False), (2, (0, 0, 500, 400), 11, 1, False),
+             (3, (0, 0, 500, 400), 12, linux.TODAS_AS_AREAS, False)]
+    assert [j[0] for j in linux.filtrar_janelas(lidas, 1, desktop_atual=0)] == [1, 3]
+    assert [j[0] for j in linux.filtrar_janelas(lidas, 1, desktop_atual=None)] == [1, 2, 3]
+
+
+def test_ocioso_do_gnome_vem_em_milissegundos():
+    assert linux.parse_ocioso_gnome("(uint64 2500,)\n") == 2.5
+    assert linux.parse_ocioso_gnome("Error: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown") is None
+    assert linux.parse_ocioso_gnome(None) is None
+
+
+def test_no_wayland_o_pet_abre_pelo_xwayland(monkeypatch):
+    for nome in ("WAYLAND_DISPLAY", "DISPLAY", "QT_QPA_PLATFORM"):
+        monkeypatch.delenv(nome, raising=False)
+    monkeypatch.setenv("WAYLAND_DISPLAY", "wayland-0")
+    linux.preparar_qt()
+    assert "QT_QPA_PLATFORM" not in os.environ          # sem XWayland: fica no Wayland
+    monkeypatch.setenv("DISPLAY", ":1")
+    linux.preparar_qt()
+    assert os.environ["QT_QPA_PLATFORM"] == "xcb"
+    monkeypatch.setenv("QT_QPA_PLATFORM", "wayland")     # quem escolheu é respeitado
+    linux.preparar_qt()
+    assert os.environ["QT_QPA_PLATFORM"] == "wayland"
 
 
 @pytest.mark.skipif(sys.platform != "darwin", reason="Requer backend macOS")
@@ -149,3 +168,15 @@ def test_atividade_reconhece_nomes_de_todos_os_sistemas():
     assert detect_activity("Spotify", 0.0, 300.0) == "MUSIC"
     assert detect_activity("programa-desconhecido", 0.0, 300.0) == "IDLE"
     assert detect_activity("code", 400.0, 300.0) == "AWAY"
+
+
+@pytest.mark.skipif(not sys.platform.startswith("linux") or not os.environ.get("DISPLAY"),
+                    reason="precisa de um X de verdade (DISPLAY)")
+def test_no_x11_de_verdade_o_leitor_enxerga_as_janelas():
+    env = dict(os.environ, QT_QPA_PLATFORM="xcb")
+    script = Path(__file__).with_name("janela_real_linux.py")
+    r = subprocess.run([sys.executable, str(script)], env=env, capture_output=True,  # noqa: S603  # nosec B603
+                       text=True, timeout=60, check=False)
+    if r.returncode == 2:
+        pytest.skip(r.stdout.strip())
+    assert r.returncode == 0, r.stdout + r.stderr

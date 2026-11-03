@@ -16,7 +16,7 @@ import sys
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QApplication, QDialog, QMessageBox
 
-from pestinha import config
+from pestinha import config, plataforma
 from pestinha.app import PestinhaApp
 from pestinha.paths import Paths, memoria_gravavel
 from pestinha.settings_store import SettingsStore
@@ -38,6 +38,7 @@ def main():
     parser.add_argument("--sair-em", type=float, default=0.0, help="fecha sozinho após N segundos (teste)")
     args = parser.parse_args()
 
+    plataforma.preparar_qt()
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)
 

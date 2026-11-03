@@ -27,13 +27,29 @@
     uma compatível (10.14 a 14; Apple Silicon pelo Rosetta).
   - O PySide6 fica no 6.11.3 nos três sistemas. A etiqueta da roda dele diz macOS 13, mas os módulos pedem
     o 15 (medido binário por binário); o 6.12.0 pede o 26.
-  - `requirements-macos-compativel.txt` (PySide6 6.4.3 e numpy 1.26, com Python 3.11) para o macOS 10.14 a 14.
+  - `requirements-compativel.txt` (PySide6 6.4.3 e numpy 1.26, com Python 3.11) para o macOS 10.14 a 14.
     A suíte inteira passa com essa combinação, e o CI roda com ela num Mac Intel.
   - `ferramentas/minimo_macos.py` lê o macOS mínimo de cada binário do app; o build falha se algum passar do
     alvo. A roda do numpy é forçada para a do macOS mínimo (a padrão pede o macOS 14).
   - O zip do macOS e o tar.gz do Linux mantêm as permissões e os links (o artefato do GitHub perdia).
   - Teste com janelas de verdade no Mac do CI; os testes de Windows e macOS não leem mais a área de trabalho
     de quem roda.
+- Linux (qualquer distro com glibc 2.28 ou mais nova, x64 e ARM64):
+  - Sem programas extras: as janelas, a janela ativa e o tempo ocioso vêm direto do X11 (python-xlib), no
+    lugar de xdotool, wmctrl e xprintidle, que a maioria das distros não instala (sem eles o pet não via
+    nada). O `wmctrl` também somava a posição da janela duas vezes (medido: y=734 virava 1468).
+  - Wayland (padrão no Ubuntu, Fedora, Debian, KDE): o pet abre pelo XWayland. No Wayland nativo a janela
+    não escolhe a posição nem fica por cima, e ele não andaria. O tempo ocioso vem do GNOME (Mutter) quando o
+    X não informa.
+  - Executáveis: x64 (glibc 2.35+), ARM64 (2.39+) e um compatível feito no AlmaLinux 8 com PySide6 6.4.3
+    (glibc 2.28+: Debian 10/11, Ubuntu 20.04, RHEL 8/9, Leap 15). Em pasta, não em arquivo único (que se
+    extrai no /tmp, às vezes noexec). As bibliotecas do xcb que muitas distros não instalam (libxcb-cursor...)
+    vão dentro; as que precisam ser as do sistema (fontconfig, libstdc++, glib, X11, GL) saem
+    (`ferramentas/podar_linux.py`); a fontconfig antiga dava erro de configuração no Fedora novo.
+  - `ferramentas/minimo_glibc.py` confere a glibc de cada binário; o job `distros` abre o app num X de
+    verdade em Debian 11/12/13, Ubuntu 20.04/22.04/24.04, Mint 22, Kali, Fedora, Arch, openSUSE Leap e
+    Tumbleweed, AlmaLinux 8 e Rocky 9.
+  - Teste do leitor do X11 com uma janela de verdade (Xvfb e openbox no CI).
 - O programa aparece como **Claude Super Power** (janelas, bandeja, menus e textos). Por dentro nada muda:
   o pacote continua `pestinha/`, o log `memory/logs/pestinha.log` e a memória no mesmo lugar.
 - Novo personagem: **Claude**, o mascote do Claude Code em blocos 3D (`pets/clawd.json`,

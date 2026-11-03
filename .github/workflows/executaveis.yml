@@ -1,6 +1,7 @@
 name: executáveis
 # Gera o executável de Windows, macOS e Linux. Roda ao criar uma tag (v1.0.0...) ou manualmente.
-# Cada um é aberto aqui mesmo por alguns segundos antes de virar artefato (teste de fumaça).
+# Cada um é aberto aqui mesmo por alguns segundos antes de virar artefato (teste de fumaça); o de Linux
+# também é aberto num X de verdade em várias distros (job distros).
 on:
   push:
     tags: ["v*"]
@@ -22,8 +23,11 @@ jobs:
           - {os: macos-latest, nome: macos-apple-silicon, reqs: requirements.txt, macos_min: "15.0", arch: arm64}
           - {os: macos-15-intel, nome: macos-intel, reqs: requirements.txt, macos_min: "15.0", arch: x86_64}
           # macOS 10.14 a 14: Intel, e Apple Silicon pelo Rosetta
-          - {os: macos-15-intel, nome: macos-compativel, reqs: requirements-macos-compativel.txt, macos_min: "10.14", arch: x86_64}
-          - {os: ubuntu-latest, nome: linux, reqs: requirements.txt}
+          - {os: macos-15-intel, nome: macos-compativel, reqs: requirements-compativel.txt, macos_min: "10.14", arch: x86_64}
+          # Linux: feito na distro mais antiga que o PySide6 aceita (glibc 2.35 no x64, 2.39 no ARM64);
+          # para glibc 2.28 a 2.34, o job linux-compativel
+          - {os: ubuntu-22.04, nome: linux-x64, reqs: requirements.txt, glibc: "2.35"}
+          - {os: ubuntu-24.04-arm, nome: linux-arm64, reqs: requirements.txt, glibc: "2.39"}
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
@@ -31,9 +35,13 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install -r ${{ matrix.reqs }} pyinstaller==6.22.3
-      - name: "Linux: biblioteca EGL (PySide6)"
+      - name: "Linux: bibliotecas do xcb que vão dentro do app (muitas distros não instalam)"
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libegl1
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libegl1 libxcb-cursor0 libxkbcommon-x11-0 \
+            libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-shape0 \
+            libxcb-xinerama0 libxcb-xkb1
       - name: "macOS: numpy da versão mínima do macOS"
         # num macOS novo o pip escolhe a roda do numpy feita para o macOS 14, que não abre nos anteriores
         if: runner.os == 'macOS'
@@ -53,12 +61,20 @@ jobs:
           case "$RUNNER_OS" in
             Windows) EXTRA="--windowed --hidden-import win32timezone"; SEP=";" ;;
             macOS) MODO="--onedir"; EXTRA="--windowed --osx-bundle-identifier io.github.rianprei.claudesuperpower" ;;
+            # Linux: pasta em vez de arquivo único (o arquivo único se extrai no /tmp, que pode ser noexec)
+            Linux) MODO="--onedir" ;;
           esac
           # assets/ e pets/ vão também dentro do executável: baixado sozinho, ele ainda tem os pets
           # (os caminhos de --add-data são relativos à pasta do .spec, build/)
           python -m PyInstaller --noconfirm $MODO $EXTRA --name Pestinha \
             --add-data "../assets${SEP}assets" --add-data "../pets${SEP}pets" \
             --distpath dist --workpath build/work --specpath build main.py
+      - name: "Linux: tirar as bibliotecas do sistema e conferir a glibc de cada binário"
+        if: runner.os == 'Linux'
+        run: |
+          cp -R assets pets dist/Pestinha/
+          python ferramentas/podar_linux.py dist/Pestinha
+          python ferramentas/minimo_glibc.py dist/Pestinha ${{ matrix.glibc }}
       - name: "macOS: conferir a versão mínima de cada binário"
         if: runner.os == 'macOS'
         run: python ferramentas/minimo_macos.py dist/Pestinha.app ${{ matrix.macos_min }} ${{ matrix.arch }}
@@ -70,9 +86,15 @@ jobs:
             dist/Pestinha.app/Contents/MacOS/Pestinha --direto --sair-em 8
             ls "$HOME/Library/Application Support/Claude Super Power/memory/pets"
           else
-            # sozinho numa pasta vazia: usa os pets de dentro do executável e grava a memory/ ao lado
-            mkdir fumaca && cp dist/Pestinha* fumaca/ && cd fumaca
-            if [ "$RUNNER_OS" = "Linux" ]; then export QT_QPA_PLATFORM=offscreen; fi
+            # numa pasta própria: grava a memory/ ao lado (no Windows, sozinho: usa os pets de dentro do .exe)
+            mkdir fumaca
+            if [ "$RUNNER_OS" = "Linux" ]; then
+              cp -R dist/Pestinha/. fumaca/
+              export QT_QPA_PLATFORM=offscreen      # aqui sem X; o job distros abre no X de verdade
+            else
+              cp dist/Pestinha.exe fumaca/
+            fi
+            cd fumaca
             ./Pestinha* --direto --sair-em 8
             ls memory/pets
           fi
@@ -83,12 +105,60 @@ jobs:
           case "$RUNNER_OS" in
             # ditto guarda os links e as permissões de dentro do .app (o zip do artefato perderia)
             macOS) ditto -c -k --keepParent dist/Pestinha.app "entrega/Pestinha-${{ matrix.nome }}.zip" ;;
-            Linux)
-              mkdir pestinha && cp -R dist/Pestinha assets pets pestinha/
-              tar -czf "entrega/Pestinha-${{ matrix.nome }}.tar.gz" pestinha ;;
+            # tar guarda a permissão de execução (o zip do artefato perderia)
+            Linux) tar -czf "entrega/Pestinha-${{ matrix.nome }}.tar.gz" -C dist Pestinha ;;
             *) cp -R dist/Pestinha.exe assets pets entrega/ ;;
           esac
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
           name: pestinha-${{ matrix.nome }}
           path: entrega/
+
+  linux-compativel:
+    # glibc 2.28 a 2.34 (Debian 10 e 11, Ubuntu 20.04, RHEL/Alma/Rocky 8 e 9, openSUSE Leap 15, Mint 20...)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+      - name: Gerar no AlmaLinux 8 (glibc 2.28)
+        run: docker run --rm -v "$PWD:/src" -w /src almalinux:8 sh ferramentas/gerar_linux_compativel.sh
+      - name: Montar a entrega
+        run: mkdir entrega && tar -czf entrega/Pestinha-linux-compativel.tar.gz -C dist Pestinha
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        with:
+          name: pestinha-linux-compativel
+          path: entrega/
+
+  distros:
+    # abre o app de Linux num X virtual dentro de cada distro, só com o que todo desktop tem
+    needs: [executavel, linux-compativel]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {imagem: "debian:12", app: linux-x64}
+          - {imagem: "debian:13", app: linux-x64}
+          - {imagem: "ubuntu:22.04", app: linux-x64}
+          - {imagem: "ubuntu:24.04", app: linux-x64}
+          - {imagem: "linuxmintd/mint22-amd64", app: linux-x64}
+          - {imagem: "kalilinux/kali-rolling", app: linux-x64}
+          - {imagem: "fedora:latest", app: linux-x64}
+          - {imagem: "archlinux:latest", app: linux-x64}
+          - {imagem: "opensuse/tumbleweed", app: linux-x64}
+          - {imagem: "debian:11", app: linux-compativel}
+          - {imagem: "ubuntu:20.04", app: linux-compativel}
+          - {imagem: "almalinux:8", app: linux-compativel}
+          - {imagem: "rockylinux:9", app: linux-compativel}
+          - {imagem: "opensuse/leap:15.6", app: linux-compativel}
+          - {imagem: "fedora:latest", app: linux-compativel}
+          - {imagem: "archlinux:latest", app: linux-compativel}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
+        with:
+          name: pestinha-${{ matrix.app }}
+          path: baixado
+      - run: tar -xzf baixado/Pestinha-${{ matrix.app }}.tar.gz
+      - name: Abrir em ${{ matrix.imagem }}
+        timeout-minutes: 10
+        run: docker run --rm -v "$PWD/Pestinha:/app:ro" -v "$PWD/ferramentas:/f:ro" ${{ matrix.imagem }} sh /f/fumaca_linux.sh

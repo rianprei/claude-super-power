@@ -2,7 +2,6 @@
 import json
 import math
 import sys
-import threading
 import time
 from pathlib import Path
 from unittest.mock import Mock
@@ -209,45 +208,38 @@ def test_rodar_aguenta_bytes_invalidos_na_saida():
     assert saida == "� ok"
 
 
-def test_wmctrl_filtra_outra_area_de_trabalho():
-    saida = "0x0a 0 10 0 0 500 400 host a\n0x0b 1 11 0 0 500 400 host b\n0x0c -1 12 0 0 500 400 host fixa"
-    assert [j[0] for j in linux.parse_wmctrl(saida, 1, set(), desktop_atual=0)] == [0x0a, 0x0c]
-    assert linux.parse_desktop_atual("0  - DG: x\n1  * DG: x\n") == 1
-    assert linux.parse_desktop_atual("") is None
+def test_sentidos_do_linux_leem_na_thread_do_coletor_e_nao_na_do_qt(monkeypatch):
+    x11 = Mock(ocioso=Mock(return_value=2.5), ativa=Mock(return_value=(None, None)),
+               janelas=Mock(return_value=(0, [])), tela=Mock(return_value=None))
+    coletor = linux.Coletor(x11=x11, gnome=False)
+    coletor.passo(time.monotonic())                      # o que a thread de sentidos faz
+    monkeypatch.setattr(linux, "_coletor", coletor)
+    leituras = [x11.ocioso, x11.ativa, x11.janelas, x11.tela]
+    feitas = sum(m.call_count for m in leituras)
+    assert math.isclose(linux.ocioso_segundos(), 2.5, abs_tol=0.5)
+    assert linux.processo_ativo() == "unknown"
+    assert linux.janelas_visiveis(set()) == []
+    assert not linux.tela_cheia()
+    assert sum(m.call_count for m in leituras) == feitas      # ler não toca no X
 
 
-def test_janelas_ficam_de_cima_para_baixo_e_sem_minimizadas():
-    achadas = [(1, (0, 0, 9, 9), False), (2, (0, 0, 9, 9), False), (3, (0, 0, 9, 9), False),
-               (99, (0, 0, 9, 9), False)]
-    ordem = linux.ordenar_pelo_x11(achadas, empilhamento=[1, 3, 2], escondidas={3})
-    assert [j[0] for j in ordem] == [2, 1, 99]           # 2 no topo; 3 minimizada; 99 desconhecida no fim
+def test_ocioso_no_gnome_wayland_vem_do_mutter_e_desiste_fora_dele(monkeypatch):
+    x11 = Mock(ocioso=Mock(return_value=None), ativa=Mock(return_value=(None, None)),
+               janelas=Mock(return_value=(None, [])), tela=Mock(return_value=None))
+    monkeypatch.setattr(linux, "rodar", lambda comando, tempo=1.0: "(uint64 4000,)")
+    coletor = linux.Coletor(x11=x11, gnome=True)
+    coletor.passo(100.0)
+    assert coletor.ocioso == (4.0, 100.0)
+    monkeypatch.setattr(linux, "rodar", lambda comando, tempo=1.0: None)    # KDE Wayland, sem gdbus...
+    outro = linux.Coletor(x11=x11, gnome=True)
+    outro.passo(100.0)
+    assert outro.ocioso is None and outro._gnome is False
 
 
 def test_tela_cheia_vale_para_qualquer_monitor():
     monitores = [(0, 0, 1920, 1080), (1920, 0, 3840, 1080)]
     assert linux.cobre_algum_monitor((1920, 0, 3840, 1080), monitores)
     assert not linux.cobre_algum_monitor((1920, 0, 3000, 1080), monitores)
-
-
-def test_sentidos_do_linux_nao_rodam_comandos_na_thread_do_qt(monkeypatch):
-    chamadas = []
-
-    def rodar_falso(comando, tempo=1.0):
-        chamadas.append((threading.current_thread().name, comando[0]))
-        return {"xprintidle": "2500", "xdotool": "", "wmctrl": ""}.get(comando[0], "")
-
-    monkeypatch.setattr(linux, "rodar", rodar_falso)
-    monkeypatch.setattr(linux, "_X11", lambda: Mock(ler=Mock(return_value=([], set()))))   # sem servidor X real
-    coletor = linux.Coletor()
-    coletor.tem = dict.fromkeys(coletor.tem, True)
-    coletor.passo(time.monotonic())                      # o que a thread de sentidos faz
-    monkeypatch.setattr(linux, "_coletor", coletor)
-    feitas = len(chamadas)
-    assert math.isclose(linux.ocioso_segundos(), 2.5, abs_tol=0.5)
-    assert linux.processo_ativo() == "unknown"
-    assert linux.janelas_visiveis(set()) == []
-    assert not linux.tela_cheia()
-    assert len(chamadas) == feitas                        # ler não roda comando nenhum
 
 
 def test_regiao_de_clique_nao_mexe_em_janela_fora_do_x11():

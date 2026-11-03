@@ -16,6 +16,7 @@ lógicas pela escala de cada tela) ou, se COORDENADAS_LOGICAS, já nas coordenad
     regiao_de_clique(id, rets)   só esses retângulos da janela recebem o mouse (X11; nos outros, nada)
     atravessar_clique(id, sim)   o clique atravessa a janela inteira (Windows e macOS; no X11, nada)
     pasta_de_dados()             pasta do app nos dados do usuário (quando a do programa não serve)
+    preparar_qt()                antes do QApplication (Linux: Wayland abre pelo XWayland)
 """
 
 import os
@@ -40,6 +41,7 @@ sem_foco_nativo = _backend.sem_foco_nativo
 iniciar_atalho = _backend.iniciar_atalho
 LIMITACAO_ATALHO = getattr(_backend, "LIMITACAO_ATALHO", None)
 COORDENADAS_LOGICAS = getattr(_backend, "COORDENADAS_LOGICAS", False)
+preparar_qt = getattr(_backend, "preparar_qt", lambda: None)
 
 
 def _sem_regiao(janela_id, retangulos):

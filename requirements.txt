@@ -1,5 +1,5 @@
 # Para rodar o Pestinha (Python 3.11 ou mais novo). Windows 10/11, macOS 15 ou mais novo, ou Linux (X11).
-# macOS 10.14 a 14: use requirements-macos-compativel.txt.
+# macOS 10.14 a 14: use requirements-compativel.txt.
 # 6.11.3 nos três sistemas, validado no CI. O 6.12.0 provoca abort nativo none_dealloc no Linux e, no macOS,
 # apesar da etiqueta da roda, o Qt dele pede o macOS 14.4 e a libpyside6 o macOS 26 (ferramentas/minimo_macos.py).
 PySide6==6.11.3

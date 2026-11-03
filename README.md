@@ -52,13 +52,16 @@ fica salvo localmente e muda o jeito dele com o tempo.
 ## Requisitos
 
 - Windows 10 (1809 ou mais novo) ou 11, em x64 ou ARM64; macOS 10.14 (Mojave) ou mais novo, em Intel ou
-  Apple Silicon; ou Linux com X11.
+  Apple Silicon; ou Linux com glibc 2.28 ou mais nova (Debian 10+, Ubuntu 20.04+, Mint 20+, Fedora, Arch,
+  Kali, openSUSE, RHEL/Alma/Rocky 8+...), em X11 ou Wayland (pelo XWayland), x64 ou ARM64.
+  Linux com musl (Alpine) não roda o executável.
   Windows 7, 8 e 8.1 e Windows de 32 bits não rodam: o Qt 6 (PySide6) não tem versão para eles.
-- Python 3.11 ou mais novo. No macOS 10.14 a 14, Python 3.11 e `pip install -r requirements-macos-compativel.txt`
+- Python 3.11 ou mais novo. No macOS 10.14 a 14, Python 3.11 e `pip install -r requirements-compativel.txt`
   (o PySide6 6.11.3 pede o macOS 15, medido nos binários; o 6.4.3 é o último que abre no 10.14).
-  macOS 10.13 ou mais antigo não roda: o Qt 6 não tem versão para ele.
-- No Linux, para as janelas e o tempo ocioso: `xdotool`, `wmctrl` e `xprintidle`. Sem eles, o pet continua
-  andando, mas não enxerga as janelas.
+  macOS 10.13 ou mais antigo não roda: o Qt 6 não tem versão para ele. No Linux com glibc 2.28 a 2.34, o mesmo
+  `requirements-compativel.txt`. No Linux, o `pip` compila o `evdev` (dependência do pynput): precisa de `gcc` e
+  dos cabeçalhos do kernel e do Python. O executável não precisa de nada disso.
+- No Linux não precisa de nenhum programa extra: as janelas e o tempo ocioso vêm direto do X11.
 - Cerca de 70 MB de RAM com ele rodando.
 
 ## Instalação e uso
@@ -103,8 +106,8 @@ novo no item do menu ou em "Fechar painéis" na bandeja.
 
 Ele roda só no seu computador e não envia nada para a internet. Lê o **nome** do programa em primeiro
 plano, o tempo sem usar teclado e mouse, a posição do cursor e a geometria das janelas. **Nunca** lê
-conteúdo de janela e nunca guarda nem usa o título (no Linux e no macOS ele vem junto na lista de
-janelas e é descartado na hora). Tudo o que ele grava fica em `memory/` e pode ser apagado pela tela de
+conteúdo de janela e nunca guarda nem usa o título (no macOS ele vem junto na lista de janelas e é
+descartado na hora). Tudo o que ele grava fica em `memory/` e pode ser apagado pela tela de
 configurações. Detalhes em [PRIVACIDADE.md](PRIVACIDADE.md).
 
 ## Personalizar
@@ -199,7 +202,13 @@ O workflow `.github/workflows/executaveis.yml` gera Windows, macOS e Linux em m�
    | `pestinha-macos-apple-silicon` | Mac M1 ou mais novo, macOS 15 ou mais novo | `Pestinha.app` (zip) |
    | `pestinha-macos-intel` | Mac Intel, macOS 15 ou mais novo | `Pestinha.app` (zip) |
    | `pestinha-macos-compativel` | macOS 10.14 a 14, Intel (ou Apple Silicon pelo Rosetta) | `Pestinha.app` (zip) |
-   | `pestinha-linux` | Linux com X11 | `.tar.gz` com o executável + `assets/` + `pets/` |
+   | `pestinha-linux-x64` | Linux x64 com glibc 2.35+ (Debian 12+, Ubuntu 22.04+, Mint 21+, Fedora, Arch, Kali...) | `.tar.gz`: pasta `Pestinha/` |
+   | `pestinha-linux-arm64` | Linux ARM64 com glibc 2.39+ (Ubuntu 24.04+, Debian 13+, Raspberry Pi OS novo...) | `.tar.gz`: pasta `Pestinha/` |
+   | `pestinha-linux-compativel` | Linux x64 com glibc 2.28 a 2.34 (Debian 10/11, Ubuntu 20.04, RHEL 8/9, Leap 15...) | `.tar.gz`: pasta `Pestinha/` |
+
+   No Linux: `tar -xzf Pestinha-linux-x64.tar.gz` e `./Pestinha/Pestinha`. O de Linux também é aberto num X de
+   verdade em 16 combinações de distro e app (job `distros`), só com o que todo desktop tem. A glibc mínima é
+   conferida binário por binário (`ferramentas/minimo_glibc.py`).
 
    O mínimo de macOS de cada app é conferido binário por binário (`ferramentas/minimo_macos.py`), porque o
    GitHub não tem máquinas com macOS antigo.
@@ -213,8 +222,7 @@ na tag criada), e não dentro do repositório: cada executável tem cerca de 60 
 - O executável não é assinado: o Windows e o macOS avisam na primeira execução. No macOS, clique no
   `Pestinha.app` com o botão direito > Abrir (no macOS 15 ou mais novo: Ajustes do Sistema > Privacidade e
   Segurança > Abrir Mesmo Assim), ou rode `xattr -dr com.apple.quarantine Pestinha.app` no Terminal.
-  No app do macOS a `memory/` fica em `~/Library/Application Support/Claude Super Power/`. No Linux, o atalho
-  e as janelas precisam de `xdotool`, `wmctrl` e `xprintidle`.
+  No app do macOS a `memory/` fica em `~/Library/Application Support/Claude Super Power/`.
 
 ## Licença
 
@@ -226,10 +234,12 @@ As imagens e os textos de `assets/` não estão cobertos por esta licença
 
 ## Limitações conhecidas
 
-- macOS e Linux ainda não foram testados numa máquina real: a parte de leitura das janelas e do teclado foi
-  escrita e testada só nas partes de texto (ver `tests/test_plataforma.py`).
+- Os testes com janelas de verdade rodam no CI (Windows, macOS e Linux com Xvfb e openbox) e o app é aberto
+  em várias distros, mas sem uma pessoa olhando a tela: o desenho em si não é conferido.
 - No macOS, o pet precisa da permissão de Acessibilidade para o atalho Ctrl+Alt+Shift+B funcionar.
-- No Linux com Wayland, o pet não enxerga janelas nem o tempo ocioso, e o atalho global não funciona.
+- No Linux com Wayland, o pet roda pelo XWayland: enxerga só as janelas de programas X11, o atalho global só
+  ouve teclas deles, e o tempo ocioso vem do GNOME (no KDE Wayland não há como ler: fica como se você estivesse
+  sempre ativo).
 - Pouco testado com escala de tela acima de 100% e com vários monitores (a conversão por tela, para DPI
   misto no Windows, é testada só com telas simuladas).
 - Jogos em janela sem borda podem não ser detectados como tela cheia.

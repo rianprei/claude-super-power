@@ -20,4 +20,6 @@ python ferramentas/gerar_doc_rede.py
 | `gerar_panfleto.py` | Desenha pets/jorge/bolinha_papel.png: um panfleto de mentoria amassado, que o Jorge atira na revolução. |
 | `gerar_readmes.py` | Gera pestinha/README.md e o README de cada camada a partir das docstrings dos módulos. |
 | `medir_cartazes.py` | Mede se cada frase do cartazes.txt de cada pet cabe na placa em que aparece, com as fontes de verdade. |
+| `minimo_glibc.py` | Confere a glibc mínima de cada binário de um app empacotado (a pasta do PyInstaller, no Linux). |
 | `minimo_macos.py` | Confere o macOS mínimo de cada binário de um app empacotado (Pestinha.app ou a pasta do PyInstaller). |
+| `podar_linux.py` | Tira do app de Linux (pasta do PyInstaller) as bibliotecas que todo desktop já tem e que precisam ser as do próprio sistema. |

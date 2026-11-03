@@ -1,0 +1,13 @@
+# Sistemas mais antigos, com Python 3.11: macOS 10.14 a 14 (Mojave a Sonoma) e Linux com glibc 2.28 a 2.33
+# (Debian 10 e 11, Ubuntu 20.04, RHEL/Alma/Rocky 8, openSUSE Leap 15, Mint 20...).
+# O PySide6 6.11.3 (requirements.txt) pede macOS 15 (medido nos binários, não na etiqueta da roda) e glibc 2.34;
+# o 6.4.3 é o último que abre no macOS 10.14 e pede glibc 2.28. Ele foi compilado com numpy 1.x, por isso o
+# numpy fica no 1.26. A suíte de testes passa inteira com esta combinação (Linux e macOS 14, no CI).
+PySide6==6.4.3
+numpy==1.26.4
+psutil>=7.2.2
+pynput>=1.7.7; sys_platform == "linux"
+python-xlib>=0.33; sys_platform == "linux"
+pyobjc-framework-Quartz==12.1; sys_platform == "darwin"
+pyobjc-framework-Cocoa==12.1; sys_platform == "darwin"
+quickmachotkey==2025.7.28; sys_platform == "darwin"

@@ -17,14 +17,13 @@ import pytest
 def _sem_desktop_real(monkeypatch):
     """Os sentidos não leem o desktop de quem roda os testes (janela ativa, tela cheia, lista de janelas).
 
-    No Linux, o coletor fica sem comandos; no Windows e no macOS, as leituras viram um desktop vazio
+    No Linux, o coletor fica sem conexão com o X; no Windows e no macOS, as leituras viram um desktop vazio
     (no Windows 11 ARM do CI a janela da frente cobre a tela e o app achava que era tela cheia).
     """
     from pestinha import plataforma
     from pestinha.plataforma import linux
-    coletor = linux.Coletor()
-    coletor.tem = dict.fromkeys(coletor.tem, False)       # sem comandos: sem subprocesso e sem thread
-    monkeypatch.setattr(linux, "_coletor", coletor)
+    # sem X e sem gdbus: nem conexão, nem subprocesso, nem thread
+    monkeypatch.setattr(linux, "_coletor", linux.Coletor(x11=linux._X11(conectar=False), gnome=False))
     if plataforma._backend is not linux:
         monkeypatch.setattr(plataforma, "tela_cheia", lambda: False)
         monkeypatch.setattr(plataforma, "retangulo_ativo", lambda *_a, **_k: None)
