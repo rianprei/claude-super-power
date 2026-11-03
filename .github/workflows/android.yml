@@ -34,7 +34,8 @@ jobs:
             "platforms;android-35" "build-tools;35.0.0" "platform-tools" >/dev/null
       - name: PySide6 de desktop (a ferramenta) e as rodas do Android
         run: |
-          pip install "PySide6==$PYSIDE" buildozer cython
+          # jinja2, pkginfo e tqdm: a ferramenta usa e não declara
+          pip install "PySide6==$PYSIDE" buildozer cython jinja2 pkginfo tqdm packaging
           BASE=https://download.qt.io/official_releases/QtForPython
           mkdir rodas
           curl -fsSL -o "rodas/pyside6.whl" "$BASE/pyside6/pyside6-$PYSIDE-$PYSIDE-cp310-abi3-android_${{ matrix.arch }}.whl"
