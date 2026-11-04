@@ -1,0 +1,5 @@
+<!-- Entra dentro da <activity> do manifesto (pela chave android.manifest.intent_filters do buildozer: é o único
+     ponto do template do bootstrap Qt dentro dela). O Qt lê os meta-dados da activity, não os do <application>:
+     com isto ele continua rodando com a activity em segundo plano, e o pet segue vivo flutuando sobre os
+     outros apps. Sem isto o Qt congela o Python assim que a activity sai da frente. -->
+<meta-data android:name="android.app.background_running" android:value="true"/>

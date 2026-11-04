@@ -23,7 +23,8 @@ python3, shiboken6 e PySide6; aqui ele ganha o resto, antes do build:
 - fora do pacote: testes, ferramentas, documentação, executáveis de desktop e a memória local;
 - o pet flutuando sobre os outros apps, como no PC: a activity de entrada e a Ponte (android_java/, ver
   pestinha/plataforma/android.py), a permissão SYSTEM_ALERT_WINDOW ("Exibir sobre outros apps") e o Qt
-  continuando a rodar com a activity em segundo plano (android.app.background_running).
+  continuando a rodar com a activity em segundo plano (android.app.background_running, que o Qt lê da
+  <activity>: entra por ferramentas/android_atividade.xml).
 """
 
 from __future__ import annotations
@@ -42,7 +43,7 @@ FORA = "tests,ferramentas,docs,executáveis,build,dist,memory,bin,.github,.build
 JAVA = Path(__file__).resolve().parent.parent / "android_java"
 ENTRADA = "org.claudesuperpower.Entrada"
 PERMISSOES = ("SYSTEM_ALERT_WINDOW", "PACKAGE_USAGE_STATS")     # flutuar; ver o app em uso (como no PC)
-META_DADOS = "android.app.background_running=true"
+ATIVIDADE = Path(__file__).resolve().parent / "android_atividade.xml"      # meta-dados dentro da <activity>
 # Android 10 com o PySide6 6.12: a libshiboken6 dele usa TLS nativo do ELF, que o Android 9 não carrega
 # ("dlopen failed: unknown reloc type 16", visto no emulador com API 28)
 API_MINIMA = os.environ.get("PESTINHA_API_MINIMA", "29")
@@ -92,7 +93,7 @@ def main() -> None:
             copiar_receitas(Path(P4A_RECEITAS).resolve(), Path(config.recipe_dir))
         self.set_value("app", "android.add_src", str(JAVA), raise_warning=False)
         self.set_value("app", "android.entrypoint", ENTRADA, raise_warning=False)
-        self.set_value("app", "android.meta_data", META_DADOS, raise_warning=False)
+        self.set_value("app", "android.manifest.intent_filters", str(ATIVIDADE), raise_warning=False)
         atuais = self.get_value("app", "android.permissions", ignore_fail=True) or ""
         self.set_value("app", "android.permissions", somar_permissoes(atuais, PERMISSOES), raise_warning=False)
         self.update_config()
