@@ -13,7 +13,10 @@ instalar() {
         export DEBIAN_FRONTEND=noninteractive
         pacotes="xvfb libegl1 libgl1 fontconfig fonts-dejavu-core libglib2.0-0 libdbus-1-3"
         # shellcheck disable=SC2086
-        if ! { apt-get update -qq && apt-get install -y -qq --no-install-recommends $pacotes >/dev/null; }; then
+        apt-get update -qq || true
+        # Ubuntu 16.04: a EGL e a GL ainda se chamavam libegl1-mesa e libgl1-mesa-glx
+        apt-cache policy libegl1 2>/dev/null | grep -q 'Candidate: [0-9]' || pacotes="$(echo "$pacotes" | sed 's/libegl1 libgl1/libegl1-mesa libgl1-mesa-glx/')"
+        if ! apt-get install -y -qq --no-install-recommends $pacotes >/dev/null; then
             # Debian antigo: os pacotes saíram do espelho principal e foram para o archive.debian.org
             sed -i -e 's|http://deb.debian.org|http://archive.debian.org|g' \
                 -e 's|http://security.debian.org|http://archive.debian.org|g' /etc/apt/sources.list
@@ -23,7 +26,14 @@ instalar() {
     elif command -v dnf >/dev/null; then
         dnf install -y -q xorg-x11-server-Xvfb mesa-libEGL mesa-libGL fontconfig dejavu-sans-fonts glib2 dbus-libs >/dev/null
     elif command -v yum >/dev/null; then
-        yum install -y -q xorg-x11-server-Xvfb mesa-libEGL mesa-libGL fontconfig dejavu-sans-fonts glib2 dbus-libs >/dev/null
+        pacotes="xorg-x11-server-Xvfb mesa-libEGL mesa-libGL fontconfig dejavu-sans-fonts glib2 dbus-libs"
+        # shellcheck disable=SC2086
+        if ! yum install -y -q $pacotes >/dev/null 2>&1; then
+            # CentOS 7: os espelhos saíram do ar, os pacotes ficaram no vault.centos.org
+            sed -i -e 's|^mirrorlist=|#mirrorlist=|' -e 's|^#\{0,1\}baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|' \
+                /etc/yum.repos.d/CentOS-*.repo
+            yum install -y -q $pacotes >/dev/null
+        fi
     elif command -v pacman >/dev/null; then
         pacman -Sy --noconfirm --needed xorg-server-xvfb mesa fontconfig ttf-dejavu glib2 dbus >/dev/null
     elif command -v zypper >/dev/null; then
@@ -37,6 +47,8 @@ instalar() {
 . /etc/os-release
 echo "== $PRETTY_NAME · $(ldd --version 2>&1 | head -n 1)"
 instalar
+# todo sistema instalado tem um machine-id; o de um container pode vir vazio, e a libdbus aborta sem ele
+[ -s /etc/machine-id ] || tr -d '-' </proc/sys/kernel/random/uuid >/etc/machine-id
 
 Xvfb :99 -screen 0 1280x800x24 -nolisten tcp >/dev/null 2>&1 &
 sleep 2

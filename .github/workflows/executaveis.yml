@@ -137,9 +137,23 @@ jobs:
           name: pestinha-linux-compativel
           path: entrega/
 
+  linux-legado:
+    # glibc 2.17 a 2.27 (CentOS/RHEL 7, Ubuntu 16.04 e 18.04, Debian 9...): Python 3.8 e Qt 5.15
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+      - name: Gerar no CentOS 7 (manylinux2014, glibc 2.17)
+        run: docker run --rm -v "$PWD:/src" -w /src quay.io/pypa/manylinux2014_x86_64 sh ferramentas/gerar_linux_legado.sh
+      - name: Montar a entrega
+        run: mkdir entrega && tar -czf entrega/Pestinha-linux-legado.tar.gz -C dist Pestinha
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        with:
+          name: pestinha-linux-legado
+          path: entrega/
+
   distros:
     # abre o app de Linux num X virtual dentro de cada distro, só com o que todo desktop tem
-    needs: [executavel, linux-compativel]
+    needs: [executavel, linux-compativel, linux-legado]
     strategy:
       fail-fast: false
       matrix:
@@ -160,6 +174,10 @@ jobs:
           - {imagem: "opensuse/leap:15.6", app: linux-compativel}
           - {imagem: "fedora:latest", app: linux-compativel}
           - {imagem: "archlinux:latest", app: linux-compativel}
+          - {imagem: "centos:7", app: linux-legado}
+          - {imagem: "ubuntu:16.04", app: linux-legado}
+          - {imagem: "ubuntu:18.04", app: linux-legado}
+          - {imagem: "fedora:latest", app: linux-legado}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
