@@ -17,7 +17,7 @@ sleep 45
 adb logcat -d >logcat.txt
 adb exec-out screencap -p >tela.png
 falhou=0
-if ! adb shell pidof "$PACOTE" >/dev/null; then
+if ! adb shell ps -A | grep -q "$PACOTE"; then
     echo "FALHOU: o app não está mais rodando"
     falhou=1
 fi
@@ -25,7 +25,7 @@ if grep -E "Traceback|FATAL EXCEPTION|Fatal signal|Fatal Python error" logcat.tx
     echo "FALHOU: erro no logcat"
     falhou=1
 fi
-if ! adb shell run-as "$PACOTE" ls "files/Claude Super Power/memory/pets"; then
+if ! adb shell "run-as $PACOTE ls 'files/Claude Super Power/memory/pets'"; then     # aspas: o adb junta tudo numa linha
     echo "FALHOU: não gravou a memória"
     falhou=1
 fi

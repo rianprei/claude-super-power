@@ -2,7 +2,7 @@
 Android: o pet mora dentro do próprio app. O Android não deixa um app Qt flutuar sobre os outros nem ler
 as janelas, o programa em primeiro plano ou o tempo ocioso deles, e não há atalho de teclado global. Tudo
 isso devolve o valor neutro: o pet anda, brinca, sente e aprende na tela do app, e o menu abre com um toque
-longo nele (pet.py).
+longo nele (pet.py). Mínimo: Android 10 (as rodas do PySide6 não carregam no 9).
 """
 
 from __future__ import annotations

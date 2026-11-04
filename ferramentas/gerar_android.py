@@ -1,5 +1,5 @@
 """
-Gera o APK do Android com o pyside6-android-deploy (PySide6 6.12, Python 3.14 no aparelho, Android 9 ou mais
+Gera o APK do Android com o pyside6-android-deploy (PySide6 6.12, Python 3.14 no aparelho, Android 10 ou mais
 novo, arm64-v8a ou x86_64). Na raiz do projeto, com o PySide6 de desktop da mesma versão instalado:
 
     python ferramentas/gerar_android.py --name ClaudeSuperPower --wheel-pyside pyside6-...android_aarch64.whl \
@@ -7,6 +7,7 @@ novo, arm64-v8a ou x86_64). Na raiz do projeto, com o PySide6 de desktop da mesm
 
 Os argumentos são os do pyside6-android-deploy. A ferramenta escreve um buildozer.spec só com
 python3, shiboken6 e PySide6; aqui ele ganha o resto, antes do build:
+- Android 10 (API 29) como mínimo (a ferramenta diz 28, mas as rodas não abrem no 9);
 - numpy (a rede neural do pet);
 - os arquivos de conteúdo dos pets (json, txt e imagens), que não são .py;
 - fora do pacote: testes, ferramentas, documentação, executáveis de desktop e a memória local.
@@ -23,6 +24,9 @@ import PySide6
 REQUISITOS = "python3,shiboken6,PySide6,numpy"
 EXTENSOES = "py,png,jpg,jpeg,gif,webp,json,txt"
 FORA = "tests,ferramentas,docs,executáveis,build,dist,memory,bin,.github,.buildozer"
+# Android 10: a libshiboken6 das rodas usa TLS nativo do ELF, que o Android 9 não carrega
+# ("dlopen failed: unknown reloc type 16", visto no emulador com API 28)
+API_MINIMA = "29"
 
 
 def main() -> None:
@@ -39,6 +43,8 @@ def main() -> None:
         self.set_value("app", "requirements", REQUISITOS)
         self.set_value("app", "source.include_exts", EXTENSOES, raise_warning=False)
         self.set_value("app", "source.exclude_dirs", FORA, raise_warning=False)
+        self.set_value("app", "android.minapi", API_MINIMA, raise_warning=False)
+        self.set_value("app", "android.ndk_api", API_MINIMA, raise_warning=False)
         self.update_config()
 
     buildozer.BuildozerConfig.__init__ = completar

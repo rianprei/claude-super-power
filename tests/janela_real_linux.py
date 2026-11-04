@@ -49,13 +49,15 @@ def main():
     janela.show()
     esperar(1.5)
     canto = janela.mapToGlobal(QPoint(0, 0))
-    esperado = (canto.x(), canto.y(), canto.x() + janela.width(), canto.y() + janela.height())
+    escala = janela.devicePixelRatioF()           # o X11 fala em pixels físicos; o Qt 5 escala pelo DPI da tela
+    esperado = tuple(round(v * escala) for v in
+                     (canto.x(), canto.y(), canto.x() + janela.width(), canto.y() + janela.height()))
     atual, lidas = x11.janelas()
     minhas = [j for j in lidas if j[2] == os.getpid()]
     print(f"área {atual} · {len(lidas)} janela(s) · minhas: {minhas} · esperado {esperado}")
     vistas_por_outro = linux.filtrar_janelas(lidas, -1, atual)
     vistas_pelo_pet = linux.filtrar_janelas(lidas, os.getpid(), atual)
-    ok = (len(minhas) == 1 and minhas[0][1] == esperado
+    ok = (len(minhas) == 1 and all(abs(a - b) <= 1 for a, b in zip(minhas[0][1], esperado))
           and any(j[0] == minhas[0][0] for j in vistas_por_outro)
           and not any(j[0] == minhas[0][0] for j in vistas_pelo_pet))
     print(f"tela {x11.tela()} · ociosidade {x11.ocioso()} · ativa {x11.ativa()}")

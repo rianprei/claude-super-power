@@ -20,7 +20,7 @@ import qt_legado
 qt_legado.ativar()     # antes do PySide6: no conjunto legado, o Qt 5 com a cara dele
 
 from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QApplication, QDialog, QMessageBox
+from PySide6.QtWidgets import QApplication, QDialog, QMessageBox, QWidget
 
 from pestinha import config, plataforma
 from pestinha.app import PestinhaApp
@@ -36,6 +36,15 @@ def apagar_memoria(paths):
     if paths.memory.exists():
         shutil.rmtree(paths.memory, onerror=lambda _f, caminho, _e: falhas.append(str(caminho)))
     return not falhas and not paths.memory.exists(), falhas
+
+
+def palco_android():
+    """Tela cheia preta atrás de tudo. No Android as janelas do Qt não ficam transparentes (o fundo delas sai
+    preto) e o fundo da tela é claro: no palco preto o pet, a bolinha e o notebook aparecem sem a caixa."""
+    palco = QWidget()
+    palco.setStyleSheet("background: black;")
+    palco.showFullScreen()
+    return palco
 
 
 def main():
@@ -81,10 +90,13 @@ def main():
             return 0
         store.save()                                # grava já: a próxima vez não mostra o passo a passo
 
+    palco = palco_android() if plataforma.ANDROID else None     # antes do pet: fica atrás dele
     pet_app = PestinhaApp(store, paths)
     if args.sair_em > 0:
         QTimer.singleShot(int(args.sair_em * 1000), pet_app.quit)
-    return app.exec()
+    codigo = app.exec()
+    del palco                       # o palco viveu até aqui, atrás do pet
+    return codigo
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 name: android
-# Gera o APK do Android (9 ou mais novo, arm64-v8a e x86_64) e abre num emulador de verdade.
+# Gera o APK do Android (10 ou mais novo, arm64-v8a e x86_64) e abre num emulador de verdade.
 # Roda ao criar uma tag (v1.0.0...) ou manualmente.
 on:
   push:
@@ -62,12 +62,12 @@ jobs:
           path: entrega/
 
   emulador:
-    # o APK x86_64 no emulador: Android 9 (o mínimo) e 15
+    # o APK x86_64 no emulador: Android 10 (o mínimo) e 15
     needs: apk
     strategy:
       fail-fast: false
       matrix:
-        api: [28, 35]
+        api: [29, 35]
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -85,7 +85,7 @@ jobs:
         with:
           api-level: ${{ matrix.api }}
           arch: x86_64
-          target: ${{ matrix.api == 28 && 'default' || 'google_apis' }}
+          target: ${{ matrix.api == 29 && 'default' || 'google_apis' }}
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
           disable-animations: true
           script: sh ferramentas/fumaca_android.sh apk/ClaudeSuperPower-x86_64.apk "$ANDROID_HOME/build-tools/35.0.0/aapt"
