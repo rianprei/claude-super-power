@@ -4,6 +4,9 @@ Etapa 5 do multipet: cores e acessórios por pet, numa camada por cima do rosto.
 O pet padrão, o Bryan (sem "aparencia" no .json), fica idêntico ao original. Valor inválido nunca derruba o app:
 cor fora de #rrggbb e acessório desconhecido ficam com o padrão.
 """
+
+from __future__ import annotations
+
 import sys
 from pathlib import Path
 from types import SimpleNamespace

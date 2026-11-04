@@ -7,6 +7,9 @@ o texto corta. Rode no Windows (não no modo offscreen, que não tem fontes):
     python ferramentas/medir_cartazes.py            todos os pets
     python ferramentas/medir_cartazes.py jorge      só um
 """
+
+from __future__ import annotations
+
 import sys
 from pathlib import Path
 

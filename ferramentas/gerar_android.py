@@ -12,6 +12,8 @@ python3, shiboken6 e PySide6; aqui ele ganha o resto, antes do build:
 - fora do pacote: testes, ferramentas, documentação, executáveis de desktop e a memória local.
 """
 
+from __future__ import annotations
+
 import runpy
 import sys
 from pathlib import Path

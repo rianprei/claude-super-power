@@ -6,6 +6,8 @@ feliz; quando a euforia enche, ele solta um fogo, e depois precisa de um tempo
 antes de soltar outro. O desenho do fogo fica em pestinha/world/fireworks.py.
 """
 
+from __future__ import annotations
+
 from ..ajustes import ATIVIDADE_MINIMA_VOO, ESPERA_FOGOS, EUFORIA_MAXIMA
 from ..log import log
 from ..world.fireworks import Fireworks

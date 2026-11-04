@@ -5,6 +5,9 @@ Gera docs/REDE_NEURAL.md a partir do código (canais, interneurônios, motores, 
 
 Rode de novo sempre que mexer em pestinha/core/nervous_system.py ou nos limiares de pestinha/ajustes.py.
 """
+
+from __future__ import annotations
+
 import re
 import sys
 from pathlib import Path

@@ -4,6 +4,8 @@ PROTESTO - a insatisfação do pet e o estágio em que ele está. Só estado e r
 Os cartazes e a bandeira são desenhados em world/cartazes.py.
 """
 
+from __future__ import annotations
+
 import random
 import time
 

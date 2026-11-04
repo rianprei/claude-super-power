@@ -7,6 +7,8 @@ de raiva da rede. A estimativa é só uma leitura do momento: se você parar de
 provocar, ela muda.
 """
 
+from __future__ import annotations
+
 import math
 
 from PySide6.QtCore import QRectF, Qt, QTimer
@@ -98,7 +100,7 @@ class StrikePanel(FloatingWidget):
         # marcas e nomes dos estágios
         p.setFont(fonte(MONO, 8))
         names = ["reclamação", "manifestação", "greve", "revolução"]
-        for level, name in zip(up, names, strict=True):
+        for level, name in zip(up, names):
             mx = bar.left() + bar.width() * level / MAX_GRIEVANCE
             strong = level == strike_at
             p.setPen(QPen(RED if strong else MUTED, 2 if strong else 1))

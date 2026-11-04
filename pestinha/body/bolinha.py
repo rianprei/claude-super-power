@@ -3,6 +3,8 @@ BOLINHA - a janela da bolinha: desenho e mouse. A física está em core/physics.
 e as regras de colisão e de "levaram" estão em toy.py.
 """
 
+from __future__ import annotations
+
 import math
 import time
 

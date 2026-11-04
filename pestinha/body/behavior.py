@@ -11,6 +11,8 @@ Estados de missão (entregar meme, atravessar a tela) passam na frente do
 passeio normal; cair, ser segurado ou estar tombado passam na frente de tudo.
 """
 
+from __future__ import annotations
+
 import math
 import random
 

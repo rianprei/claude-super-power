@@ -7,6 +7,8 @@ segurando o botão esquerdo em qualquer ponto; a posição é lembrada em
 memory/panels.json (ver paths.py).
 """
 
+from __future__ import annotations
+
 from PySide6.QtCore import QRect, Qt
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import QWidget

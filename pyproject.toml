@@ -2,7 +2,7 @@
 name = "pestinha"
 version = "0.7.0"
 description = "Pestinha: pets de tela para Windows, macOS e Linux, cada um com uma rede neural pulsada."
-requires-python = ">=3.11"
+requires-python = ">=3.8"          # 3.8: conjunto legado (requirements-legado.txt)
 readme = "README.md"
 license = "GPL-3.0-or-later"
 license-files = ["LICENSE"]
@@ -14,7 +14,7 @@ filterwarnings = ["error"]      # qualquer aviso do Python vira falha: o gate é
 
 # Gate de qualidade (ver CONTRIBUTING.md): ruff check . && mypy && bandit -c pyproject.toml -r pestinha main.py ferramentas
 [tool.ruff]
-target-version = "py311"
+target-version = "py38"            # o conjunto legado roda no Python 3.8
 extend-exclude = [".venv", "build", "executáveis"]
 
 [tool.ruff.lint]
@@ -30,12 +30,16 @@ ignore = [
     "S311",     # random serve para comportamento (sorteio, ruído da rede), nunca para segurança
     "TRY003",   # mensagens de erro em português dentro da exceção, de propósito
     "PLC0415",  # imports dentro de função: dependências opcionais por sistema (pyobjc, Xlib, pynput)
+    "PERF203",  # try/except no laço é de propósito (nova tentativa, janela que fecha no meio da leitura)
 ]
 
 [tool.ruff.lint.per-file-ignores]
 # testes: assert é o próprio teste; lambdas de encaixe (monkeypatch/Qt) ignoram argumentos; sys.path antes do import
 "tests/**" = ["S101", "ARG", "E402", "PLW0603", "S108"]
 "conftest.py" = ["E402"]
+"main.py" = ["E402"]          # qt_legado.ativar() vem antes do PySide6
+# a camada do Qt 5 se chama PySide6 de propósito e reexporta os módulos do PySide2 inteiros
+"qt5compat/**" = ["N999", "F403"]
 # ferramentas são scripts: ajustam o sys.path antes de importar o pacote; o fuzzer ignora argumentos
 "ferramentas/**" = ["E402", "ARG", "T201"]
 

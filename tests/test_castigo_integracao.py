@@ -1,4 +1,7 @@
 """Cantinho do castigo dentro do app: o castigo vence a mesa e as travessuras, e o pânico encerra a fuga."""
+
+from __future__ import annotations
+
 import sys
 import tempfile
 import time

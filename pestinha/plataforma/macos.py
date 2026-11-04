@@ -6,6 +6,8 @@ O atalho global usa o QuickMacHotKey.
 Os retângulos saem em pontos, que já são as coordenadas lógicas do Qt (com escala 1, a que o app usa).
 """
 
+from __future__ import annotations
+
 import os
 import re
 import threading

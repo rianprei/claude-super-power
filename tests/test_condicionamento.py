@@ -4,6 +4,8 @@ Testes do condicionamento: aprender a reagir antes, extinguir, e persistir.
 Rodar (na pasta v7):  python -m pytest tests -q
 """
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
 

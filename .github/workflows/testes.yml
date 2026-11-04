@@ -11,6 +11,8 @@ jobs:
     # Windows: o mais novo, o 2022 (mesma base do Windows 10 21H2) e o Windows 11 em ARM64.
     # macOS: Apple Silicon (macos-latest) e Intel; e o conjunto compatível (10.14 a 14) num Intel e no macOS 14.
     # Linux: o mais novo, o 22.04 (onde sai o executável) e o conjunto compatível (glibc 2.28 a 2.34).
+    # Conjunto legado (Python 3.8 + PySide2/Qt 5.15: Windows 7/8, 32 bits, macOS 10.13): Windows de 32 e de
+    # 64 bits, Mac Intel e Linux.
     strategy:
       fail-fast: false
       matrix:
@@ -27,6 +29,10 @@ jobs:
           - os: ubuntu-22.04
             python: "3.11"
             reqs: requirements-compativel.txt
+          - {os: windows-2022, python: "3.8", reqs: requirements-legado.txt, arch: x86}
+          - {os: windows-2022, python: "3.8", reqs: requirements-legado.txt, arch: x64}
+          - {os: macos-15-intel, python: "3.8", reqs: requirements-legado.txt}
+          - {os: ubuntu-22.04, python: "3.8", reqs: requirements-legado.txt}
     runs-on: ${{ matrix.os }}
     env:
       QT_QPA_PLATFORM: offscreen
@@ -35,6 +41,7 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5
         with:
           python-version: ${{ matrix.python }}
+          architecture: ${{ matrix.arch }}
           cache: pip
           cache-dependency-path: ${{ matrix.reqs }}
       - name: "Linux: EGL e xcb (PySide6), e um X virtual com gerenciador de janelas"
@@ -49,8 +56,12 @@ jobs:
           DISPLAY=:99 openbox &
           echo "DISPLAY=:99" >> "$GITHUB_ENV"      # o teste do leitor do X11 abre uma janela de verdade
       # Só o necessário para os testes: sem PyInstaller (o executável é gerado à parte).
-      - run: pip install -r ${{ matrix.reqs }} pytest==8.4.2 pyflakes==4.1.0
-      - run: python -m pyflakes pestinha tests main.py ferramentas conftest.py
+      # o pytest 8.4 e o pyflakes 4 não rodam mais no Python 3.8 (conjunto legado)
+      - shell: bash
+        run: |
+          if [ "${{ matrix.python }}" = "3.8" ]; then FERRAMENTAS="pytest==8.3.5 pyflakes==3.2.0"; else FERRAMENTAS="pytest==8.4.2 pyflakes==4.1.0"; fi
+          pip install -r ${{ matrix.reqs }} $FERRAMENTAS
+      - run: python -m pyflakes pestinha tests main.py ferramentas conftest.py qt_legado.py
       - name: Verificar versão de PySide6 no Linux
         if: runner.os == 'Linux' && matrix.reqs == 'requirements.txt'
         run: |

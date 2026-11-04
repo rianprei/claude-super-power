@@ -2,6 +2,9 @@
 macOS: janelas do pet visíveis com outro app ativo, sem sombra, clique na aura e o macOS mínimo dos binários.
 A lógica roda em qualquer sistema; o último teste abre janelas de verdade e só roda no macOS.
 """
+
+from __future__ import annotations
+
 import os
 import struct
 import subprocess  # nosec B404 - roda o próprio Python com um script fixo dos testes

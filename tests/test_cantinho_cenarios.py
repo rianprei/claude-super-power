@@ -3,6 +3,9 @@
 python -m pytest tests/test_cantinho_cenarios.py -q
 Os atributos obtido/esperado ficam no JUnit via record_property.
 """
+
+from __future__ import annotations
+
 import json
 import math
 import os

@@ -6,6 +6,8 @@ ausente ou corrompido vira o valor padrão, sem derrubar o app) e uma linha
 por registro para os históricos. Todos os módulos usam isto.
 """
 
+from __future__ import annotations
+
 import contextlib
 import json
 import os

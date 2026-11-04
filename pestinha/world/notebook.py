@@ -6,6 +6,8 @@ A posição é lembrada em memory/panels.json. A decisão de trabalhar fica em
 pestinha/mind/mesa.py; aqui só mostramos se ele está trabalhando (borda acesa).
 """
 
+from __future__ import annotations
+
 from PySide6.QtCore import QRectF, Qt
 from PySide6.QtGui import (
     QColor,

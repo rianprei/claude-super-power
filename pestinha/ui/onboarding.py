@@ -6,6 +6,8 @@ Aparece só quando ainda não existe memory/permissions.json. "Pular" e "Começa
 levam direto à tela de permissões.
 """
 
+from __future__ import annotations
+
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QDialog,

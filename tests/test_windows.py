@@ -2,6 +2,9 @@
 Windows: o que só quebra lá (DPI misto, clique na aura, arquivo preso por antivírus, pasta sem permissão).
 A lógica roda em qualquer sistema; o último teste abre uma janela de verdade e só roda no Windows.
 """
+
+from __future__ import annotations
+
 import os
 import subprocess  # nosec B404 - roda o próprio Python com um script fixo dos testes
 import sys

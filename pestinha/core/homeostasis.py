@@ -16,6 +16,8 @@ Ou seja: nenhum timer manda ele explorar ou ficar triste; ele tenta
 recuperar o equilíbrio.
 """
 
+from __future__ import annotations
+
 import time
 
 from ..mathutil import clamp, valor_real

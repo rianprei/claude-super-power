@@ -3,6 +3,9 @@ Etapa 2 do multipet: conteúdo por pet (frases, cartazes, memes, imagens).
 
 Ordem: pets/<pet>/ → assets/comum/ → neutro (ou a ação não acontece). Nunca o conteúdo de outro pet.
 """
+
+from __future__ import annotations
+
 import re
 import sys
 from pathlib import Path

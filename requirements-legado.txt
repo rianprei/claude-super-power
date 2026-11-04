@@ -1,0 +1,12 @@
+# Sistemas em que o Qt 6 não roda, com Python 3.8 (o último com Windows 7): Windows 7 SP1, 8 e 8.1, em 32 ou
+# 64 bits; macOS 10.13 (Intel); Linux x64 com glibc 2.17 a 2.27 (CentOS 7, Ubuntu 18.04...).
+# Qt 5.15 pelo PySide2; o app continua escrevendo PySide6: a camada compat/qt5 (ativada por qt_legado.py)
+# faz a ponte. A suíte de testes passa inteira com esta combinação.
+PySide2==5.15.2.1
+numpy==1.24.4
+psutil==5.9.8
+pywin32==306; sys_platform == "win32"
+pynput==1.7.7; sys_platform == "linux"
+python-xlib==0.33; sys_platform == "linux"
+pyobjc-framework-Quartz==9.2; sys_platform == "darwin"
+pyobjc-framework-Cocoa==9.2; sys_platform == "darwin"

@@ -8,6 +8,8 @@ Regras fixas (não dependem do cérebro):
 O cérebro só decide QUANDO e com que emoção; aqui se decide a FORMA.
 """
 
+from __future__ import annotations
+
 import math
 import random
 import time

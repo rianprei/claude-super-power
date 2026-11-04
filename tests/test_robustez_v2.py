@@ -1,4 +1,7 @@
 """Falhas do relatório técnico (docs/auditorias/ANALISE_TECNICA.md): cada caso tem um teste que reproduz o problema."""
+
+from __future__ import annotations
+
 import json
 import sys
 from pathlib import Path

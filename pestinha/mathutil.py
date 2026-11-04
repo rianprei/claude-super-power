@@ -1,5 +1,7 @@
 """Funções matemáticas pequenas, sem dependências. Usadas por módulos puros e de sensores."""
 
+from __future__ import annotations
+
 import math
 
 

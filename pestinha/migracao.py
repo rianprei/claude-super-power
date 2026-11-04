@@ -16,6 +16,8 @@ são reaproveitadas e os originais só saem do lugar depois da validação. `res
 Pastas de memória não criam personagens: os pets selecionáveis vêm só de pets/*.json.
 """
 
+from __future__ import annotations
+
 import hashlib
 import json
 import os

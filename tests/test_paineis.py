@@ -1,4 +1,7 @@
 """Painéis do menu (monitor neural e painel de protesto): só abrem quando você pede e fecham fácil."""
+
+from __future__ import annotations
+
 import sys
 from pathlib import Path
 

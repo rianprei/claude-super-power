@@ -1,4 +1,7 @@
 """Cantinho do castigo: soltar o Bryan na frente da placa prende ele, e a fuga bem-sucedida fica salva."""
+
+from __future__ import annotations
+
 import sys
 from pathlib import Path
 

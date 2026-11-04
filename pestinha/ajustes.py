@@ -8,10 +8,11 @@ com a lista completa dos problemas (o programa não sobe com ajuste errado).
 Os perfis de tempo (teste e normal) ficam em `pestinha/config.py`.
 """
 
+from __future__ import annotations
+
 # ---------------------------------------------------------------------------
 # Interação com o mouse
 # ---------------------------------------------------------------------------
-import itertools
 
 COOLDOWN_CUTUCADA = 0.25        # s entre cutucadas que contam
 TEMPO_MAX_CUTUCADA_MS = 350     # ms: clique mais longo que isso não é cutucada
@@ -236,7 +237,7 @@ def validar():
         if not (isinstance(par, tuple) and len(par) == 2 and 0 < par[0] <= par[1] <= 600):
             erros.append(f"{nome}: deveria ser (mínimo, máximo) com 0 < mínimo <= máximo <= 600")
     limites = atuais["LIMITES_ESTAGIO"]
-    if not (len(limites) == 4 and all(0 < a < b for a, b in itertools.pairwise(limites))):
+    if not (len(limites) == 4 and all(0 < a < b for a, b in zip(limites, limites[1:]))):
         erros.append("LIMITES_ESTAGIO: deveria ter 4 valores crescentes e positivos")
     if erros:
         raise ValueError("ajustes inválidos:\n  " + "\n  ".join(erros))

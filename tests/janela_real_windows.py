@@ -6,11 +6,17 @@ pintada inteira com alfa baixo como a aura, e pergunta ao Windows quem recebe o 
 Sai com 0 se o clique atravessa com atravessar_clique(True) e volta para a janela com False; com 2 se nem uma
 janela opaca recebe o clique (sessão sem desktop interativo, como no Windows 11 ARM do CI): não dá para testar.
 """
+
+from __future__ import annotations
+
 import sys
 import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+import qt_legado
+
+qt_legado.ativar()     # antes do PySide6 (conjunto legado)
 
 import win32con
 import win32gui

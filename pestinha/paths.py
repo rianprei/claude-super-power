@@ -15,6 +15,8 @@ Arquivos da versão antiga (tudo solto em memory/) são migrados por pestinha/mi
 originais ficam guardados em memory/legado/<pet>/.
 """
 
+from __future__ import annotations
+
 import re
 import sys
 import tempfile

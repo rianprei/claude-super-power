@@ -19,6 +19,8 @@ lógicas pela escala de cada tela) ou, se COORDENADAS_LOGICAS, já nas coordenad
     preparar_qt()                antes do QApplication (Linux: Wayland abre pelo XWayland)
 """
 
+from __future__ import annotations
+
 import os
 import sys
 from pathlib import Path

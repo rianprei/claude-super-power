@@ -1,5 +1,7 @@
 """Partes que os três sistemas compartilham: rodar comandos do sistema e o atalho global via pynput."""
 
+from __future__ import annotations
+
 # subprocess: só comandos fixos do sistema, em lista de argumentos e sem shell
 import subprocess  # nosec B404
 

@@ -6,12 +6,18 @@ fica de fora do que ele vê.
 Roda num processo à parte, chamado por tests/test_plataforma.py. Sai com 0 se tudo confere; com 2 se não há
 X com gerenciador de janelas (não dá para testar).
 """
+
+from __future__ import annotations
+
 import os
 import sys
 import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+import qt_legado
+
+qt_legado.ativar()     # antes do PySide6 (conjunto legado)
 
 from PySide6.QtCore import QPoint
 from PySide6.QtWidgets import QApplication, QWidget

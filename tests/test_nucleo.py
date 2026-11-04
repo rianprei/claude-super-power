@@ -4,6 +4,8 @@ Testes dos módulos puros: nada de Qt, nada de Windows.
 Rodar (na pasta v7):  python -m pytest tests -q
 """
 
+from __future__ import annotations
+
 import math
 import sys
 from pathlib import Path

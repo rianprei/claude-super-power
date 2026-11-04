@@ -1,4 +1,7 @@
 """Fogos de artifício ligados à rede e brincadeira mais animada quando feliz. Rodar: python -m pytest tests -q"""
+
+from __future__ import annotations
+
 import os
 import sys
 from pathlib import Path

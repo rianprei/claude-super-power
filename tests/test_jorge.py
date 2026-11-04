@@ -4,6 +4,9 @@ Etapa 4 do multipet: o Jorge, segundo personagem, feito só de configuração e 
 Mesma rede e mesmos estágios do Bryan; muda a semente, o temperamento (pets/jorge.json) e o
 conteúdo (pets/jorge/). Nada do Bryan aparece nele, e nada dele no Bryan.
 """
+
+from __future__ import annotations
+
 import re
 import sys
 from pathlib import Path

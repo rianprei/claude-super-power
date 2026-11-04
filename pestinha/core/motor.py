@@ -21,6 +21,8 @@ satura perto de 1. As referências vêm das taxas medidas da rede (em regime
 os motores ficam em 2-7 Hz; picos de 10-25 Hz).
 """
 
+from __future__ import annotations
+
 import math
 
 REFERENCE_HZ = {

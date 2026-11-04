@@ -5,6 +5,8 @@ Só olha: janela ativa, processo, tempo ocioso, tela cheia e o RETÂNGULO das ja
 Como o sistema é lido fica em plataforma/; aqui fica só o que isso significa. Nunca lê conteúdo de janela.
 """
 
+from __future__ import annotations
+
 import math
 import time
 from typing import ClassVar
@@ -58,7 +60,7 @@ def detect_activity(app, idle_seconds, away_after):
     if idle_seconds >= away_after:
         return "AWAY"
     nome = app.lower()
-    nome = nome.removesuffix(".exe")
+    nome = nome[:-4] if nome.endswith(".exe") else nome
     for activity, apps in ACTIVITY_APPS.items():
         if nome in apps:
             return activity

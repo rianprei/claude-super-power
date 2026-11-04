@@ -5,6 +5,8 @@ Nada aqui grava na sua pasta memory/: cada teste usa um Paths apontando para
 tmp_path. Rodar (na pasta v7):  python -m pytest tests -q
 """
 
+from __future__ import annotations
+
 import os
 import sys
 from pathlib import Path
@@ -180,6 +182,7 @@ def test_toque_longo_parado_abre_o_menu_e_o_curto_cutuca(buddy, monkeypatch):
     from pestinha.body import pet as pet_mod
     pet = buddy.pet
     menus, cutucadas = [], []
+    pet.menu_requested.disconnect()                    # sem abrir o menu de verdade (exec bloqueia)
     pet.menu_requested.connect(menus.append)
     pet.poked.connect(lambda: cutucadas.append(1))
     pet.state.allow_poke = True

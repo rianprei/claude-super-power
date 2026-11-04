@@ -7,6 +7,8 @@ Não tem estado nem decisão: recebe a forma dos olhos, a direção do olhar e a
 não mudam os olhos nem as expressões.
 """
 
+from __future__ import annotations
+
 import math
 import re
 from dataclasses import dataclass, field

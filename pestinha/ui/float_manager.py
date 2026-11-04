@@ -7,6 +7,8 @@ teste, que só encurta os tempos). Ficam até você fechar: o × no canto, o mes
 A posição fica salva (paths.panels).
 """
 
+from __future__ import annotations
+
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import QPushButton

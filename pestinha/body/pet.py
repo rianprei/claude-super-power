@@ -9,8 +9,9 @@ no Windows e no macOS, com o cursor fora do corpo, o clique atravessa a janela i
 A janela nunca pega o foco (o teclado continua no seu programa).
 """
 
+from __future__ import annotations
+
 import contextlib
-import itertools
 import math
 import random
 import time
@@ -111,7 +112,7 @@ class PetWindow(QWidget):
         self._rub.append((now, x))
         self._rub = [r for r in self._rub if now - r[0] < RUB_WINDOW]
         reversals, travel, last_dir = 0, 0.0, 0
-        for (_, x0), (_, x1) in itertools.pairwise(self._rub):
+        for (_, x0), (_, x1) in zip(self._rub, self._rub[1:]):
             step = x1 - x0
             if abs(step) < 2:
                 continue

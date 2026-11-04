@@ -5,6 +5,9 @@ Cobre os critérios combinados: cópia validada byte a byte e no formato real (J
 conflito bloqueia sem sobrescrever, marcador só no fim, interrupção sem perda, legado
 recuperável, ids antigos não viram personagens, e isolamento dos oito arquivos entre pets.
 """
+
+from __future__ import annotations
+
 import json
 import re
 import sys
@@ -236,7 +239,7 @@ def test_bryan_igual_antes_e_depois_da_migracao(tmp_path, monkeypatch):
     antes = estado(app)
     paths = app.paths
     novo, antigo = paths.pet("bryan"), paths.pet_legado("bryan")
-    for de, para in zip(novo.todos(), antigo.todos(), strict=True):         # monta o formato da versão antiga
+    for de, para in zip(novo.todos(), antigo.todos()):         # monta o formato da versão antiga
         de.replace(para)
     assert antigo.drives.exists() and antigo.nervous.name == "bryan_nervous.json"
     depois = estado(criar_app(tmp_path, monkeypatch))

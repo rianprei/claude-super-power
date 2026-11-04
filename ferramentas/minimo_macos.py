@@ -9,6 +9,8 @@ A etiqueta da roda não serve: a do PySide6 6.11.3 diz macOS 13, mas os módulos
     python ferramentas/minimo_macos.py dist/Pestinha.app 10.14 x86_64
 """
 
+from __future__ import annotations
+
 import struct
 import sys
 from pathlib import Path

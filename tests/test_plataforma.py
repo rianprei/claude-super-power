@@ -5,6 +5,9 @@ janelas do Quartz) são testadas com saídas de exemplo, em qualquer sistema.
 Não há Mac nem Linux nos testes automatizados: o caminho real desses sistemas ainda precisa ser
 testado numa máquina de verdade (ver README).
 """
+
+from __future__ import annotations
+
 import os
 import subprocess  # nosec B404 - roda o próprio Python com um script fixo dos testes
 import sys

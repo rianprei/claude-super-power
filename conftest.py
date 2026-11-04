@@ -5,8 +5,15 @@ Configuração comum dos testes (pasta tests/).
 - Isolamento: apps e janelas criados num teste não continuam rodando nos seguintes, e nenhum teste
   lê o desktop real (janela ativa, tela cheia, lista de janelas).
 """
+
+from __future__ import annotations
+
 import gc
 import os
+
+import qt_legado
+
+qt_legado.ativar()     # antes do PySide6: no conjunto legado, o Qt 5 com a cara dele
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 

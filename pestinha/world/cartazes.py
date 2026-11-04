@@ -4,6 +4,8 @@ CARTAZES - os cartazes e a bandeira que o pet levanta. Só desenho.
 A escolha do texto e do estilo fica em core/protesto.py (Protesto.escolher_cartaz).
 """
 
+from __future__ import annotations
+
 import math
 import time
 

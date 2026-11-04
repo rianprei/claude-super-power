@@ -9,6 +9,8 @@ passar do limite.
     python ferramentas/minimo_glibc.py dist/Pestinha 2.28
 """
 
+from __future__ import annotations
+
 import re
 import sys
 from pathlib import Path

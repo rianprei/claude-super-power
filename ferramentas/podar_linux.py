@@ -13,6 +13,8 @@ libxcb-cursor) continuam dentro do app.
     python ferramentas/podar_linux.py dist/Pestinha
 """
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
 

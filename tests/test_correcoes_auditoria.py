@@ -1,4 +1,7 @@
 """Regressões da auditoria de 2026-11: cada teste prende uma correção (o código antigo falhava nele)."""
+
+from __future__ import annotations
+
 import json
 import math
 import sys

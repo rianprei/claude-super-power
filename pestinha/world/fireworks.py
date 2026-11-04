@@ -9,6 +9,8 @@ Desenho: um foguete sobe do pet, explode em partículas e as partículas caem e
 somem. A janela é transparente e não recebe cliques.
 """
 
+from __future__ import annotations
+
 import math
 import random
 

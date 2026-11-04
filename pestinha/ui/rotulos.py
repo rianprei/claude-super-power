@@ -5,6 +5,8 @@ Os nomes internos da rede (MOTION, TYPING, FOCUS...) ficam no código como estã
 Aqui fica só a tradução que o usuário vê, no monitor neural e nos textos.
 """
 
+from __future__ import annotations
+
 CANAIS_SENSORIAIS = {
     "MOTION": "movimento",
     "TYPING": "digitação",

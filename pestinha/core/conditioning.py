@@ -20,6 +20,8 @@ que liga em ALERT e STARTLE. Ou seja, o reflexo antecipado sai da rede, não
 de um "se apertar, pule".
 """
 
+from __future__ import annotations
+
 import math
 
 from ..store import read_json, write_json

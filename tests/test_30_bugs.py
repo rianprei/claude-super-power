@@ -1,4 +1,7 @@
 """Regressão dos 30 bugs encontrados na rodada de fuzzing e revisão (docs/auditorias/BUGS_30_RODADA.md)."""
+
+from __future__ import annotations
+
 import json
 import math
 import re

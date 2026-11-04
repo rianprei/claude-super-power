@@ -23,7 +23,8 @@ desenho: a juba pronta por ângulo de visão (arredondado a 1°) e a aura como u
 segundo (como animação de anime); juntos custam ~1/5 de desenhar tudo a cada quadro.
 """
 
-import itertools
+from __future__ import annotations
+
 import math
 from collections import OrderedDict
 
@@ -478,9 +479,9 @@ def _zigue(n, origem, rumo, altura=ALTURA_CLAWD):
         ponta = math.radians(RAIO_ANGULO[0] + (RAIO_ANGULO[1] - RAIO_ANGULO[0]) * _acaso(n, 20 + i))
         direcoes.append(direcoes[-1] + sinal * (math.pi - ponta))
         sinal = -sinal
-    desvio = rumo - sum(w * d for w, d in zip(pesos, direcoes, strict=True)) / sum(pesos)   # em média, segue o rumo
+    desvio = rumo - sum(w * d for w, d in zip(pesos, direcoes)) / sum(pesos)   # em média, segue o rumo
     pts = [origem]
-    for peso, d in zip(pesos, direcoes, strict=True):
+    for peso, d in zip(pesos, direcoes):
         passo = comprimento * peso / sum(pesos)
         pts.append(QPointF(pts[-1].x() + passo * math.cos(d + desvio), pts[-1].y() + passo * math.sin(d + desvio)))
     return pts
@@ -505,7 +506,7 @@ def _raios_vivos(now):
 
 def _fita(pts, largura):
     """Polígono do raio com a largura `largura` no meio e ponta afiada nas duas pontas (sem curva: quinas vivas)."""
-    trechos = [math.hypot(b.x() - a.x(), b.y() - a.y()) or 1e-6 for a, b in itertools.pairwise(pts)]
+    trechos = [math.hypot(b.x() - a.x(), b.y() - a.y()) or 1e-6 for a, b in zip(pts, pts[1:])]
     total, andado = sum(trechos), 0.0
     esquerda, direita = [], []
     for i, q in enumerate(pts):

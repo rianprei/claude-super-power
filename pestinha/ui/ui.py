@@ -5,6 +5,8 @@ O visual é o do Claude Code: fundo escuro quente, texto creme, letra de termina
 (cores em body/desenho_rosto.py). A tela abre com a caixa de boas-vindas com borda laranja e o ✻.
 """
 
+from __future__ import annotations
+
 from string import Template
 
 from PySide6.QtCore import QObject, Qt, Signal

@@ -1,5 +1,7 @@
 """Windows: a API do sistema (user32, dwmapi) via ctypes e pywin32. Retângulos em pixels físicos."""
 
+from __future__ import annotations
+
 import ctypes
 import sys
 import threading

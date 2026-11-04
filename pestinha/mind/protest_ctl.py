@@ -6,6 +6,8 @@ aparece na tela: o cartaz preso no pet, a bandeja da revolução, o cartaz
 que volta maior depois de arrancado e o cartaz de acordo ou desistência.
 """
 
+from __future__ import annotations
+
 import math
 import time
 

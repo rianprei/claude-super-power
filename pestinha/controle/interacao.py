@@ -7,6 +7,8 @@ Pausado ou desligado, as interações não mexem no estado (ver SessaoMixin._con
 Mixin de PestinhaApp: usa os atributos criados em PestinhaApp.__init__.
 """
 
+from __future__ import annotations
+
 import time
 
 from PySide6.QtWidgets import QMenu

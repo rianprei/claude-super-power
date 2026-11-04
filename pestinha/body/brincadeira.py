@@ -13,6 +13,8 @@ quando está bravo, e tudo quando está em revolução.
 Na revolução, além da bolinha, ele arremessa bolinhas de papel no cursor.
 """
 
+from __future__ import annotations
+
 import math
 import random
 

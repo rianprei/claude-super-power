@@ -8,6 +8,8 @@ Elas seguem o cérebro com atraso (emotion_tau) e a emoção é lida do
 quadrante. Susto e drama são sobreposições curtas, disparadas por eventos.
 """
 
+from __future__ import annotations
+
 import math
 import time
 

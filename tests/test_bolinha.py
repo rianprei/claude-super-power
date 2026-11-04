@@ -2,6 +2,8 @@
 Testes da bolinha e da tristeza (abandono). Rodar: python -m pytest tests -q
 """
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
 

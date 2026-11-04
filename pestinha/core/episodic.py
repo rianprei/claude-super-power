@@ -15,6 +15,8 @@ Sono: consolida a memória. Refaz a tabela a partir dos episódios guardados,
 pesando os recentes mais que os antigos.
 """
 
+from __future__ import annotations
+
 import json
 import math
 import random

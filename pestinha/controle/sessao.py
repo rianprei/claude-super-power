@@ -7,6 +7,8 @@ decisões (`_congelado`). Escondido ou desligado, nada fica na tela (`update_vis
 Mixin de PestinhaApp: usa os atributos criados em PestinhaApp.__init__.
 """
 
+from __future__ import annotations
+
 import time
 
 from PySide6.QtWidgets import QApplication, QSystemTrayIcon

@@ -1,4 +1,7 @@
 """As 10 funções do cantinho que mexem na rede neural: entrada, aprendizado e efeito nos motores."""
+
+from __future__ import annotations
+
 import sys
 import time
 from pathlib import Path

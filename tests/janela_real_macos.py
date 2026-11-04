@@ -5,11 +5,17 @@ não têm sombra e deixam o clique atravessar a aura.
 Roda num processo à parte, chamado por tests/test_macos.py: abre uma janela igual à do pet e lê o NSWindow dela.
 Sai com 0 se tudo confere.
 """
+
+from __future__ import annotations
+
 import sys
 import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+import qt_legado
+
+qt_legado.ativar()     # antes do PySide6 (conjunto legado)
 
 import objc
 from PySide6.QtCore import Qt

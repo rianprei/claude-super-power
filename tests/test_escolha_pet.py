@@ -4,6 +4,9 @@ Etapa 3 do multipet: escolha do personagem nas configurações e o nome certo em
 O programa se chama Pestinha (config.APP_NOME); quem fala nos textos é o pet escolhido.
 Trocar de pet só grava a escolha: vale ao reabrir, cada um com a própria memória e conteúdo.
 """
+
+from __future__ import annotations
+
 import ast
 import json
 import sys

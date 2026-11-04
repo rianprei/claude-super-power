@@ -1,4 +1,7 @@
 """Programas de trabalho: VS Code, Claude e Codex contam como programação."""
+
+from __future__ import annotations
+
 import sys
 from pathlib import Path
 

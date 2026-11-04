@@ -1,4 +1,7 @@
 """Pedir para trabalhar: o neurônio SENTAR decide. Se ele não senta até o pedido acabar, recusa."""
+
+from __future__ import annotations
+
 import sys
 from pathlib import Path
 

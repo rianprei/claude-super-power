@@ -10,6 +10,8 @@ NEURAL MONITOR - o que a rede está fazendo agora, sincronizado com o corpo.
 Abre pela bandeja ("Monitor neural"). Só grava o raster enquanto está aberto.
 """
 
+from __future__ import annotations
+
 import numpy as np
 from PySide6.QtCore import QRectF, Qt, QTimer
 from PySide6.QtGui import QColor, QImage, QPainter

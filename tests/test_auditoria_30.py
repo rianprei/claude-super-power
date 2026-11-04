@@ -1,6 +1,9 @@
 """Contratos dos 30 bugs da auditoria (docs/auditorias/AUDITORIA_30_BUGS.md). Todos passam desde a correção.
 Sem escrita na memória pessoal do pet.
 """
+
+from __future__ import annotations
+
 import contextlib
 import json
 import os

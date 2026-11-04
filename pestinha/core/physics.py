@@ -6,6 +6,8 @@ caixa (half_w x half_h) girada pelo ângulo; para colidir usamos a caixa
 que envolve o corpo girado. Plataformas são as barras de título das janelas.
 """
 
+from __future__ import annotations
+
 import math
 
 from ..ajustes import (

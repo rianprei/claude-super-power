@@ -15,6 +15,8 @@ ocioso vem do X (MIT-SCREEN-SAVER) ou, no GNOME Wayland, do Mutter (gdbus); no K
 ler e fica 0, como se você estivesse sempre ativo. O atalho global só ouve teclas de janelas X11.
 """
 
+from __future__ import annotations
+
 import os
 import re
 import threading

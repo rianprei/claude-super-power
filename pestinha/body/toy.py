@@ -10,6 +10,8 @@ O mesmo "tirou a bolinha" pode deixar um pet triste ou bravo. Isso vem do
 temperamento (pets/*.json), não de um código por pet.
 """
 
+from __future__ import annotations
+
 import math
 
 from ..ajustes import (

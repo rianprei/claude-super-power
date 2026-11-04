@@ -1,4 +1,7 @@
 """Cantinho no app inteiro, com relógio virtual: soltar no ar, pousar, ficar preso e reagir pela rede."""
+
+from __future__ import annotations
+
 import sys
 import tempfile
 import time

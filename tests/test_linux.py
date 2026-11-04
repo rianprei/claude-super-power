@@ -2,6 +2,9 @@
 Linux: o app empacotado roda em qualquer distro com a glibc mínima dele. Testa as ferramentas do build:
 a glibc que cada binário pede e a poda das bibliotecas que têm de ser as do sistema.
 """
+
+from __future__ import annotations
+
 import sys
 from pathlib import Path
 

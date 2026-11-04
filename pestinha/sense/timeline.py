@@ -19,6 +19,8 @@ Colunas:
     emocao          emoção dominante do pet no minuto
 """
 
+from __future__ import annotations
+
 import contextlib
 import csv
 import time

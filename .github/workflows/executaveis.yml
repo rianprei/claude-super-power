@@ -19,11 +19,15 @@ jobs:
         include:
           - {os: windows-latest, nome: windows-x64, reqs: requirements.txt, py: '3.13'}
           - {os: windows-11-arm, nome: windows-arm64, reqs: requirements.txt, py: '3.13'}
+          # Windows 7 SP1, 8 e 8.1 (e qualquer outro): 32 bits, Python 3.8 e Qt 5.15 (conjunto legado)
+          - {os: windows-2022, nome: windows-legado-32bits, reqs: requirements-legado.txt, py: '3.8', arch: x86}
           # macOS: o mínimo é conferido binário por binário (ferramentas/minimo_macos.py)
           - {os: macos-latest, nome: macos-apple-silicon, reqs: requirements.txt, py: '3.13', macos_min: "15.0", arch: arm64}
           - {os: macos-15-intel, nome: macos-intel, reqs: requirements.txt, py: '3.13', macos_min: "15.0", arch: x86_64}
           # macOS 10.14 a 14: Intel, e Apple Silicon pelo Rosetta
           - {os: macos-15-intel, nome: macos-compativel, reqs: requirements-compativel.txt, py: '3.11', macos_min: "10.14", arch: x86_64}
+          # macOS 10.13: Python 3.8 e Qt 5.15 (conjunto legado)
+          - {os: macos-15-intel, nome: macos-legado, reqs: requirements-legado.txt, py: '3.8', macos_min: "10.13", arch: x86_64}
           # Linux: feito na distro mais antiga que o PySide6 aceita (glibc 2.35 no x64, 2.39 no ARM64);
           # para glibc 2.28 a 2.34, o job linux-compativel
           - {os: ubuntu-22.04, nome: linux-x64, reqs: requirements.txt, py: '3.13', glibc: "2.35"}
@@ -36,6 +40,7 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5
         with:
           python-version: ${{ matrix.py }}
+          architecture: ${{ runner.os == 'Windows' && matrix.arch || '' }}
       - run: pip install -r ${{ matrix.reqs }} pyinstaller==6.22.3
       - name: "Linux: bibliotecas do xcb que vão dentro do app (muitas distros não instalam)"
         if: runner.os == 'Linux'
@@ -66,6 +71,8 @@ jobs:
             # Linux: pasta em vez de arquivo único (o arquivo único se extrai no /tmp, que pode ser noexec)
             Linux) MODO="--onedir" ;;
           esac
+          # o qt5compat (PySide2 com a cara do PySide6) só vai no conjunto legado
+          if [ "${{ matrix.reqs }}" != "requirements-legado.txt" ]; then EXTRA="$EXTRA --exclude-module qt5compat"; fi
           # assets/ e pets/ vão também dentro do executável: baixado sozinho, ele ainda tem os pets
           # (os caminhos de --add-data são relativos à pasta do .spec, build/)
           python -m PyInstaller --noconfirm $MODO $EXTRA --name Pestinha \

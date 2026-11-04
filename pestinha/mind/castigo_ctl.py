@@ -11,6 +11,8 @@ você ou vira de costas. Cada fuga bem-sucedida fica salva e entra na rede como 
 ou desligar a opção no menu devolve ele à tela normal.
 """
 
+from __future__ import annotations
+
 import math
 import random
 

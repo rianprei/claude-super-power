@@ -4,6 +4,9 @@ Clawd: o mascote do Claude Code em blocos 3D (corpo "clawd3d") e o modo Super Sa
 O corpo vem do pets/<pet>.json ("tela" é o padrão; valor desconhecido fica com o padrão). O desenho
 apoia os pés onde a física apoia o corpo em qualquer giro, e o cabelo dourado só aparece transformado.
 """
+
+from __future__ import annotations
+
 import json
 import sys
 from pathlib import Path
@@ -274,7 +277,6 @@ def test_micro_raios_piscam_a_cada_meio_segundo_e_somem():
 
 
 def test_micro_raio_em_zigue_zague_com_dobras_afiadas_e_tamanho_pela_altura():
-    import itertools
     import math
 
     from PySide6.QtCore import QPointF
@@ -283,9 +285,9 @@ def test_micro_raio_em_zigue_zague_com_dobras_afiadas_e_tamanho_pela_altura():
     for n in range(300):
         pts = c._zigue(n, QPointF(0.0, 0.0), 0.3 * n)
         assert 3 <= len(pts) - 2 <= 5, n                                             # 3 a 5 dobras
-        trechos = [(b.x() - a.x(), b.y() - a.y()) for a, b in itertools.pairwise(pts)]
+        trechos = [(b.x() - a.x(), b.y() - a.y()) for a, b in zip(pts, pts[1:])]
         total = sum(math.hypot(*t) for t in trechos)
         assert 0.08 * c.ALTURA_CLAWD - 1e-6 <= total <= 0.15 * c.ALTURA_CLAWD + 1e-6, n
-        for (ax, ay), (bx, by) in itertools.pairwise(trechos):                     # ângulo na ponta de cada dobra
+        for (ax, ay), (bx, by) in zip(trechos, trechos[1:]):                     # ângulo na ponta de cada dobra
             cos = -(ax * bx + ay * by) / (math.hypot(ax, ay) * math.hypot(bx, by))
             assert 45.0 - 1e-6 <= math.degrees(math.acos(max(-1.0, min(1.0, cos)))) <= 70.0 + 1e-6, n

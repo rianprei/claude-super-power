@@ -1,4 +1,7 @@
 """Bolinha: colisão com post-its e estilos de brincadeira por pet. Rodar: python -m pytest tests -q"""
+
+from __future__ import annotations
+
 import os
 import random
 import sys

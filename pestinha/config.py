@@ -5,6 +5,8 @@ Tudo o que o usuário escolhe na tela inicial mora em memory/permissions.json (v
 e é gravado a CADA mudança (se o programa cair, a escolha não se perde).
 """
 
+from __future__ import annotations
+
 import copy
 import math
 import random

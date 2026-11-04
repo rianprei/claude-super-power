@@ -5,6 +5,8 @@ O arquivo é aparado quando passa de 1 MB (fica com a metade mais recente).
 Se o arquivo não puder ser escrito, a mensagem vai só para o terminal.
 """
 
+from __future__ import annotations
+
 import contextlib
 import datetime
 from pathlib import Path

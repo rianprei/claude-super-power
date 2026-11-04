@@ -4,6 +4,8 @@ OBJETOS - os post-its, memes e fotos que o pet traz, como janelas na tela.
 Só desenho e clique. Quem decide criar, largar e remover fica em mischief.py.
 """
 
+from __future__ import annotations
+
 import random
 import time
 

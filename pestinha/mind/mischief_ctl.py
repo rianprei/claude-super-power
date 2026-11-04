@@ -7,6 +7,8 @@ pelo que deu certo antes naquele contexto. A dispensa alimenta a rede (raiva),
 a memória (episódio negativo) e o aprendizado (penalidade de 1 s).
 """
 
+from __future__ import annotations
+
 import random
 from collections import deque
 

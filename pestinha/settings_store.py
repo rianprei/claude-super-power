@@ -5,6 +5,8 @@ O dicionário é o mesmo objeto para todo mundo que o lê (app, controladores,
 tela inicial). Cada mudança é gravada na hora, então uma queda não perde nada.
 """
 
+from __future__ import annotations
+
 from . import config
 
 

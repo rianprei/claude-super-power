@@ -9,9 +9,15 @@ Rodar:
 Dependências em requirements.txt. Pânico: Ctrl + Alt + Shift + B (desliga tudo e continua desligado).
 """
 
+from __future__ import annotations
+
 import argparse
 import shutil
 import sys
+
+import qt_legado
+
+qt_legado.ativar()     # antes do PySide6: no conjunto legado, o Qt 5 com a cara dele
 
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QApplication, QDialog, QMessageBox

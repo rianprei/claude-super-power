@@ -1,4 +1,7 @@
 """Robustez: arquivo corrompido, assets faltando, log em arquivo. Rodar: python -m pytest tests -q"""
+
+from __future__ import annotations
+
 import sys
 from pathlib import Path
 

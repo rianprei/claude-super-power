@@ -6,6 +6,9 @@ FUZZ - roda o app inteiro com relógio virtual e ações aleatórias, checando i
 Cada violação é agrupada pelo nome do invariante, com a primeira sequência que a causou.
 Usa Qt sem janela e uma pasta temporária: não toca na memória pessoal do pet.
 """
+
+from __future__ import annotations
+
 import math
 import os
 import random

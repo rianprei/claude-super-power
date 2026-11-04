@@ -1,4 +1,7 @@
 """Reproduções diagnósticas: asserções descrevem o comportamento esperado."""
+
+from __future__ import annotations
+
 import sys
 from pathlib import Path
 from types import SimpleNamespace

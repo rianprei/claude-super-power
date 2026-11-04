@@ -6,6 +6,9 @@ Regra de camadas do pacote `pestinha`: cada camada só importa das que estão ab
 Módulos compartilhados (ajustes, config, store, log, mathutil, paths, settings_store) podem ser
 usados por todas. `core/` é puro: sem Qt e sem Windows, para ser testável em qualquer lugar.
 """
+
+from __future__ import annotations
+
 import ast
 from pathlib import Path
 

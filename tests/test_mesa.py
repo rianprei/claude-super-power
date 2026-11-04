@@ -1,4 +1,7 @@
 """Notebook: sentar e levantar pelo disparo do neurônio SENTAR. Rodar: python -m pytest tests -q"""
+
+from __future__ import annotations
+
 import sys
 from pathlib import Path
 

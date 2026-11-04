@@ -1,4 +1,7 @@
 """Carinho: olhinhos fechados de felicidade enquanto ele recebe carinho, e voltam ao normal depois."""
+
+from __future__ import annotations
+
 import sys
 from pathlib import Path
 

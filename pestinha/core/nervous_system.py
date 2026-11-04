@@ -35,6 +35,8 @@ Simplificações assumidas:
 Dependência: numpy. Testes em tests/test_nucleo.py e tests/test_cantinho_rede.py.
 """
 
+from __future__ import annotations
+
 import math
 import time
 from abc import ABC, abstractmethod

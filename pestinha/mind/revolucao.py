@@ -6,6 +6,8 @@ frequência das bolinhas (sem rajadas nem pausas fixas). Cada bolinha bate em po
 no cursor, e some depois de 10 s. Há no máximo 40 na tela.
 """
 
+from __future__ import annotations
+
 import random
 
 from ..ajustes import GANHO_PAPEL

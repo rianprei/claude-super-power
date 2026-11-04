@@ -13,6 +13,8 @@ Quem lê:
 Assim nenhum dos três precisa conhecer os outros atributos da janela.
 """
 
+from __future__ import annotations
+
 import time
 
 from ..ajustes import DURACAO_CARINHO as CARESS_HOLD, FELIZ_APOS_CARINHO

@@ -6,6 +6,9 @@ Gera pestinha/README.md e o README de cada camada a partir das docstrings dos m�
 A primeira linha da docstring de cada arquivo vira a descrição na tabela. Rode de novo ao criar,
 renomear ou mudar o propósito de um módulo.
 """
+
+from __future__ import annotations
+
 import ast
 from pathlib import Path
 

@@ -5,6 +5,8 @@ isso devolve o valor neutro: o pet anda, brinca, sente e aprende na tela do app,
 longo nele (pet.py).
 """
 
+from __future__ import annotations
+
 COORDENADAS_LOGICAS = True          # não há janelas de outros programas para converter
 LIMITACAO_ATALHO = "no Android não há atalho de teclado global; use o menu do pet (toque longo)"
 

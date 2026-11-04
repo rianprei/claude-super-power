@@ -12,6 +12,8 @@ até o pedido acabar, ele recusa, e a recusa entra na rede como frustração.
 DeskController é a decisão pura. MesaController liga a decisão ao notebook.
 """
 
+from __future__ import annotations
+
 from ..ajustes import (
     ALCANCE_NOTEBOOK,
     FOCO_MAXIMO_HZ,

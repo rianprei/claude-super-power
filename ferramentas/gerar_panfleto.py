@@ -3,6 +3,9 @@ Desenha pets/jorge/bolinha_papel.png: um panfleto de mentoria amassado, que o Jo
 
 Desenho feito por código (sem imagem de terceiros). Rode de novo para refazer o arquivo.
 """
+
+from __future__ import annotations
+
 import math
 import os
 import random

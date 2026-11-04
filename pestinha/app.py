@@ -22,6 +22,8 @@ Quem faz o quê:
     PetState                o que ele sente e mostra (lido pela janela e pelo comportamento)
 """
 
+from __future__ import annotations
+
 import math
 import time
 
@@ -287,7 +289,7 @@ class PestinhaApp(SessaoMixin, InteracaoMixin, QObject):
             if encontrada is not None:
                 return encontrada
             geometrias = self.screen_geometries() if monitores is None else monitores
-            for area, geometria in zip(areas, geometrias, strict=False):    # um monitor pode sair no meio
+            for area, geometria in zip(areas, geometrias):    # um monitor pode sair no meio
                 if geometria[0] <= x < geometria[2] and geometria[1] <= y < geometria[3]:
                     return area
         g = QGuiApplication.primaryScreen().availableGeometry()
