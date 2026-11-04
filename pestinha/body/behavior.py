@@ -29,6 +29,7 @@ DELIVER_TIMEOUT = 14.0
 CARRY_GAP = 14
 CROSS_SCREEN_CHANCE = 0.3  # em parte dos passeios, visita deliberadamente um monitor lateral
 CROSS_SCREEN_SPEED = 180.0
+DESCANSO_TELEPORTE = 4.0   # s parado onde reapareceu antes de voltar a passear
 
 
 class Behavior:
@@ -149,7 +150,7 @@ class Behavior:
         if st.escala != (1.0, 1.0):                     # teletransportando: o destino de antes não vale mais
             self.target_x = None                        # (senão ele voltava andando para perto de onde sumiu)
             self.crossing_screen = False
-            self.next_roam = now + 2.0
+            self.next_roam = now + DESCANSO_TELEPORTE
             return
 
         # objeto carregado acompanha (e solta se o pet cair/voar)

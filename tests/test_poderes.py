@@ -229,7 +229,7 @@ def test_depois_do_teleporte_ele_nao_volta_andando_para_o_destino_antigo():
     estado.tone.speed = lambda: 300.0                    # passeio rápido, como no app
     prof = {"roam_interval": (100.0, 100.0), "righting_after": 1.0}
     t, chegada = 0.0, None
-    while t < 2.2:                                       # o teleporte (~0,5 s) e mais 1,7 s sem passeio novo
+    while t < 4.2:                                       # o teleporte (~0,5 s) e o descanso, sem passeio novo
         corpo.step(DT, TELA, [])
         comportamento.tick(DT, t, (1200.0, 300.0), TELA, prof)
         ctl.tick(t, DT, corpo, estado, TELA, (1200.0, 300.0), {"TELEPORTE": QUER} if t == 0.0 else {},
@@ -239,3 +239,23 @@ def test_depois_do_teleporte_ele_nao_volta_andando_para_o_destino_antigo():
         t += DT
     assert chegada is not None and abs(chegada - 400.0) >= pod.TELE_LONGE
     assert comportamento.target_x != 380.0 and corpo.x == pytest.approx(chegada, abs=5.0)    # ficou onde apareceu
+
+
+def test_nenhum_poder_em_protesto_de_raiva_ou_de_tristeza():
+    """Regressão: na greve de tristeza ele se teletransportava e o protesto o levava andando para outro lugar."""
+    from types import SimpleNamespace
+
+    from pestinha.app import PestinhaApp
+
+    def app(raiva=0, tristeza=0, **extra):
+        base = {"asleep": False, "pet": SimpleNamespace(isVisible=lambda: True), "mesa": SimpleNamespace(sentado=False),
+                "protest": SimpleNamespace(stage=raiva), "sad": SimpleNamespace(stage=tristeza),
+                "behavior": SimpleNamespace(mission=None)}
+        base.update(extra)
+        return SimpleNamespace(**base)
+
+    assert PestinhaApp.poderes_livres(app(), preso=False)
+    assert not PestinhaApp.poderes_livres(app(tristeza=2), preso=False)      # greve de abandono
+    assert not PestinhaApp.poderes_livres(app(raiva=1), preso=False)
+    assert not PestinhaApp.poderes_livres(app(), preso=True)
+    assert not PestinhaApp.poderes_livres(app(asleep=True), preso=False)

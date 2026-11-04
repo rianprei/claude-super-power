@@ -536,8 +536,7 @@ class PestinhaApp(SessaoMixin, InteracaoMixin, QObject):
         self.poderes.tick(                                  # a rede decide voo, teletransporte e Kamehameha
             now, dt, body, self.pet_state, bounds, cursor, motores,
             patas=lambda: self.pet.patas_na_tela(now),
-            livre=(not self.asleep and not preso and self.pet.isVisible() and not self.mesa.sentado
-                   and self.protest.stage == 0 and not self.behavior.mission),
+            livre=self.poderes_livres(preso),
             visivel=self.pet.isVisible(),
         )
         # o cursor também bate na bolinha
@@ -552,6 +551,12 @@ class PestinhaApp(SessaoMixin, InteracaoMixin, QObject):
         self.mischief.tick(dt, bounds[3])
         self.pet.animate(now)
         self.maybe_mischief(now, dt, bounds, cursor, motores)
+
+    def poderes_livres(self, preso):
+        """Voo, teletransporte e Kamehameha só com ele acordado, visível e sem nada que o leve para outro lugar:
+        castigo, notebook, missão, ou protesto de raiva ou de tristeza (o protesto o leva andando)."""
+        return (not self.asleep and not preso and self.pet.isVisible() and not self.mesa.sentado
+                and self.protest.stage == 0 and self.sad.stage == 0 and not self.behavior.mission)
 
     def _atualizar_mesa(self, now):
         """O neurônio SENTAR decide se ele senta no notebook. Aqui só entram as condições do corpo."""
