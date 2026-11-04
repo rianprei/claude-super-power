@@ -1,6 +1,12 @@
 package org.claudesuperpower;
 
 import android.app.Activity;
+import android.app.AppOpsManager;
+import android.app.usage.UsageEvents;
+import android.app.usage.UsageStatsManager;
+import android.content.SharedPreferences;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -62,6 +68,9 @@ import java.util.concurrent.Executors;
  *                   'T' id acao x y             toque (MotionEvent: 0 desce, 1 sobe, 2 move, 3 cancela), x/y na tela
  *                   'O' id                      toque fora (em outro app): conta como atividade; fecha menus
  *                   'C' texto                   comando da notificação (hide, settings, quit)
+ *                   'P' categoria texto         app em primeiro plano (pacote e ApplicationInfo.category), se o
+ *                                               acesso de uso foi liberado
+ *                   'U' cheia                   a tela está cheia (as barras do sistema sumiram: vídeo, jogo)
  */
 public final class Ponte {
     static final String NOME = "claudesuperpower.ponte";        // socket local, namespace abstrato
@@ -80,6 +89,9 @@ public final class Ponte {
     private volatile Activity atividade;
     private volatile boolean recebeuQuadro;
     private boolean recuou;
+    private View sensor;                    // janela invisível de 1 px: vê se as barras do sistema somem
+    private Boolean cheia;
+    private String appAtivo = "";
 
     private static final class Janela {
         ImageView vista;
@@ -103,6 +115,7 @@ public final class Ponte {
                 @Override public void onLowMemory() { }
             };
             a.getApplicationContext().registerComponentCallbacks(telas);
+            atual.vigiarApps();
         }
         atual.atividade = a;
     }
@@ -142,8 +155,11 @@ public final class Ponte {
                         continue;
                     }
                     saida = new DataOutputStream(new BufferedOutputStream(s.getOutputStream(), 1 << 12));
+                    appAtivo = "";
+                    cheia = null;
                     enviarModo();
                     enviarTela();
+                    ui.post(this::ligarSensor);
                     ler(new DataInputStream(new BufferedInputStream(s.getInputStream(), 1 << 16)));
                 } catch (IOException e) {
                     Log.i(TAG, "Python desconectou: " + e.getMessage());
@@ -354,6 +370,10 @@ public final class Ponte {
         for (Integer id : new ArrayList<>(janelas.keySet())) {
             remover(id);
         }
+        if (sensor != null) {
+            wm.removeView(sensor);
+            sensor = null;
+        }
         ((NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE)).cancel(1);
     }
 
@@ -362,8 +382,96 @@ public final class Ponte {
         if (a != null && sobreposicao() && !recuou) {
             recuou = true;
             a.moveTaskToBack(true);
+            pedirAcessoDeUso(a);
         }
         notificar(false, false);
+    }
+
+    // ---------------- sentidos: app em primeiro plano e tela cheia ----------------
+
+    private boolean acessoDeUso() {
+        AppOpsManager ops = (AppOpsManager) ctx.getSystemService(Context.APP_OPS_SERVICE);
+        int modo = ops.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, Process.myUid(), ctx.getPackageName());
+        return modo == AppOpsManager.MODE_ALLOWED;
+    }
+
+    /** Uma vez só: abre a tela do acesso de uso (o pet sente o app em uso, como sente o programa no PC). */
+    private void pedirAcessoDeUso(Activity a) {
+        SharedPreferences prefs = ctx.getSharedPreferences("ponte", Context.MODE_PRIVATE);
+        if (acessoDeUso() || prefs.getBoolean("pediu_uso", false)) {
+            return;
+        }
+        prefs.edit().putBoolean("pediu_uso", true).apply();
+        try {
+            a.startActivity(new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS));
+        } catch (RuntimeException e) {
+            Log.w(TAG, "sem a tela de acesso de uso: " + e);
+        }
+    }
+
+    /** A cada 2 s: o app em primeiro plano (o último que foi para a frente), se o acesso de uso foi liberado. */
+    private void vigiarApps() {
+        Thread t = new Thread(() -> {
+            UsageStatsManager uso = (UsageStatsManager) ctx.getSystemService(Context.USAGE_STATS_SERVICE);
+            while (true) {
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    return;
+                }
+                if (saida == null || uso == null || !acessoDeUso()) {
+                    continue;
+                }
+                long agora = System.currentTimeMillis();
+                UsageEvents eventos = uso.queryEvents(agora - 60_000, agora);
+                UsageEvents.Event ev = new UsageEvents.Event();
+                String ultimo = null;
+                while (eventos.hasNextEvent()) {
+                    eventos.getNextEvent(ev);
+                    if (ev.getEventType() == UsageEvents.Event.ACTIVITY_RESUMED) {
+                        ultimo = ev.getPackageName();
+                    }
+                }
+                if (ultimo == null || ultimo.equals(ctx.getPackageName()) || ultimo.equals(appAtivo)) {
+                    continue;
+                }
+                appAtivo = ultimo;
+                int categoria = -1;
+                try {
+                    ApplicationInfo info = ctx.getPackageManager().getApplicationInfo(ultimo, 0);
+                    categoria = info.category;
+                } catch (PackageManager.NameNotFoundException e) {
+                    // sem informação de categoria
+                }
+                final String pacote = ultimo;
+                final int cat = categoria;
+                enviar(o -> { o.writeByte('P'); o.writeInt(cat); o.writeUTF(pacote); });
+            }
+        }, "ponte-apps");
+        t.setDaemon(true);
+        t.start();
+    }
+
+    /** Janela invisível de 1 px que recebe as margens do sistema: sem barra de status, a tela está cheia. */
+    private void ligarSensor() {
+        if (sensor != null || !sobreposicao() || Build.VERSION.SDK_INT < 30) {
+            return;
+        }
+        sensor = new View(ctx);
+        sensor.setOnApplyWindowInsetsListener((v, insets) -> {
+            boolean agora = !insets.isVisible(WindowInsets.Type.statusBars());
+            if (cheia == null || cheia != agora) {
+                cheia = agora;
+                enviar(o -> { o.writeByte('U'); o.writeBoolean(agora); });
+            }
+            return insets;
+        });
+        try {
+            wm.addView(sensor, parametros(0, 0, 1, 1, false, false));
+        } catch (RuntimeException e) {
+            Log.w(TAG, "sem sensor de tela cheia: " + e);
+            sensor = null;
+        }
     }
 
     // ---------------- notificação (a bandeja do PC) ----------------

@@ -9,9 +9,11 @@ outros apps") na mesma posição. Só as áreas de toque recebem o dedo: a regi�
 toques voltam como eventos de mouse do Qt, então arrastar, cutucar, arremessar e o menu (toque longo)
 funcionam como no PC. A notificação faz o papel do ícone da bandeja.
 
-Sentidos: qualquer toque na tela (também em outros apps) conta como atividade para o tempo ocioso; o cursor
-é o último toque no pet. O app em primeiro plano, as janelas e a tela cheia não são lidos (precisariam do
-serviço de acessibilidade). Sem a permissão de sobreposição, o pet fica dentro do app, num palco preto.
+Sentidos, como no PC: qualquer toque na tela (também em outros apps) conta como atividade para o tempo
+ocioso; o cursor é o último toque no pet; o app em primeiro plano vem do acesso de uso (liberado uma vez nas
+configurações do Android), pelo pacote ou, para jogos, música e redes sociais, pela categoria que o Android
+informa (APP_POR_CATEGORIA); a tela cheia é a barra de status escondida (vídeo, jogo). Não há janelas de outros
+apps para pousar. Sem a permissão de sobreposição, o pet fica dentro do app, num palco preto.
 
 Protocolo: ver Ponte.java. O socket é local (namespace abstrato) e a Ponte só aceita o próprio app (UID).
 """
@@ -30,10 +32,19 @@ LIMITACAO_ATALHO = "no Android não há atalho de teclado global; use a notifica
 NOME_PONTE = "\0claudesuperpower.ponte"
 QUADRO_MS = 33                      # ~30 quadros por segundo nas janelas flutuantes
 FLAG_POPUP = 1
-TAMANHOS = {ord("M"): 1, ord("S"): 24, ord("T"): 16, ord("O"): 4}
+TAMANHOS = {ord("M"): 1, ord("S"): 24, ord("T"): 16, ord("O"): 4, ord("U"): 1}
+# ApplicationInfo.category -> o nome que os sentidos conhecem (sense/senses.py, ACTIVITY_APPS)
+APP_POR_CATEGORIA = {0: "android:jogo", 1: "android:audio", 4: "android:social"}
 ACOES_MOUSE = {0: "MouseButtonPress", 1: "MouseButtonRelease", 2: "MouseMove", 3: "MouseButtonRelease"}
 
 _estado: dict[str, Any] = {"ponte": None}
+
+
+def _apps_conhecidos():
+    """Os nomes que os sentidos conhecem (importados só na hora: sense importa a plataforma)."""
+    from ..sense.senses import ACTIVITY_APPS
+
+    return set().union(*ACTIVITY_APPS.values())
 
 
 def _ponte():
@@ -47,8 +58,9 @@ def ocioso_segundos():
 
 
 def processo_ativo():
-    """O app em primeiro plano não é lido (precisaria do serviço de acessibilidade)."""
-    return "unknown"
+    """O app em primeiro plano (pacote, ou a categoria dele), pelo acesso de uso; "unknown" sem ele."""
+    p = _ponte()
+    return "unknown" if p is None else p.app_ativo
 
 
 def retangulo_ativo(escala=1.0):
@@ -57,8 +69,9 @@ def retangulo_ativo(escala=1.0):
 
 
 def tela_cheia():
-    """Não é lida: o pet fica por cima mesmo de vídeo em tela cheia (esconda pela notificação)."""
-    return False
+    """O app da frente escondeu a barra de status (vídeo, jogo): o pet se recolhe, como no PC."""
+    p = _ponte()
+    return p is not None and p.cheia
 
 
 def janelas_visiveis(excluir, escala=1.0):
@@ -121,14 +134,19 @@ def decodificar(buffer):
     msgs: list[tuple[str, Any]] = []
     while buffer:
         tipo = buffer[0]
-        if tipo == ord("C"):
-            if len(buffer) < 3:
+        if tipo in (ord("C"), ord("P")):
+            extra = 4 if tipo == ord("P") else 0             # P: a categoria antes do texto
+            if len(buffer) < 3 + extra:
                 break
-            n = struct.unpack_from(">H", buffer, 1)[0]
-            if len(buffer) < 3 + n:
+            n = struct.unpack_from(">H", buffer, 1 + extra)[0]
+            if len(buffer) < 3 + extra + n:
                 break
-            msgs.append(("C", bytes(buffer[3:3 + n]).decode("utf-8", "replace")))
-            del buffer[:3 + n]
+            texto = bytes(buffer[3 + extra:3 + extra + n]).decode("utf-8", "replace")
+            if tipo == ord("P"):
+                msgs.append(("P", (struct.unpack_from(">i", buffer, 1)[0], texto)))
+            else:
+                msgs.append(("C", texto))
+            del buffer[:3 + extra + n]
             continue
         tamanho = TAMANHOS.get(tipo)
         if tamanho is None:
@@ -143,6 +161,8 @@ def decodificar(buffer):
             msgs.append(("S", struct.unpack(">6i", corpo)))
         elif tipo == ord("T"):
             msgs.append(("T", struct.unpack(">iiff", corpo)))
+        elif tipo == ord("U"):
+            msgs.append(("U", corpo[0] != 0))
         else:
             msgs.append(("O", struct.unpack(">i", corpo)[0]))
     return msgs
@@ -172,6 +192,8 @@ class Ponte:
         self.janelas = {}                   # id -> widget (as que estão na tela)
         self.agarrado = None                # widget que recebeu o toque que desceu
         self.cursor = None
+        self.app_ativo = "unknown"          # o app em primeiro plano, no nome que os sentidos conhecem
+        self.cheia = False                  # a tela está cheia (barra de status escondida)
         self.ultima_atividade = time.monotonic()
         self.proxima_tentativa = 0.0
         self.timer = QTimer()
@@ -242,6 +264,11 @@ class Ponte:
             self.fora(valor)
         elif tipo == "C":
             self.comando(valor)
+        elif tipo == "P":
+            categoria, pacote = valor
+            self.app_ativo = pacote if pacote in _apps_conhecidos() else APP_POR_CATEGORIA.get(categoria, pacote)
+        elif tipo == "U":
+            self.cheia = valor
 
     def _palco(self, visivel):
         if self.palco is not None:

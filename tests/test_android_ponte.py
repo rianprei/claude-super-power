@@ -189,3 +189,19 @@ def test_sem_permissao_o_palco_aparece_e_com_permissao_some():
     palco.setVisible.assert_called_with(True)
     ponte.tratar("M", True)
     palco.setVisible.assert_called_with(False)
+
+
+def test_app_em_uso_vira_a_atividade_do_pc_e_a_tela_cheia_recolhe():
+    from pestinha.sense.senses import detect_activity
+
+    buffer = bytearray(b"P" + struct.pack(">iH", 7, 17) + b"com.spotify.music" + b"U\x01")
+    assert android.decodificar(buffer) == [("P", (7, "com.spotify.music")), ("U", True)]
+    ponte = android.Ponte(bandeja=None, conectar=False)
+    casos = [((7, "com.spotify.music"), "MUSIC"), ((0, "com.supercell.clashroyale"), "GAMING"),
+             ((4, "com.exemplo.rede"), "SOCIAL"), ((-1, "com.android.chrome"), "BROWSING"),
+             ((-1, "com.anthropic.claude"), "PROGRAMMING"), ((7, "com.exemplo.planilha"), "IDLE")]
+    for valor, atividade in casos:
+        ponte.tratar("P", valor)
+        assert detect_activity(ponte.app_ativo, 0.0, 300.0) == atividade, valor
+    ponte.tratar("U", True)
+    assert ponte.cheia is True

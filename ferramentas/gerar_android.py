@@ -41,7 +41,7 @@ EXTENSOES = "py,png,jpg,jpeg,gif,webp,json,txt"
 FORA = "tests,ferramentas,docs,executáveis,build,dist,memory,bin,.github,.buildozer,android_java"
 JAVA = Path(__file__).resolve().parent.parent / "android_java"
 ENTRADA = "org.claudesuperpower.Entrada"
-PERMISSOES = ("SYSTEM_ALERT_WINDOW",)
+PERMISSOES = ("SYSTEM_ALERT_WINDOW", "PACKAGE_USAGE_STATS")     # flutuar; ver o app em uso (como no PC)
 META_DADOS = "android.app.background_running=true"
 # Android 10 com o PySide6 6.12: a libshiboken6 dele usa TLS nativo do ELF, que o Android 9 não carrega
 # ("dlopen failed: unknown reloc type 16", visto no emulador com API 28)

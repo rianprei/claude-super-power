@@ -14,16 +14,20 @@ from typing import ClassVar
 from .. import plataforma
 from ..mathutil import clamp
 
-# Nomes sem ".exe" e em minúsculo: vale para Windows, macOS e Linux (ver detect_activity)
+# Nomes sem ".exe" e em minúsculo: vale para Windows, macOS e Linux (ver detect_activity). No Android, o
+# pacote do app em primeiro plano ou, sem ele aqui, a categoria que o Android informa ("android:jogo"...)
 ACTIVITY_APPS = {
     "PROGRAMMING": {"code", "visual studio code", "devenv", "pycharm64", "pycharm", "xcode",
-                    "claude", "codex"},
+                    "claude", "codex", "com.anthropic.claude", "com.termux", "com.github.android"},
     "DESIGNING": {"fusion360", "fusion"},
-    "GAMING": {"valorant", "cs2", "csgo"},
+    "GAMING": {"valorant", "cs2", "csgo", "android:jogo"},
     "BROWSING": {"chrome", "google chrome", "chromium", "firefox", "msedge", "microsoft edge", "opera",
-                 "brave", "brave browser", "safari"},
-    "SOCIAL": {"discord", "teams", "microsoft teams", "whatsapp"},
-    "MUSIC": {"spotify"},
+                 "brave", "brave browser", "safari", "com.android.chrome", "com.brave.browser",
+                 "org.mozilla.firefox", "com.microsoft.emmx", "com.opera.browser", "com.mi.globalbrowser",
+                 "com.sec.android.app.sbrowser"},
+    "SOCIAL": {"discord", "teams", "microsoft teams", "whatsapp", "com.discord", "com.whatsapp",
+               "com.microsoft.teams", "org.telegram.messenger", "com.instagram.android", "android:social"},
+    "MUSIC": {"spotify", "com.spotify.music", "com.google.android.apps.youtube.music", "android:audio"},
 }
 
 # Qual canal sensorial cada atividade estimula
