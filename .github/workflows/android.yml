@@ -84,8 +84,10 @@ jobs:
       - name: NDK r26b, libclang e ferramentas de build
         run: |
           sudo apt-get update
+          # libgles2-mesa-dev: num host Linux o shiboken lê os cabeçalhos do OpenGL ES do próprio host ao gerar o
+          # QtGui (pyside-setup, sources/pyside6/cmake/Macros/PySideModules.cmake); sem eles, "GLES2/gl2.h" falta
           sudo apt-get install -y --no-install-recommends libclang-15-dev llvm-15-dev clang-15 ninja-build \
-            autoconf automake libtool pkg-config zlib1g-dev libffi-dev libssl-dev
+            autoconf automake libtool pkg-config zlib1g-dev libffi-dev libssl-dev libgles2-mesa-dev libegl-dev
           echo "LLVM_INSTALL_DIR=/usr/lib/llvm-15" >> "$GITHUB_ENV"
           echo "JAVA_HOME=$JAVA_HOME_17_X64" >> "$GITHUB_ENV"
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;26.1.10909125" \
