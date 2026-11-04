@@ -71,6 +71,7 @@ PERNAS = tuple((x, x + 1.0, 2.5, 5.5, 0.6, 2.2) for x in (-4.5, -2.5, 1.5, 3.5))
 TRONCO = ((-6.0, 6.0, TOPO, 2.5, -FRENTE, FRENTE),
           (-7.5, -6.0, -4.5, -1.5, -1.5, 1.5),
           (6.0, 7.5, -4.5, -1.5, -1.5, 1.5))
+PONTAS_BRACOS = ((-7.5, -3.0, 0.0), (7.5, -3.0, 0.0))     # meio da face de fora de cada braço: as patas
 # Juba: (z da raiz, comprimento no centro, largura da raiz, brilho, inclinação em z, posições de -1 a 1
 # na largura da cabeça). Todas sobem: a mecha abre no meio e a ponta volta só um pouco para dentro, então
 # a juba fica volumosa dos lados e fecha em cima sem virar uma chama fechada. As de trás são as mais altas.
@@ -609,16 +610,28 @@ def _aura_pronta(p, now):
     p.drawPixmap(QRectF(REGIAO_AURA), imagem, QRectF(imagem.rect()))
 
 
-def draw_clawd(p, shape, gaze=(0.0, 0.0), blink=1.0, emotion="observando", carinho=False, ssj=None, now=0.0):
-    """
-    Desenha o Clawd com o centro do pet na origem do painter e os pés em +BODY_H/2 (onde a física
-    apoia o corpo). `ssj` = segundos desde a transformação em Super Saiyajin, ou None (desligado).
-    """
+def _camera(gaze, now):
+    """(câmera, giro, inclinação) do quadro: gira para o lado do olhar e balança devagar; os pés tocam o chão."""
     gx, gy = gaze
     giro, inclinacao = GIRO_OLHAR * gx + 5.0 * math.sin(now * 0.7), INCLINACAO + 6.0 * gy
     cam = _Camera(giro, inclinacao)
     pes = max(cam.girar(v)[1] for v in SOLAS)
     cam.dy = BODY_H / 2 - pes * U                        # os pés tocam o chão em qualquer giro
+    return cam, giro, inclinacao
+
+
+def patas(gaze=(0.0, 0.0), now=0.0):
+    """(esquerda, direita): onde as patas aparecem no quadro, em px com o centro do pet na origem (sem girar)."""
+    cam = _camera(gaze, now)[0]
+    return tuple(cam.tela(v) for v in PONTAS_BRACOS)
+
+
+def draw_clawd(p, shape, gaze=(0.0, 0.0), blink=1.0, emotion="observando", carinho=False, ssj=None, now=0.0):
+    """
+    Desenha o Clawd com o centro do pet na origem do painter e os pés em +BODY_H/2 (onde a física
+    apoia o corpo). `ssj` = segundos desde a transformação em Super Saiyajin, ou None (desligado).
+    """
+    cam, giro, inclinacao = _camera(gaze, now)
 
     escala = 0.0 if ssj is None else min(1.0, max(0.05, ssj / CRESCER_CABELO))
     pronto = ssj is not None and ssj >= EXPLOSAO        # transformação acabou: usa o que está guardado

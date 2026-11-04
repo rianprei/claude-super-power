@@ -40,6 +40,7 @@ app inteiro usam um relógio virtual: avançam o tempo sem esperar.
 | `test_festa.py` | Fogos de artifício ligados à rede e brincadeira mais animada quando feliz. |
 | `test_homeostase.py` | Homeostase: trabalhar é estímulo, então o tédio não sobe enquanto ele programa. |
 | `test_jorge.py` | Etapa 4 do multipet: o Jorge, segundo personagem, feito só de configuração e conteúdo. |
+| `test_ki.py` | Rajadas de Ki do Clawd em Super Saiyajin: fases, física por tempo, desenho e a troca do papel pelo Ki. |
 | `test_linux.py` | Linux: o app empacotado roda em qualquer distro com a glibc mínima dele. |
 | `test_macos.py` | MacOS: janelas do pet visíveis com outro app ativo, sem sombra, clique na aura e o macOS mínimo dos binários. |
 | `test_mesa.py` | Notebook: sentar e levantar pelo disparo do neurônio SENTAR. |

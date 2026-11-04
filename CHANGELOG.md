@@ -50,6 +50,32 @@
     verdade em Debian 11/12/13, Ubuntu 20.04/22.04/24.04, Mint 22, Kali, Fedora, Arch, openSUSE Leap e
     Tumbleweed, AlmaLinux 8 e Rocky 9.
   - Teste do leitor do X11 com uma janela de verdade (Xvfb e openbox no CI).
+- Rajadas de Ki: na revolução, o Clawd em Super Saiyajin atira Ki no lugar das bolinhas de papel
+  (`world/ki.py`). Cada rajada:
+  - é uma esfera pequena e redonda: núcleo branco, borda amarelo-dourada, brilho e arcos elétricos azul-ciano
+    que piscam;
+  - nasce na pata do lado do cursor e carrega por 0,18 s, com faíscas entrando; acompanha a pata se ele se
+    mexe;
+  - sai acelerando até 1700 px/s, com uma cauda de energia que afina e apaga e solta faíscas;
+  - explode num flash curto (núcleo, anel e estilhaços) no alvo, num post-it ou na borda da tela.
+
+  O intervalo continua vindo do neurônio PAPEL. Às vezes vem um segundo tiro da outra pata, e cada tiro dá um
+  coice no pet. A física é por tempo, sem depender da taxa de quadros. Fora do Super Saiyajin, continua o
+  papel.
+- Android 10 ou mais novo (arm64-v8a e x86_64): o pet mora dentro do app, num palco preto (o Android não deixa
+  um app Qt flutuar sobre os outros nem ler as janelas deles, e no Android as janelas do Qt não ficam
+  transparentes). `plataforma/android.py` devolve tudo neutro (sem ocioso, janelas nem atalho global); o menu
+  abre com um toque longo no pet (vale para tela de toque em qualquer sistema); a memória fica na pasta privada
+  do app; abre direto no pet. APK pelo `pyside6-android-deploy` (PySide6 6.12, Python 3.14 no aparelho, NDK
+  r28c), com o numpy e o conteúdo dos pets (`ferramentas/gerar_android.py`), e aberto num emulador de verdade
+  (`ferramentas/fumaca_android.sh`). O Android 9 fica de fora: a libshiboken6 das rodas usa TLS nativo do ELF e
+  não carrega nele ("unknown reloc type 16", visto no emulador).
+- Conjunto legado, com Python 3.8 e Qt 5.15 (PySide2): Windows 7 SP1, 8 e 8.1, Windows de 32 bits, macOS 10.13
+  e Linux com glibc 2.17 (CentOS 7, Ubuntu 16.04 e 18.04). O código continua escrevendo PySide6: o pacote
+  `qt5compat` faz a ponte (exec, position/globalPosition, QAction no QtGui, DPI automático) e `qt_legado.ativar()`
+  o registra como PySide6 quando o PySide6 não está instalado. O código ficou compatível com o Python 3.8
+  (`from __future__ import annotations`, sem pairwise, zip strict e removesuffix). A suíte inteira passa no
+  PySide6 6.11.3, no 6.4.3 e no PySide2 5.15.
 - Executáveis modernos (Windows, macOS 15+, Linux x64/ARM64) com Python 3.13: no 3.11 o PySide6 6.11.3 abortava
   ao fechar ("none_dealloc", visto no Linux ARM64 do CI). Os compatíveis seguem no 3.11 (o PySide6 6.4.3 pede)
   e não têm o problema.

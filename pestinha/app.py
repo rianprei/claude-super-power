@@ -525,6 +525,7 @@ class PestinhaApp(SessaoMixin, InteracaoMixin, QObject):
             revoltado=self.protest.stage == 4 and not self.asleep and not preso and self.pet.isVisible(),
             papel_hz=motores["PAPEL"],
             obstaculos=self._obstaculos_da_mesa(),
+            patas=lambda: self.pet.patas_na_tela(now),      # Clawd em Super Saiyajin: Ki no lugar do papel
         )
         # o cursor também bate na bolinha
         if self._prev_cursor is not None and now > self._prev_cursor_t:

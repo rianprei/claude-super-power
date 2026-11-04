@@ -11,6 +11,7 @@ Objetos que aparecem na tela: post-its, memes, cartazes, notebook, fogos e a jan
 | `arrastavel.py` | Janela arrastável que flutua sobre a área de trabalho (painéis, notebook, placa). |
 | `cartazes.py` | Os cartazes e a bandeira que o pet levanta. |
 | `fireworks.py` | O fogo de artifício do bichinho feliz. |
+| `ki.py` | As rajadas de Ki do Clawd em Super Saiyajin (no lugar das bolinhas de papel da revolução). |
 | `mischief.py` | Memes, fotos e bilhetes que o pet espalha pela tela. |
 | `notebook.py` | O notebook do pet (só o desenho e o arrastar). |
 | `objetos.py` | Os post-its, memes e fotos que o pet traz, como janelas na tela. |

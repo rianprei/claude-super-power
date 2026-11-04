@@ -51,18 +51,30 @@ fica salvo localmente e muda o jeito dele com o tempo.
 
 ## Requisitos
 
-- Windows 10 (1809 ou mais novo) ou 11, em x64 ou ARM64; macOS 10.14 (Mojave) ou mais novo, em Intel ou
-  Apple Silicon; ou Linux com glibc 2.28 ou mais nova (Debian 10+, Ubuntu 20.04+, Mint 20+, Fedora, Arch,
-  Kali, openSUSE, RHEL/Alma/Rocky 8+...), em X11 ou Wayland (pelo XWayland), x64 ou ARM64.
-  Linux com musl (Alpine) não roda o executável.
-  Windows 7, 8 e 8.1 e Windows de 32 bits não rodam: o Qt 6 (PySide6) não tem versão para eles.
-- Python 3.11 ou mais novo; com o `requirements.txt`, prefira o 3.12 ou mais novo (no 3.11 o PySide6 6.11.3 pode
-  abortar ao fechar, com "none_dealloc"; os executáveis já usam o 3.13). No macOS 10.14 a 14, Python 3.11 e `pip install -r requirements-compativel.txt`
-  (o PySide6 6.11.3 pede o macOS 15, medido nos binários; o 6.4.3 é o último que abre no 10.14).
-  macOS 10.13 ou mais antigo não roda: o Qt 6 não tem versão para ele. No Linux com glibc 2.28 a 2.34, o mesmo
-  `requirements-compativel.txt`. No Linux, o `pip` compila o `evdev` (dependência do pynput): precisa de `gcc` e
-  dos cabeçalhos do kernel e do Python. O executável não precisa de nada disso.
-- No Linux não precisa de nenhum programa extra: as janelas e o tempo ocioso vêm direto do X11.
+| Sistema | Versões | Como |
+|---|---|---|
+| Windows | 10 (1809+) e 11, x64 e ARM64 | `requirements.txt` (PySide6 6.11.3, Qt 6) |
+| Windows | 7 SP1, 8 e 8.1, e qualquer Windows de 32 bits | `requirements-legado.txt` (Python 3.8, PySide2/Qt 5.15) |
+| macOS | 15 ou mais novo, Apple Silicon e Intel | `requirements.txt` |
+| macOS | 10.14 a 14 | `requirements-compativel.txt` (Python 3.11, PySide6 6.4.3) |
+| macOS | 10.13 (Intel) | `requirements-legado.txt` |
+| Linux | glibc 2.35+ (Debian 12+, Ubuntu 22.04+, Mint 21+, Fedora, Arch, Kali, Tumbleweed...), x64 e ARM64 | `requirements.txt` |
+| Linux | glibc 2.28 a 2.34 (Debian 10/11, Ubuntu 20.04, RHEL/Alma/Rocky 8 e 9, openSUSE Leap 15, Mint 20) | `requirements-compativel.txt` |
+| Linux | glibc 2.17 a 2.27 (CentOS/RHEL 7, Ubuntu 16.04 e 18.04) | `requirements-legado.txt` |
+| Android | 10 ou mais novo, arm64-v8a e x86_64 | APK (`ferramentas/gerar_android.py`) |
+
+- O código é um só. No conjunto legado, o pacote `qt5compat` faz o PySide2 responder como PySide6 (`qt_legado.py`).
+- Não rodam: Windows XP e Vista; macOS 10.12 ou mais antigo; Linux com glibc abaixo de 2.17 ou com musl
+  (Alpine); Android 9 ou mais antigo, e celulares de 32 bits (as rodas do PySide6 para Android são só 64 bits e
+  não carregam no Android 9).
+- No Linux, X11 ou Wayland (pelo XWayland), sem nenhum programa extra: as janelas e o tempo ocioso vêm direto
+  do X11.
+- No Android o pet mora dentro do app: o sistema não deixa um app Qt flutuar sobre os outros nem ler as
+  janelas deles. O menu abre com um toque longo no pet.
+- Python: com o `requirements.txt`, prefira o 3.12 ou mais novo (no 3.11 o PySide6 6.11.3 pode abortar ao
+  fechar, com "none_dealloc"; os executáveis já usam o 3.13). No Linux, o `pip` compila o `evdev`
+  (dependência do pynput): precisa de `gcc` e dos cabeçalhos do kernel e do Python. Os executáveis não
+  precisam de nada disso.
 - Cerca de 70 MB de RAM com ele rodando.
 
 ## Instalação e uso
@@ -206,6 +218,10 @@ O workflow `.github/workflows/executaveis.yml` gera Windows, macOS e Linux em m�
    | `pestinha-linux-x64` | Linux x64 com glibc 2.35+ (Debian 12+, Ubuntu 22.04+, Mint 21+, Fedora, Arch, Kali...) | `.tar.gz`: pasta `Pestinha/` |
    | `pestinha-linux-arm64` | Linux ARM64 com glibc 2.39+ (Ubuntu 24.04+, Debian 13+, Raspberry Pi OS novo...) | `.tar.gz`: pasta `Pestinha/` |
    | `pestinha-linux-compativel` | Linux x64 com glibc 2.28 a 2.34 (Debian 10/11, Ubuntu 20.04, RHEL 8/9, Leap 15...) | `.tar.gz`: pasta `Pestinha/` |
+   | `pestinha-linux-legado` | Linux x64 com glibc 2.17 a 2.27 (CentOS 7, Ubuntu 16.04 e 18.04) | `.tar.gz`: pasta `Pestinha/` |
+   | `pestinha-windows-legado-32bits` | Windows 7 SP1, 8, 8.1, 10 e 11, de 32 ou 64 bits | `Pestinha.exe` + `assets/` + `pets/` |
+   | `pestinha-macos-legado` | macOS 10.13 (Intel) | `Pestinha.app` (zip) |
+   | `android-aarch64` / `android-x86_64` (workflow `android`) | Android 10+ (celular: aarch64) | `.apk` |
 
    No Linux: `tar -xzf Pestinha-linux-x64.tar.gz` e `./Pestinha/Pestinha`. O de Linux também é aberto num X de
    verdade em 16 combinações de distro e app (job `distros`), só com o que todo desktop tem. A glibc mínima é

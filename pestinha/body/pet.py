@@ -34,7 +34,7 @@ from ..ajustes import (
 from ..config import EMOTION_NAMES
 from ..core.emotion import EYE_SHAPES
 from ..core.physics import Body
-from .clawd3d import JANELA_SSJ, draw_clawd
+from .clawd3d import JANELA_SSJ, draw_clawd, patas
 from .desenho_rosto import (
     BODY_H,
     BODY_W,
@@ -164,6 +164,15 @@ class PetWindow(QWidget):
             self.geometria = alvo
             self.setFixedSize(alvo[0], alvo[1])
             self._regiao_clique = None           # a região de clique é relativa à janela: refaz
+
+    def patas_na_tela(self, now):
+        """[(x, y) esquerda, (x, y) direita] das patas do Clawd em Super Saiyajin, na tela; None nos outros casos."""
+        if self.corpo != "clawd3d" or self.state.super_saiyajin_desde is None:
+            return None
+        a = math.radians(self.body.angle)
+        c, s = math.cos(a), math.sin(a)
+        return [(self.body.x + q.x() * c - q.y() * s, self.body.y + q.x() * s + q.y() * c)
+                for q in patas(self.state.gaze, now)]
 
     def _atualizar_regiao_de_clique(self):
         """Só o corpo (girado) recebe o mouse; o resto do quadrado transparente deixa o clique passar."""

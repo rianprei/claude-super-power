@@ -13,5 +13,5 @@ Controladores de decisão: ligam o que a rede decide à cena (sono, mesa, protes
 | `mesa.py` | O computadorzinho do pet: sentar e levantar do notebook. |
 | `mischief_ctl.py` | Quando e como ele apronta, e o que a dispensa causa. |
 | `protest_ctl.py` | Liga o protesto (core/protesto.py) à cena: cartaz, estágio, repressão. |
-| `revolucao.py` | As bolinhas de papel que o pet atira no cursor quando está em revolução. |
+| `revolucao.py` | O que o pet atira no cursor quando está em revolução: bolinhas de papel ou, no Clawd em Super Saiyajin, rajadas de Ki (world/ki.py). |
 | `sleep.py` | Quando ele dorme, quando acorda, e o que acontece ao adormecer. |
