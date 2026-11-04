@@ -488,7 +488,8 @@ public final class Ponte {
         };
         IntentFilter filtro = new IntentFilter(ACAO);
         if (Build.VERSION.SDK_INT >= 33) {
-            ctx.registerReceiver(receptor, filtro, Context.RECEIVER_NOT_EXPORTED);
+            ctx.registerReceiver(receptor, filtro, 4);    // Context.RECEIVER_NOT_EXPORTED (API 33: a variante
+                                                          // compatível compila com um SDK mais antigo)
         } else {
             ctx.registerReceiver(receptor, filtro);
         }
