@@ -87,3 +87,14 @@ def test_no_mac_as_janelas_do_pet_funcionam_de_verdade():
     r = subprocess.run([sys.executable, str(script)], env=env, capture_output=True,  # noqa: S603  # nosec B603
                        text=True, timeout=60, check=False)
     assert r.returncode == 0, r.stdout + r.stderr
+
+
+def test_qt5_no_mac_desenha_pela_camada_e_respeita_quem_escolheu(monkeypatch):
+    from pestinha.plataforma import macos
+
+    monkeypatch.delenv("QT_MAC_WANTS_LAYER", raising=False)
+    macos.preparar_qt()
+    assert os.environ["QT_MAC_WANTS_LAYER"] == "1"      # sem isso o Qt 5 trava repintando no macOS 11+
+    monkeypatch.setenv("QT_MAC_WANTS_LAYER", "0")
+    macos.preparar_qt()
+    assert os.environ["QT_MAC_WANTS_LAYER"] == "0"

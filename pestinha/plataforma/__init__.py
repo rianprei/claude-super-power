@@ -16,7 +16,8 @@ lógicas pela escala de cada tela) ou, se COORDENADAS_LOGICAS, já nas coordenad
     regiao_de_clique(id, rets)   só esses retângulos da janela recebem o mouse (X11; nos outros, nada)
     atravessar_clique(id, sim)   o clique atravessa a janela inteira (Windows e macOS; no X11, nada)
     pasta_de_dados()             pasta do app nos dados do usuário (quando a do programa não serve)
-    preparar_qt()                antes do QApplication (Linux: Wayland abre pelo XWayland)
+    preparar_qt()                antes do QApplication (Linux: Wayland abre pelo XWayland; macOS: o Qt 5 desenha
+                                 pela camada do Core Animation)
 """
 
 from __future__ import annotations

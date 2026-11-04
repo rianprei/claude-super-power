@@ -29,6 +29,18 @@ OPCOES_NA_TELA = (1 << 0) | (1 << 4)        # OnScreenOnly | ExcludeDesktopEleme
 JANELA_NULA = 0
 _hotkey = None
 
+def preparar_qt():
+    """Antes do QApplication: o Qt 5 (conjunto legado, macOS 10.13) desenha pela camada do Core Animation.
+
+    O Qt 5.15.2 do PySide2 foi compilado com um SDK antigo e usa o desenho antigo (QNSWindowBackingStore); do
+    macOS 11 em diante o AppKit força as views a terem camada, e cada `displayLayer` faz um flush que pede outro
+    display: a thread principal fica presa repintando (medido no CI: macOS 15, 100% das amostras em
+    CA::Transaction::commit -> QBackingStore::flush) e o app não responde. Com QT_MAC_WANTS_LAYER ele usa o
+    QCALayerBackingStore. O Qt 6 sempre usa camada e ignora a variável. Quem já escolheu é respeitado.
+    """
+    os.environ.setdefault("QT_MAC_WANTS_LAYER", "1")
+
+
 def _quartz():
     """Carrega o módulo Quartz (pyobjc); devolve None se não estiver instalado."""
     try:
