@@ -98,10 +98,21 @@ jobs:
         run: python ferramentas/minimo_macos.py dist/Pestinha.app ${{ matrix.macos_min }} ${{ matrix.arch }}
       - name: Teste de fumaça (abre, roda 8 s e fecha)
         shell: bash
-        timeout-minutes: 3
+        timeout-minutes: 5
         run: |
           if [ "$RUNNER_OS" = "macOS" ]; then
-            dist/Pestinha.app/Contents/MacOS/Pestinha --direto --sair-em 8
+            # em segundo plano: se travar, o sample do macOS mostra onde, antes de matar
+            dist/Pestinha.app/Contents/MacOS/Pestinha --direto --sair-em 8 >saida.txt 2>&1 &
+            PID=$!
+            for _ in $(seq 1 60); do kill -0 "$PID" 2>/dev/null || break; sleep 1; done
+            if kill -0 "$PID" 2>/dev/null; then
+              echo "TRAVOU: ainda rodando depois de 60 s"
+              sample "$PID" 3 -file amostra.txt >/dev/null 2>&1 || true
+              grep -E "Thread_|^ +[0-9]+ " amostra.txt | head -80 || true
+              kill -9 "$PID"; cat saida.txt; exit 1
+            fi
+            wait "$PID" || { cat saida.txt; exit 1; }
+            cat saida.txt
             ls "$HOME/Library/Application Support/Claude Super Power/memory/pets"
           else
             # numa pasta própria: grava a memory/ ao lado (no Windows, sozinho: usa os pets de dentro do .exe)
@@ -163,6 +174,7 @@ jobs:
   distros:
     # abre o app de Linux num X virtual dentro de cada distro, só com o que todo desktop tem
     needs: [executavel, linux-compativel, linux-legado]
+    if: ${{ !cancelled() }}          # um build de outro sistema que falhou não impede o teste nas distros
     strategy:
       fail-fast: false
       matrix:
