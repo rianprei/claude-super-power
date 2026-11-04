@@ -89,6 +89,7 @@ def _revolucao():
 
 
 def test_em_super_saiyajin_atira_ki_da_pata_do_lado_do_cursor_e_com_coice(monkeypatch):
+    monkeypatch.setattr("pestinha.mind.revolucao.CHANCE_FORTE_MAX", 0.0)      # só o Ki normal aqui
     monkeypatch.setattr("pestinha.mind.revolucao.random.random", lambda: 0.0)        # dispara e sempre em dupla
     monkeypatch.setattr("pestinha.mind.revolucao.random.uniform", lambda a, b: a)
     rev, play = _revolucao()
@@ -162,6 +163,7 @@ def test_a_rede_quer_atirar_ki_so_quando_sente_o_poder():
 
 
 def test_fora_da_revolucao_o_motor_ki_decide_e_mira_no_cursor(monkeypatch):
+    monkeypatch.setattr("pestinha.mind.revolucao.CHANCE_FORTE_MAX", 0.0)      # só o Ki normal aqui
     monkeypatch.setattr("pestinha.mind.revolucao.random.uniform", lambda a, b: (a + b) / 2)
     corpo = SimpleNamespace(x=500.0, y=600.0, vx=0.0)
     patas = [(450.0, 580.0), (550.0, 580.0)]
@@ -192,3 +194,43 @@ def test_a_mira_e_o_cursor_na_hora_do_disparo_e_nao_no_comeco_da_carga():
     linha = _rodar(ki, 3.0)
     x, y = next((x, y) for _t, f, x, y in linha if f == "clarao")
     assert (x, y) == (pytest.approx(100.0, abs=1.0), pytest.approx(100.0, abs=1.0))
+
+
+def test_as_vezes_sai_o_forte_teleguiado_um_por_vez_e_com_coice_maior(monkeypatch):
+    monkeypatch.setattr("pestinha.mind.revolucao.random.random", lambda: 0.0)
+    rev, _play = _revolucao()
+    corpo = SimpleNamespace(x=500.0, y=400.0, vx=0.0)
+    patas = [(450.0, 380.0), (550.0, 380.0)]
+    rev.tick(0.0, DT, TELA, (100.0, 300.0), (0, 0), corpo, True, False, [], 0.0,
+             patas=lambda: patas, ki_hz=60.0, livre=True)
+    assert len(rev.kis) == 1 and rev.kis[0].forte and rev._segundo is None      # forte: sem dupla
+    assert corpo.vx == pytest.approx(175.0)
+    rev.tick(0.01, DT, TELA, (100.0, 300.0), (0, 0), corpo, True, False, [], 0.0,
+             patas=lambda: patas, ki_hz=60.0, livre=True)
+    assert [ki.forte for ki in rev.kis] == [True, False]                         # só uma teleguiada por vez
+    rev.fechar()
+    from pestinha.mind import revolucao
+    assert min(revolucao.CHANCE_FORTE_MAX, revolucao.CHANCE_FORTE_BASE
+                                              + revolucao.CHANCE_FORTE_POR_HZ * 10.0) > revolucao.CHANCE_FORTE_BASE   # mais vontade, mais forte
+
+
+def test_o_forte_persegue_o_cursor_que_foge_e_explode_nele():
+    estado = {"t": 0.0}
+
+    def cursor():                                    # o mouse foge em curva
+        t = estado["t"]
+        return (900.0 + 300.0 * math.sin(t * 1.3), 260.0 + 220.0 * math.sin(t * 2.1))
+
+    ki = KiBlast(lambda: (160.0, 640.0), cursor, 0.0, semente=3, forte=True)
+    t, explodiu = 0.0, None
+    while t < 6.0:
+        t += DT
+        estado["t"] = t
+        if not ki.passo(t, DT, (0, 0, 1400, 800)):
+            break
+        if ki.fase == "clarao" and explodiu is None:
+            explodiu = (ki.ex, ki.ey, cursor())
+    assert explodiu is not None
+    x, y, (cx, cy) = explodiu
+    assert math.hypot(x - cx, y - cy) <= ki_mod.ACERTO + ki_mod.VELOCIDADE_FORTE * DT      # alcançou o cursor
+    assert ki.perfil.raio > ki_mod.RAIO and ki.perfil.lado > LADO                          # e é maior

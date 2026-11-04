@@ -64,6 +64,12 @@
   a taxa dele vira a chance de atirar (`GANHO_KI`), e o alvo é sempre o cursor. Medido na rede: uns 13 tiros por minuto logo
   depois de transformar, caindo para 2 ou 3 por minuto em 10 min; cansado, menos de 1 por minuto. A rede
   passa a ter 486 neurônios, 31 canais e 16 motores, e o aprendizado salvo continua valendo.
+  Às vezes sai uma rajada forte e teleguiada:
+  - maior, carrega 0,55 s e tem coroa de labaredas e 4 arcos elétricos;
+  - persegue o cursor em curva (até 5,5 rad/s) e atravessa os post-its;
+  - explode ao alcançá-lo, numa bola de fogo branca com duas ondas de choque;
+  - dá um coice 2,5 vezes maior;
+  - a chance cresce com a vontade da rede, de 5% até 35%, e só sai uma por vez.
   Na revolução, o intervalo continua vindo do neurônio PAPEL. Às vezes vem um segundo tiro da outra pata, e cada tiro dá um
   coice no pet. A física é por tempo, sem depender da taxa de quadros. Fora do Super Saiyajin, continua o
   papel.

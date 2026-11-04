@@ -12,6 +12,10 @@ trás (coice). Há no máximo 12 no ar.
 Fora da revolução, em Super Saiyajin, quem decide é o motor KI da rede (o canal PODER o alimenta enquanto
 ele está transformado; brincadeira e raiva somam, calma, tristeza e cansaço seguram): a taxa dele vira a
 chance de atirar. O alvo é sempre o cursor.
+
+Às vezes sai a rajada forte, teleguiada (persegue o cursor): a chance cresce com a taxa do disparo que a
+decidiu (CHANCE_FORTE_BASE + CHANCE_FORTE_POR_HZ por Hz, até CHANCE_FORTE_MAX). Só uma teleguiada no ar por vez,
+sem dupla, e o coice é COICE_FORTE.
 """
 
 from __future__ import annotations
@@ -30,6 +34,10 @@ MAXIMO_KI = 12
 CHANCE_DUPLA = 0.35        # chance de vir um segundo Ki da outra pata
 INTERVALO_DUPLA = (0.12, 0.3)   # s entre os dois
 COICE = 70.0               # px/s que o tiro empurra o pet para trás
+COICE_FORTE = 175.0        # px/s da teleguiada
+CHANCE_FORTE_BASE = 0.05
+CHANCE_FORTE_POR_HZ = 0.02
+CHANCE_FORTE_MAX = 0.35
 
 
 class RevolucaoController:
@@ -53,11 +61,11 @@ class RevolucaoController:
         self.cursor = cursor                        # a mira de cada Ki é lida no disparo, depois da carga
         if revoltado and random.random() < papel_hz * GANHO_PAPEL * dt:
             if maos:
-                self._rajada(now, cursor, corpo, visivel, patas)
+                self._rajada(now, cursor, corpo, visivel, patas, papel_hz)
             elif len(self.papeis) < MAXIMO_PAPEIS:
                 self._atirar(now, cursor, corpo, visivel)
         elif maos and livre and not revoltado and random.random() < ki_hz * GANHO_KI * dt:
-            self._rajada(now, cursor, corpo, visivel, patas)
+            self._rajada(now, cursor, corpo, visivel, patas, ki_hz)
         if self._segundo is not None and now >= self._segundo[0]:
             if maos and (revoltado or livre) and len(self.kis) < MAXIMO_KI:
                 self._ki(now, self._segundo[2], corpo, visivel, patas, self._segundo[1])
@@ -65,16 +73,21 @@ class RevolucaoController:
         self._mover(now, dt, limites, cursor, vel_cursor, obstaculos)
         self._mover_ki(now, dt, limites, obstaculos, visivel)
 
-    def _rajada(self, now, alvo, corpo, visivel, patas):
-        """Um Ki da pata do lado do alvo e, às vezes, um segundo da outra pata logo depois."""
+    def _rajada(self, now, alvo, corpo, visivel, patas, hz):
+        """Um Ki da pata do lado do alvo: às vezes a forte teleguiada (mais provável quanto maior a taxa `hz` que
+        decidiu o tiro); senão o normal e, às vezes, um segundo da outra pata logo depois."""
         if len(self.kis) >= MAXIMO_KI:
             return
         pata = 0 if alvo[0] < corpo.x else 1
+        chance = min(CHANCE_FORTE_MAX, CHANCE_FORTE_BASE + CHANCE_FORTE_POR_HZ * hz)
+        if not any(ki.forte for ki in self.kis) and random.random() < chance:
+            self._ki(now, alvo, corpo, visivel, patas, pata, forte=True)
+            return
         self._ki(now, alvo, corpo, visivel, patas, pata)
         if random.random() < CHANCE_DUPLA:
             self._segundo = (now + random.uniform(*INTERVALO_DUPLA), 1 - pata, alvo)
 
-    def _ki(self, now, cursor, corpo, visivel, patas, lado):
+    def _ki(self, now, cursor, corpo, visivel, patas, lado, forte=False):
         """Uma rajada de Ki carregando na pata `lado` (0 esquerda, 1 direita), mirando no cursor; coice no pet."""
         ultima = [patas()[lado]]
 
@@ -84,10 +97,10 @@ class RevolucaoController:
                 ultima[0] = maos[lado]
             return ultima[0]
 
-        ki = KiBlast(onde, lambda: self.cursor, now)
+        ki = KiBlast(onde, lambda: self.cursor, now, forte=forte)     # a forte lê o cursor o voo inteiro
         ki.setVisible(visivel)
         self.kis.append(ki)
-        corpo.vx -= math.copysign(COICE, cursor[0] - corpo.x)
+        corpo.vx -= math.copysign(COICE_FORTE if forte else COICE, cursor[0] - corpo.x)
 
     def _mover_ki(self, now, dt, limites, obstaculos, visivel):
         """Anda cada Ki; o que acabou (depois do clarão) fecha."""
