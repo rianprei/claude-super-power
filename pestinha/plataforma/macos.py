@@ -14,7 +14,7 @@ import threading
 
 from PySide6.QtWidgets import QApplication
 
-from ._comum import rodar
+from ._comum import atalho_pynput, rodar
 
 try:
     from quickmachotkey import mask, quickHotKey
@@ -175,7 +175,7 @@ def iniciar_atalho(callback):
     if _hotkey is not None:
         return True
     if quickHotKey is None:
-        return False
+        return atalho_pynput(callback)  # sem QuickMacHotKey (Python 3.8, macOS antigo): pelo pynput, se houver
 
     if threading.current_thread() is not threading.main_thread() or (
         app := QApplication.instance()

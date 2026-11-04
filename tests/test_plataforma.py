@@ -153,6 +153,8 @@ def test_atalho_do_mac_usa_control_option_shift(monkeypatch):
         capturado.update(kwargs)
         return lambda _callback: Atalho()
 
+    if macos.mask is None:
+        pytest.skip("sem QuickMacHotKey (conjunto legado): o atalho vai pelo pynput")
     monkeypatch.setattr(macos, "_hotkey", None)
     monkeypatch.setattr(macos, "quickHotKey", quick_hot_key)
     assert macos.iniciar_atalho(lambda: None) is True
@@ -193,3 +195,13 @@ def test_android_devolve_tudo_neutro_e_o_menu_vem_pelo_toque():
     assert android.janelas_visiveis({1}) == []
     assert android.iniciar_atalho(lambda: None) is False
     assert "toque longo" in android.LIMITACAO_ATALHO
+
+
+@pytest.mark.skipif(sys.platform != "darwin", reason="Requer backend macOS")
+def test_sem_quickmachotkey_o_mac_usa_o_pynput(monkeypatch):
+    assert macos is not None
+    chamadas = []
+    monkeypatch.setattr(macos, "_hotkey", None)
+    monkeypatch.setattr(macos, "quickHotKey", None)
+    monkeypatch.setattr(macos, "atalho_pynput", lambda cb: chamadas.append(cb) or True)
+    assert macos.iniciar_atalho(print) is True and chamadas == [print]

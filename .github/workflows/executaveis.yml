@@ -107,8 +107,10 @@ jobs:
             for _ in $(seq 1 60); do kill -0 "$PID" 2>/dev/null || break; sleep 1; done
             if kill -0 "$PID" 2>/dev/null; then
               echo "TRAVOU: ainda rodando depois de 60 s"
+              # a pilha Python (py-spy) e a nativa da thread principal (sample)
+              python -m pip install -q py-spy >/dev/null 2>&1 && sudo "$(python -c 'import shutil; print(shutil.which("py-spy"))')" dump --pid "$PID" || true
               sample "$PID" 3 -file amostra.txt >/dev/null 2>&1 || true
-              grep -E "Thread_|^ +[0-9]+ " amostra.txt | head -80 || true
+              sed -n '/Call graph/,/Total number/p' amostra.txt | head -120 || true
               kill -9 "$PID"; cat saida.txt; exit 1
             fi
             wait "$PID" || { cat saida.txt; exit 1; }

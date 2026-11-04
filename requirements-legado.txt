@@ -11,3 +11,6 @@ python-xlib==0.33; sys_platform == "linux"
 pyobjc-core==9.2; sys_platform == "darwin"          # o Quartz 9.2 aceita um core mais novo, sem roda para o 3.8
 pyobjc-framework-Quartz==9.2; sys_platform == "darwin"
 pyobjc-framework-Cocoa==9.2; sys_platform == "darwin"
+pyobjc-framework-ApplicationServices==9.2; sys_platform == "darwin"
+# no Mac, o atalho global vai pelo pynput (o QuickMacHotKey não roda no Python 3.8)
+pynput==1.7.7; sys_platform == "darwin"
