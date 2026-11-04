@@ -59,7 +59,8 @@ def _suave(u):
 
 
 class KiBlast(QWidget):
-    """Uma rajada de Ki. `pata()` diz onde a pata está agora (a carga a acompanha); `alvo` é para onde ela vai."""
+    """Uma rajada de Ki. `pata()` diz onde a pata está agora (a carga a acompanha); `alvo` é para onde ela vai:
+    um ponto ou uma função lida no instante do disparo (o cursor de agora, não o de quando a carga começou)."""
 
     def __init__(self, pata, alvo, now, semente=None):
         """Nasce carregando na pata, já visível."""
@@ -115,7 +116,7 @@ class KiBlast(QWidget):
 
     def _disparar(self, now):
         """Fim da carga: mira no alvo a partir da pata e sai."""
-        ax, ay = self.alvo
+        ax, ay = self.alvo() if callable(self.alvo) else self.alvo
         vx, vy = ax - self.ex, ay - self.ey
         self.distancia = math.hypot(vx, vy) or 1.0
         self.dx, self.dy = vx / self.distancia, vy / self.distancia

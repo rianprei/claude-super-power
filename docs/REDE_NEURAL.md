@@ -110,6 +110,6 @@ Os motores de decisão viram comportamento assim (valores em `pestinha/ajustes.p
 | Travessuras | por segundo: taxa de `TRAVESSURA` × 0.002. |
 | Cartazes do castigo | por segundo: taxa de `CARTAZ` × 0.5 (cada um fica ao menos 8 s). |
 | Bolinhas de papel | por segundo: taxa de `PAPEL` × 0.05 (só na revolução). |
-| Rajadas de Ki | por segundo: taxa de `KI` × 0.015 (Clawd em Super Saiyajin, fora da revolução; bravo mira no cursor). |
+| Rajadas de Ki | por segundo: taxa de `KI` × 0.015 (Clawd em Super Saiyajin, fora da revolução; mira no cursor). |
 
 Regras que ainda não são da rede: as condições do corpo (dormindo, segurado, no ar), os estágios do protesto (acúmulo com limiar), o sono pela energia e a escolha do tipo de travessura (memória episódica).

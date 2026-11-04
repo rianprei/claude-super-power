@@ -161,17 +161,17 @@ def test_a_rede_quer_atirar_ki_so_quando_sente_o_poder():
     assert media_ki(1.0, {"FATIGUE": 1.0}) < transformado      # cansado atira menos
 
 
-def test_fora_da_revolucao_o_motor_ki_decide_e_escolhe_a_mira(monkeypatch):
+def test_fora_da_revolucao_o_motor_ki_decide_e_mira_no_cursor(monkeypatch):
     monkeypatch.setattr("pestinha.mind.revolucao.random.uniform", lambda a, b: (a + b) / 2)
     corpo = SimpleNamespace(x=500.0, y=600.0, vx=0.0)
     patas = [(450.0, 580.0), (550.0, 580.0)]
     cursor = (900.0, 650.0)
 
-    def atirar(ki_hz, livre=True, bravo=False, sorte=0.5, com_patas=True):
+    def atirar(ki_hz, livre=True, sorte=0.5, com_patas=True):
         monkeypatch.setattr("pestinha.mind.revolucao.random.random", lambda: sorte)
         rev, _play = _revolucao()
         rev.tick(0.0, 1.0, TELA, cursor, (0, 0), corpo, True, False, [], 0.0,
-                 patas=(lambda: patas) if com_patas else (lambda: None), ki_hz=ki_hz, livre=livre, bravo=bravo)
+                 patas=(lambda: patas) if com_patas else (lambda: None), ki_hz=ki_hz, livre=livre)
         kis = list(rev.kis)
         rev.fechar()
         return kis, rev
@@ -180,6 +180,15 @@ def test_fora_da_revolucao_o_motor_ki_decide_e_escolhe_a_mira(monkeypatch):
     assert atirar(ki_hz=60.0, livre=False)[0] == []           # dormindo, preso ou escondido: não atira
     assert atirar(ki_hz=60.0, com_patas=False)[0] == []       # fora do Super Saiyajin: não atira
     kis, _ = atirar(ki_hz=60.0)
-    assert len(kis) == 1 and kis[0].alvo[1] < corpo.y - 300     # para se exibir: para o alto
-    kis, _ = atirar(ki_hz=60.0, bravo=True)
-    assert kis[0].alvo == cursor and (kis[0].ex, kis[0].ey) == patas[1]    # bravo: no cursor, pata do lado dele
+    assert len(kis) == 1 and kis[0].alvo() == cursor              # sempre no cursor
+    assert (kis[0].ex, kis[0].ey) == patas[1]                       # da pata do lado dele
+
+
+def test_a_mira_e_o_cursor_na_hora_do_disparo_e_nao_no_comeco_da_carga():
+    alvo = {"p": (900.0, 500.0)}
+    ki = KiBlast(lambda: (100.0, 500.0), lambda: alvo["p"], 0.0, semente=6)
+    _rodar(ki, CARGA / 2)
+    alvo["p"] = (100.0, 100.0)                       # o mouse foi para cima durante a carga
+    linha = _rodar(ki, 3.0)
+    x, y = next((x, y) for _t, f, x, y in linha if f == "clarao")
+    assert (x, y) == (pytest.approx(100.0, abs=1.0), pytest.approx(100.0, abs=1.0))

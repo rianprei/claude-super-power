@@ -529,7 +529,6 @@ class PestinhaApp(SessaoMixin, InteracaoMixin, QObject):
             patas=lambda: self.pet.patas_na_tela(now),      # Clawd em Super Saiyajin: Ki no lugar do papel
             ki_hz=motores["KI"],                            # fora da revolução, a rede decide se atira Ki
             livre=not self.asleep and not preso and self.pet.isVisible(),
-            bravo=motores["ANGRY"] > motores["CHEER"],       # bravo mira em você; senão, atira para o alto
         )
         # o cursor também bate na bolinha
         if self._prev_cursor is not None and now > self._prev_cursor_t:

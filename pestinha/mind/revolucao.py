@@ -11,8 +11,7 @@ trás (coice). Há no máximo 12 no ar.
 
 Fora da revolução, em Super Saiyajin, quem decide é o motor KI da rede (o canal PODER o alimenta enquanto
 ele está transformado; brincadeira e raiva somam, calma, tristeza e cansaço seguram): a taxa dele vira a
-chance de atirar. A rede também escolhe a mira: bravo (ANGRY acima de CHEER), no cursor; senão, para o alto,
-para se exibir.
+chance de atirar. O alvo é sempre o cursor.
 """
 
 from __future__ import annotations
@@ -31,8 +30,6 @@ MAXIMO_KI = 12
 CHANCE_DUPLA = 0.35        # chance de vir um segundo Ki da outra pata
 INTERVALO_DUPLA = (0.12, 0.3)   # s entre os dois
 COICE = 70.0               # px/s que o tiro empurra o pet para trás
-ALTO = (-160.0, -20.0)     # graus: o tiro para se exibir vai para cima (0 = direita, -90 = para cima)
-DISTANCIA_LIVRE = (350.0, 800.0)   # px até onde o tiro para se exibir explode
 
 
 class RevolucaoController:
@@ -44,21 +41,23 @@ class RevolucaoController:
         self.papeis = []                 # dicts {bola, nascimento, ultimo_empurrao}
         self.kis = []                    # KiBlast no ar
         self._segundo = None             # (quando, pata) do segundo Ki da dupla
+        self.cursor = (0.0, 0.0)         # onde o cursor está agora (a mira)
         self.debug = debug
 
     def tick(self, now, dt, limites, cursor, vel_cursor, corpo, visivel, revoltado, obstaculos, papel_hz, patas=None,
-             ki_hz=0.0, livre=False, bravo=False):
+             ki_hz=0.0, livre=False):
         """Atira e move o que já está no ar. `patas()`: onde estão as patas do Clawd em Super Saiyajin (ou None).
         Na revolução, o neurônio PAPEL atira papel ou, com patas, Ki no cursor. Fora dela (`livre`: acordado, solto
-        e visível), o motor KI decide se atira; `bravo` mira no cursor, senão vai para o alto."""
+        e visível), o motor KI decide se atira; o alvo é o cursor."""
         maos = patas() if patas is not None else None
+        self.cursor = cursor                        # a mira de cada Ki é lida no disparo, depois da carga
         if revoltado and random.random() < papel_hz * GANHO_PAPEL * dt:
             if maos:
                 self._rajada(now, cursor, corpo, visivel, patas)
             elif len(self.papeis) < MAXIMO_PAPEIS:
                 self._atirar(now, cursor, corpo, visivel)
         elif maos and livre and not revoltado and random.random() < ki_hz * GANHO_KI * dt:
-            self._rajada(now, cursor if bravo else self._alto(corpo), corpo, visivel, patas)
+            self._rajada(now, cursor, corpo, visivel, patas)
         if self._segundo is not None and now >= self._segundo[0]:
             if maos and (revoltado or livre) and len(self.kis) < MAXIMO_KI:
                 self._ki(now, self._segundo[2], corpo, visivel, patas, self._segundo[1])
@@ -75,13 +74,6 @@ class RevolucaoController:
         if random.random() < CHANCE_DUPLA:
             self._segundo = (now + random.uniform(*INTERVALO_DUPLA), 1 - pata, alvo)
 
-    @staticmethod
-    def _alto(corpo):
-        """Um ponto para cima, de um lado ou do outro: o tiro para se exibir."""
-        angulo = math.radians(random.uniform(*ALTO))
-        distancia = random.uniform(*DISTANCIA_LIVRE)
-        return (corpo.x + math.cos(angulo) * distancia, corpo.y + math.sin(angulo) * distancia)
-
     def _ki(self, now, cursor, corpo, visivel, patas, lado):
         """Uma rajada de Ki carregando na pata `lado` (0 esquerda, 1 direita), mirando no cursor; coice no pet."""
         ultima = [patas()[lado]]
@@ -92,7 +84,7 @@ class RevolucaoController:
                 ultima[0] = maos[lado]
             return ultima[0]
 
-        ki = KiBlast(onde, cursor, now)
+        ki = KiBlast(onde, lambda: self.cursor, now)
         ki.setVisible(visivel)
         self.kis.append(ki)
         corpo.vx -= math.copysign(COICE, cursor[0] - corpo.x)
