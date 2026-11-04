@@ -67,25 +67,102 @@ jobs:
           name: android-${{ matrix.variante }}-${{ matrix.arch }}
           path: entrega/
 
+  rodas-32bits:
+    # o Qt não publica rodas Android de 32 bits: compila o PySide6 6.8.3 (QtCore, QtGui, QtWidgets) na API 28
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [armv7a, i686]
+    runs-on: ubuntu-22.04
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5
+        with:
+          python-version: "3.11"
+      - name: NDK r26b, libclang e ferramentas de build
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libclang-15-dev llvm-15-dev clang-15 ninja-build \
+            autoconf automake libtool pkg-config zlib1g-dev libffi-dev libssl-dev
+          echo "LLVM_INSTALL_DIR=/usr/lib/llvm-15" >> "$GITHUB_ENV"
+          echo "JAVA_HOME=$JAVA_HOME_17_X64" >> "$GITHUB_ENV"
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;26.1.10909125" \
+            "platforms;android-34" "build-tools;34.0.0" >/dev/null
+      - name: Compilar as rodas
+        run: sh ferramentas/gerar_rodas_android_32bits.sh ${{ matrix.arch }} "$ANDROID_HOME" "$ANDROID_HOME/ndk/26.1.10909125"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        with:
+          name: rodas-android-${{ matrix.arch }}
+          path: pyside-setup/dist/*.whl
+
+  apk-32bits:
+    # Android 9+ de 32 bits: as rodas compiladas acima, no mesmo esquema da variante compatível
+    needs: rodas-32bits
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [armv7a, i686]
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5
+        with:
+          python-version: "3.11"
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
+        with:
+          name: rodas-android-${{ matrix.arch }}
+          path: rodas
+      - name: SDK, NDK, JDK 17 e as ferramentas de build do python-for-android
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends autoconf automake libtool libltdl-dev pkg-config \
+            m4 gettext cmake zlib1g-dev libffi-dev libssl-dev zip unzip
+          echo "JAVA_HOME=$JAVA_HOME_17_X64" >> "$GITHUB_ENV"
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;26.1.10909125" \
+            "platforms;android-35" "build-tools;35.0.0" "platform-tools" >/dev/null
+          sudo mkdir -p "$ANDROID_HOME/tools"
+          sudo ln -sfn "$ANDROID_HOME/cmdline-tools/latest/bin" "$ANDROID_HOME/tools/bin"
+          sudo ln -sfn "$ANDROID_HOME/cmdline-tools/latest/lib" "$ANDROID_HOME/tools/lib"
+          pip install "PySide6==6.8.3" buildozer cython jinja2 pkginfo tqdm packaging
+          ls rodas
+      - name: Gerar o APK
+        env:
+          PESTINHA_API_MINIMA: "28"
+          PESTINHA_P4A: develop
+          PESTINHA_P4A_COMMIT: f8e5c05889c121181f309177ed0bc7b14e896212
+        run: |
+          python ferramentas/gerar_android.py --name ClaudeSuperPower -f \
+            --wheel-pyside "$(ls rodas/PySide6-*.whl)" --wheel-shiboken "$(ls rodas/shiboken6-*.whl)" \
+            --ndk-path "$ANDROID_HOME/ndk/26.1.10909125" --sdk-path "$ANDROID_HOME"
+          mkdir entrega
+          mv ./*.apk "entrega/ClaudeSuperPower-32bits-${{ matrix.arch }}.apk"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        with:
+          name: android-32bits-${{ matrix.arch }}
+          path: entrega/
+
   emulador:
-    # o APK x86_64 de cada variante no emulador: na versão mínima dela e no Android 15
-    needs: apk
+    # o APK de cada variante no emulador: na versão mínima dela e no Android 15 (o de 32 bits num x86)
+    needs: [apk, apk-32bits]
     if: ${{ !cancelled() }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - {variante: moderno, api: 29, alvo: default}
-          - {variante: moderno, api: 35, alvo: google_apis}
-          - {variante: compativel, api: 28, alvo: default}
-          - {variante: compativel, api: 35, alvo: google_apis}
+          - {variante: moderno, api: 29, alvo: default, apk: x86_64, emu: x86_64}
+          - {variante: moderno, api: 35, alvo: google_apis, apk: x86_64, emu: x86_64}
+          - {variante: compativel, api: 28, alvo: default, apk: x86_64, emu: x86_64}
+          - {variante: compativel, api: 35, alvo: google_apis, apk: x86_64, emu: x86_64}
+          - {variante: 32bits, api: 28, alvo: default, apk: i686, emu: x86}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
         with:
-          name: android-${{ matrix.variante }}-x86_64
+          name: android-${{ matrix.variante }}-${{ matrix.apk }}
           path: apk
       - name: KVM para o emulador
         run: |
@@ -95,11 +172,11 @@ jobs:
       - uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d  # v2
         with:
           api-level: ${{ matrix.api }}
-          arch: x86_64
+          arch: ${{ matrix.emu }}
           target: ${{ matrix.alvo }}
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
           disable-animations: true
-          script: sh ferramentas/fumaca_android.sh apk/ClaudeSuperPower-${{ matrix.variante }}-x86_64.apk "$ANDROID_HOME/build-tools/35.0.0/aapt"
+          script: sh ferramentas/fumaca_android.sh apk/ClaudeSuperPower-${{ matrix.variante }}-${{ matrix.apk }}.apk "$ANDROID_HOME/build-tools/35.0.0/aapt"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         if: always()
         with:
