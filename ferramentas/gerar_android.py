@@ -8,9 +8,10 @@ novo, arm64-v8a ou x86_64). Na raiz do projeto, com o PySide6 de desktop da mesm
 Os argumentos são os do pyside6-android-deploy. Duas variáveis de ambiente escolhem a variante:
 - PESTINHA_API_MINIMA: a API mínima do Android (29 com o PySide6 6.12; 28 com o 6.8.3, o último cujas
   bibliotecas não usam TLS nativo do ELF e por isso abrem no Android 9);
-- PESTINHA_P4A: a versão do python-for-android (a ferramenta do 6.8.3 clona o develop, que hoje traz um
-  Python mais novo que o das rodas cp311; a v2024.01.21 tem o Python 3.11 e o bootstrap Qt). Vazia: a da
-  ferramenta. A ferramenta escreve um buildozer.spec só com
+- PESTINHA_P4A e PESTINHA_P4A_COMMIT: o branch e o commit do python-for-android. A ferramenta do 6.8.3 clona o
+  develop, que hoje traz o Python 3.14 (as rodas dela são cp311); a v2024.01.21 tem o Python 3.11, mas o
+  bootstrap Qt dela ainda chama QtNative.setEnvironmentVariable, que o Qt 6.8 tirou. O commit f8e5c05 (agosto de
+  2024) tem o bootstrap já adaptado, o Python 3.11.5 e o numpy 1.26.5. Vazias: as da ferramenta. A ferramenta escreve um buildozer.spec só com
 python3, shiboken6 e PySide6; aqui ele ganha o resto, antes do build:
 - Android 10 (API 29) como mínimo (a ferramenta diz 28, mas as rodas não abrem no 9);
 - numpy (a rede neural do pet);
@@ -34,6 +35,7 @@ FORA = "tests,ferramentas,docs,executáveis,build,dist,memory,bin,.github,.build
 # ("dlopen failed: unknown reloc type 16", visto no emulador com API 28)
 API_MINIMA = os.environ.get("PESTINHA_API_MINIMA", "29")
 P4A = os.environ.get("PESTINHA_P4A", "")
+P4A_COMMIT = os.environ.get("PESTINHA_P4A_COMMIT", "")
 
 
 def main() -> None:
@@ -54,6 +56,8 @@ def main() -> None:
         self.set_value("app", "android.ndk_api", API_MINIMA, raise_warning=False)
         if P4A:
             self.set_value("app", "p4a.branch", P4A, raise_warning=False)
+        if P4A_COMMIT:
+            self.set_value("app", "p4a.commit", P4A_COMMIT, raise_warning=False)
         self.update_config()
 
     buildozer.BuildozerConfig.__init__ = completar
