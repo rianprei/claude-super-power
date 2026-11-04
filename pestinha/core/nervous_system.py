@@ -143,6 +143,9 @@ MOTOR_SPEC = [
     ("PAPEL",   10, 60.0, 0.030, 4.0),      # atira bolinha de papel (na revolução)
     ("ACEITAR", 10, 80.0, 0.020, 4.0),      # aceita o castigo e sai do canto por conta própria (perdão)
     ("KI",      10, 50.0, 0.040, 3.0),      # atira uma rajada de Ki (em Super Saiyajin; a taxa vira a frequência)
+    ("VOO",     10, 60.0, 0.030, 4.0),      # sai voando (em Super Saiyajin)
+    ("TELEPORTE", 10, 40.0, 0.050, 2.0),    # some e reaparece em outro lugar (em Super Saiyajin)
+    ("KAMEHAMEHA", 10, 70.0, 0.030, 5.0),   # carrega e dispara o feixe (em Super Saiyajin)
 ]
 
 # ============================================================
@@ -281,6 +284,22 @@ CONNECTIONS = [
     ("CALM",    "KI",     -0.20, 0.5),
     ("GLOOM",   "KI",     -0.40, 0.5),      # triste não atira
     ("TIRED",   "KI",     -0.30, 0.5),      # cansado também não
+    ("PODER",   "VOO",     0.32, 0.6),      # transformado: voar
+    ("PLAYFUL", "VOO",     0.25, 0.6),      #    ...mais ainda brincando
+    ("CURIOUS", "VOO",     0.10, 0.6),      #    ...ou curioso (ver de cima)
+    ("TIRED",   "VOO",    -0.40, 0.5),      # cansado fica no chão
+    ("GLOOM",   "VOO",    -0.40, 0.5),
+    ("PODER",   "TELEPORTE", 0.30, 0.6),    # transformado: aparecer e sumir
+    ("ALERT",   "TELEPORTE", 0.25, 0.6),    #    ...assustado some dali
+    ("PLAYFUL", "TELEPORTE", 0.10, 0.6),
+    ("TIRED",   "TELEPORTE", -0.30, 0.5),
+    ("GLOOM",   "TELEPORTE", -0.30, 0.5),
+    ("PODER",   "KAMEHAMEHA", 0.30, 0.6),   # transformado: o golpe maior
+    ("FRUSTRATION", "KAMEHAMEHA", 0.35, 0.6),   #    ...bravo, mais ainda
+    ("PLAYFUL", "KAMEHAMEHA", 0.05, 0.6),
+    ("CALM",    "KAMEHAMEHA", -0.25, 0.5),  # calmo não precisa
+    ("GLOOM",   "KAMEHAMEHA", -0.40, 0.5),
+    ("TIRED",   "KAMEHAMEHA", -0.35, 0.5),
 
     # ---- cantinho do castigo ----
     ("PLACA",   "TRAVESSURA", -0.60, 0.6),  # 3) a placa à vista desencoraja travessuras
@@ -304,7 +323,8 @@ CONNECTIONS = [
     ("BOREDOM", "FUGIR",   0.15, 0.6),      # 10) entediado no canto, foge do tédio
 ]
 
-DECISION_MOTORS = {"SENTAR", "FUGIR", "CARTAZ", "CANTO", "TRAVESSURA", "PAPEL", "ACEITAR", "KI"}   # decisões, não expressão
+DECISION_MOTORS = {"SENTAR", "FUGIR", "CARTAZ", "CANTO", "TRAVESSURA", "PAPEL", "ACEITAR", "KI",
+                   "VOO", "TELEPORTE", "KAMEHAMEHA"}   # decisões, não expressão
 LATERAL_INHIBITION = 0.05      # cada motor inibe os outros
 STARTLE_INHIBITION = 0.10      # o susto inibe mais forte
 

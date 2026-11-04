@@ -74,6 +74,7 @@ class Body:
         self.surface = 0.0        # y da superfície onde está apoiado
         self.impacts = []         # velocidades das batidas desde a última leitura (px/s)
         self.held = False         # sendo segurado pelo mouse
+        self.flutuando = False    # voando por conta própria (Super Saiyajin): sem gravidade e sem pousar
 
     def pop_impacts(self):
         """Devolve as batidas desde a última vez e zera a lista (para a rede sentir a batida)."""
@@ -106,8 +107,9 @@ class Body:
         left, top, right, bottom = bounds
 
         if not self.grounded:
-            self.vy += GRAVITY * dt
-            self.vx -= self.vx * AIR_DRAG * dt
+            if not self.flutuando:                    # voando, quem dá a velocidade é o voo (mind/poderes.py)
+                self.vy += GRAVITY * dt
+                self.vx -= self.vx * AIR_DRAG * dt
             self.omega -= self.omega * ANGULAR_DRAG * dt
         else:
             self.vx -= self.vx * GROUND_FRICTION * dt
@@ -147,6 +149,12 @@ class Body:
             self.y = top + ey
             self.impacts.append(abs(self.vy))
             self.vy = abs(self.vy) * RESTITUTION
+
+        if self.flutuando:                            # voando: o chão segura, mas ele não pousa
+            if self.y + ey > bottom and not _tem_vizinha(areas, atual, "bottom", self.x, monitors):
+                self.y = bottom - ey
+                self.vy = min(self.vy, 0.0)
+            return
 
         # apoiado: acompanha a superfície; se ela sumiu/mexeu ou ele saiu da beirada, cai
         if self.grounded:

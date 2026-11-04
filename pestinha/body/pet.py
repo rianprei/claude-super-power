@@ -34,7 +34,7 @@ from ..ajustes import (
 from ..config import EMOTION_NAMES
 from ..core.emotion import EYE_SHAPES
 from ..core.physics import Body
-from .clawd3d import JANELA_SSJ, draw_clawd, patas
+from .clawd3d import JANELA_PODER, JANELA_SSJ, draw_clawd, patas
 from .desenho_rosto import (
     BODY_H,
     BODY_W,
@@ -157,9 +157,10 @@ class PetWindow(QWidget):
         self.update()
 
     def _ajustar_janela(self):
-        """Super Saiyajin no Clawd: a janela cresce para caber a juba e a aura; fora dele, o tamanho normal."""
+        """Super Saiyajin no Clawd: a janela cresce para caber a juba e a aura (mais ainda no voo e no Kamehameha,
+        com a aura maior e o corpo inclinado); fora dele, o tamanho normal."""
         ssj = self.corpo == "clawd3d" and self.state.super_saiyajin_desde is not None
-        alvo = JANELA_SSJ if ssj else (WIN, WIN, CX, CY)
+        alvo = (JANELA_PODER if self.state.poder > 0.0 else JANELA_SSJ) if ssj else (WIN, WIN, CX, CY)
         if alvo != self.geometria:
             self.geometria = alvo
             self.setFixedSize(alvo[0], alvo[1])
@@ -216,11 +217,21 @@ class PetWindow(QWidget):
         p.save()
         p.translate(cx + jitter_x, cy + jitter_y)
         p.rotate(self.body.angle + sway)
+        sx, sy = st.escala
+        if sx <= 0.01:                          # teletransportando: sumiu
+            p.restore()
+            p.end()
+            return
+        if (sx, sy) != (1.0, 1.0):              # o teletransporte estica e fecha o corpo pelos pés
+            p.translate(0.0, BODY_H / 2)
+            p.scale(sx, sy)
+            p.translate(0.0, -BODY_H / 2)
         blink = 0.08 if time.monotonic() < st.blink_until else 1.0
         if self.corpo == "clawd3d":
             agora = time.monotonic()
             ssj = None if st.super_saiyajin_desde is None else agora - st.super_saiyajin_desde
-            draw_clawd(p, st.shape, st.gaze, blink, st.emotion, carinho=st.feliz_fechado(), ssj=ssj, now=agora)
+            draw_clawd(p, st.shape, st.gaze, blink, st.emotion, carinho=st.feliz_fechado(), ssj=ssj, now=agora,
+                       poder=st.poder)
         else:
             draw_face(p, st.shape, st.gaze, blink, st.emotion, carinho=st.feliz_fechado(), aparencia=self.aparencia)
         p.restore()

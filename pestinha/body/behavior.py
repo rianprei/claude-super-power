@@ -181,6 +181,10 @@ class Behavior:
             self.next_roam = now + 1.0
             return
 
+        if st.concentrado:                              # carregando ou soltando o Kamehameha: firme no lugar
+            self.next_roam = now + 1.0
+            return
+
         # tonto, dormindo ou ganhando carinho: fica paradinho
         if st.at_desk:                                  # sentado no notebook: trabalha, sem passear
             body.vx = 0.0

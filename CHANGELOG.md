@@ -2,6 +2,36 @@
 
 ## Claude Super Power
 
+- Clawd SSJ2: três poderes novos, decididos pela rede (motores VOO, TELEPORTE e KAMEHAMEHA; o canal PODER os
+  alimenta transformado, brincadeira puxa o voo, susto o teletransporte, raiva o Kamehameha, cansaço e
+  tristeza seguram). Um por vez, com recarga, só acordado, solto e fora do castigo, do notebook e do protesto
+  (`mind/poderes.py`). A rede passa a ter 516 neurônios e 19 motores; o aprendizado salvo continua valendo.
+  - Voo: decola, voa entre pontos (metade das vezes perto do cursor) e flutua balançando. Chega freando no
+    perfil de frenagem, com antecipação da desaceleração: sem trancos (aceleração até 950 px/s²) e com pouso
+    macio, sem quicar. O corpo inclina até 24° para o lado em que vai. A aura fica mais forte (a mesma aura,
+    de novo por cima, maior e translúcida) e solta partículas subindo. O corpo ganhou o modo `flutuando`, sem
+    gravidade e sem pouso.
+  - Teletransporte: o corpo estica e fecha num risco de luz, some e reaparece longe, às vezes ao lado do
+    cursor, saindo de outro risco (`world/teleporte.py`). Nas duas pontas há clarão, anéis de distorção
+    ondulando com faixa escura de lente, riscos de luz e partículas: na saída elas se espalham, na chegada
+    vêm em espiral e estouram no clarão. Voando, ele reaparece no ar e segue voando. A distorção é desenhada,
+    não captura a tela.
+  - Kamehameha: fica firme, encara o cursor e carrega por 1,6 s uma esfera azul-branca entre as patas, com
+    um fio de energia de cada pata, partículas em espiral e arcos (`world/kamehameha.py`). Dispara um feixe
+    contínuo de 1,5 s, com a mira travada no cursor e cortado na borda da tela. O feixe tem borda ondulando,
+    miolo branco e faixas em espiral, e empurra o corpo para trás. Na ponta, uma explosão arde com estilhaços
+    e ondas de choque, e no fim o feixe afina e a explosão abre.
+- Ki com física melhor e mais rápido:
+  - Normal:
+    - sai a 55% e chega a 2700 px/s em curva exponencial (antes 1700 px/s);
+    - carrega em 0,12 s;
+    - estica no sentido do voo.
+  - Mira com antecipação: na carga, mede a velocidade do cursor (saltos do cursor não contam) e mira onde ele
+    vai estar.
+  - Colisão por segmento: não atravessa um post-it fino nem a 20 quadros por segundo.
+  - Teleguiada: voa como um míssil, a 1500 px/s (antes 1050), com aceleração lateral limitada. Freia nas
+    curvas fechadas, acelera na reta e acerta se passar a 22 px do cursor, mesmo entre dois quadros.
+
 - Windows:
   - No Super Saiyajin, a aura semitransparente não bloqueia mais o clique no que está atrás dela.
     Com o cursor fora do corpo, o clique atravessa a janela (WS_EX_TRANSPARENT).

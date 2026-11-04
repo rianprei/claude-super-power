@@ -63,6 +63,7 @@ from .mind.castigo_ctl import CastigoController
 from .mind.festa import FestaController
 from .mind.mesa import MesaController, pull
 from .mind.mischief_ctl import MischiefController
+from .mind.poderes import PoderesController
 from .mind.protest_ctl import ProtestController
 from .mind.revolucao import RevolucaoController
 from .mind.sleep import SleepController
@@ -193,6 +194,7 @@ class PestinhaApp(SessaoMixin, InteracaoMixin, QObject):
         self.castigo = CastigoController(self, self.debugging)
         paper = load_sprite(self.conteudo.bolinha_papel)
         self.revolucao = RevolucaoController(self.behavior.play, self.debugging, sprite=paper)
+        self.poderes = PoderesController(self.debugging)     # voo, teletransporte e Kamehameha (SSJ2)
 
         # ----- reflexos e medições -----
         self.in_flight = False      # voando depois de um arremesso
@@ -312,6 +314,7 @@ class PestinhaApp(SessaoMixin, InteracaoMixin, QObject):
         exclude = {int(self.pet.winId())} | {int(t.winId()) for t in self.mischief.things}
         exclude |= self.floats.visible_handles()
         exclude |= {int(w.winId()) for w in self.revolucao.janelas()}
+        exclude |= {int(w.winId()) for w in self.poderes.janelas()}
         exclude |= {int(w.winId()) for w in self.protest_ctl.sign_windows()}
         exclude |= {int(w.winId()) for w in self.sad_ctl.sign_windows()}
         if self.ball.isVisible():
@@ -529,6 +532,13 @@ class PestinhaApp(SessaoMixin, InteracaoMixin, QObject):
             patas=lambda: self.pet.patas_na_tela(now),      # Clawd em Super Saiyajin: Ki no lugar do papel
             ki_hz=motores["KI"],                            # fora da revolução, a rede decide se atira Ki
             livre=not self.asleep and not preso and self.pet.isVisible(),
+        )
+        self.poderes.tick(                                  # a rede decide voo, teletransporte e Kamehameha
+            now, dt, body, self.pet_state, bounds, cursor, motores,
+            patas=lambda: self.pet.patas_na_tela(now),
+            livre=(not self.asleep and not preso and self.pet.isVisible() and not self.mesa.sentado
+                   and self.protest.stage == 0 and not self.behavior.mission),
+            visivel=self.pet.isVisible(),
         )
         # o cursor também bate na bolinha
         if self._prev_cursor is not None and now > self._prev_cursor_t:

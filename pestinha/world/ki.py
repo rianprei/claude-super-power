@@ -5,13 +5,20 @@ Cada rajada é uma esfera pequena e redonda de energia dourada: núcleo branco, 
 volta e faíscas elétricas azul-ciano (as mesmas da aura). Ela vive em três fases:
 
     carga    nasce na pata e cresce em CARGA segundos, com faíscas entrando nela; segue a pata se ele se mexe
-    voo      sai em alta velocidade (acelera em ACELERACAO s até VELOCIDADE) rumo ao alvo, com rastro de energia
+    voo      sai já rápido (ARRANQUE da VELOCIDADE) e chega nela em curva exponencial (constante ACELERACAO s),
+             rumo ao alvo, com rastro de energia; esticada no sentido do voo, quanto mais rápida
     clarão   ao chegar no alvo, bater num objeto ou na borda da tela, some num flash curto com estilhaços
 
+Mira com antecipação: durante a carga ela mede a velocidade do cursor (média móvel; saltos maiores que
+SALTO_CURSOR px/s, como o cursor pulando de tela, não contam) e, no disparo, mira onde o cursor vai estar
+quando ela chegar (no máximo ANTECIPACAO_MAX s à frente). A colisão é por segmento (o trecho andado no
+quadro), então nem a 2700 px/s ela atravessa um post-it fino num quadro lento.
+
 A rajada forte (`forte=True`) é maior e mais brutal: carrega mais (CARGA_FORTE), com mais raios e uma coroa
-de labaredas, e é teleguiada: no voo vira para o cursor (no máximo GIRO rad/s, então faz curva), atravessa os
-post-its e só explode ao alcançar o cursor, na borda da tela ou depois de VIDA_TELEGUIADO; o clarão é bem maior,
-com duas ondas de choque.
+de labaredas, e é teleguiada como um míssil: a curva tem aceleração lateral máxima (ACEL_LATERAL; quanto mais
+rápida, mais aberta a curva), ela freia nas curvas fechadas e acelera de novo na reta (ACEL_FORTE), atravessa
+os post-its e só explode ao passar a ACERTO px do cursor, na borda da tela ou depois de VIDA_TELEGUIADO; o
+clarão é bem maior, com duas ondas de choque.
 
 A janela é pequena (LADO px, ou LADO_FORTE), acompanha a esfera e deixa o clique passar. A física é por tempo
 (`passo`), sem depender da taxa de quadros; o desenho só lê o estado.
@@ -36,11 +43,16 @@ from PySide6.QtWidgets import QWidget
 
 from ..body.pet import overlay_flags
 
-CARGA = 0.18            # s carregando na pata
-ACELERACAO = 0.05       # s até a velocidade de cruzeiro
-VELOCIDADE = 1700.0     # px/s
+CARGA = 0.12            # s carregando na pata
+ARRANQUE = 0.55         # fração da VELOCIDADE com que ela sai da pata
+ACELERACAO = 0.03       # s: constante de tempo até a velocidade de cruzeiro (exponencial)
+VELOCIDADE = 2700.0     # px/s
 RAIO = 9.0              # px da esfera pronta
-RASTRO = 0.065          # s de posições no rastro (~110 px em cruzeiro)
+RASTRO = 0.045          # s de posições no rastro (~120 px em cruzeiro)
+ESTICA = 0.45           # a esfera estica até 1 + ESTICA no sentido do voo, em cruzeiro
+SALTO_CURSOR = 6000.0   # px/s: o cursor mais rápido que isso pulou (não é movimento) e não entra na média
+MEDIA_CURSOR = 0.06     # s: constante da média móvel da velocidade do cursor
+ANTECIPACAO_MAX = 0.6   # s: o quanto ela antecipa o cursor no máximo (~1600 px de voo)
 CLARAO = 0.26           # s do flash final
 ALCANCE = 2400.0        # px: some mesmo sem acertar nada
 LADO = 280              # px da janela: cabe o rastro, o brilho e os estilhaços
@@ -48,13 +60,15 @@ FAISCA_VIDA = (0.12, 0.3)       # s de vida de cada partícula
 ATRITO = 7.0                    # 1/s: as faíscas freiam no ar (por tempo, não por quadro)
 
 # rajada forte (teleguiada)
-CARGA_FORTE = 0.55
-VELOCIDADE_FORTE = 1050.0
+CARGA_FORTE = 0.45
+VELOCIDADE_FORTE = 1500.0
 RAIO_FORTE = 17.0
-RASTRO_FORTE = 0.16
+RASTRO_FORTE = 0.13
 CLARAO_FORTE = 0.55
 LADO_FORTE = 520
-GIRO = 5.5              # rad/s: o quanto ela consegue virar para o cursor (faz curva, não teleporta)
+ACEL_LATERAL = 9000.0   # px/s²: a curva mais fechada que ela faz (a 1500 px/s, ~6 rad/s)
+ACEL_FORTE = 4000.0     # px/s²: o quanto ela acelera ou freia
+FREIO_CURVA = 0.45      # numa curva de 90° ou mais, cai para 1 - FREIO_CURVA da velocidade
 VIDA_TELEGUIADO = 4.0   # s de voo no máximo
 ACERTO = 22.0           # px do cursor: acertou
 
@@ -83,6 +97,34 @@ CIANO = (150, 232, 255)
 def _cor(rgb, alfa):
     """QColor de uma tupla (r, g, b) com alfa."""
     return QColor(rgb[0], rgb[1], rgb[2], max(0, min(255, alfa)))
+
+
+def _entrada(x0, y0, x1, y1, retangulo):
+    """Fração (0..1) do segmento em que ele entra no retângulo (x, y, w, h), ou None (Liang-Barsky)."""
+    x, y, w, h = retangulo
+    dx, dy = x1 - x0, y1 - y0
+    t0, t1 = 0.0, 1.0
+    for p, q in ((-dx, x0 - x), (dx, x + w - x0), (-dy, y0 - y), (dy, y + h - y0)):
+        if p == 0:
+            if q < 0:
+                return None                         # paralelo e fora
+            continue
+        t = q / p
+        if p < 0:
+            t0 = max(t0, t)
+        else:
+            t1 = min(t1, t)
+        if t0 > t1:
+            return None
+    return t0
+
+
+def _distancia_ao_segmento(px, py, x0, y0, x1, y1):
+    """Distância do ponto ao segmento."""
+    dx, dy = x1 - x0, y1 - y0
+    n = dx * dx + dy * dy
+    t = 0.0 if n == 0 else max(0.0, min(1.0, ((px - x0) * dx + (py - y0) * dy) / n))
+    return math.hypot(px - (x0 + dx * t), py - (y0 + dy * t))
 
 
 def _suave(u):
@@ -114,6 +156,9 @@ class KiBlast(QWidget):
         self.andado = 0.0
         self.distancia = 0.0                # até o alvo, medida no disparo
         self.inicio_fase = now
+        self.mira = None                    # (x, y, t) da última leitura do alvo na carga
+        self.vel_alvo = (0.0, 0.0)          # média móvel da velocidade do alvo (px/s)
+        self.medido = False                 # já entrou alguma medida na média
         self.rastro = []                    # [(t, x, y)] dos últimos RASTRO s
         self.faiscas = []                   # [[x, y, vx, vy, nascimento, vida, cor]]
         self.agora = now
@@ -127,19 +172,22 @@ class KiBlast(QWidget):
         self.agora = now
         if self.fase == "carga":
             self.ex, self.ey = self.pata()
+            self._medir_alvo(now)
             self._faiscas_entrando(dt)
             if now - self.inicio_fase >= self.perfil.carga:
                 self._disparar(now)
         elif self.fase == "voo":
-            self.velocidade = self.perfil.velocidade * min(1.0, (now - self.inicio_fase) / ACELERACAO)
             if self.forte:
                 acertou = self._perseguir(dt)
             else:
+                v = self.perfil.velocidade
+                self.velocidade = v - (v - self.velocidade) * math.exp(-dt / ACELERACAO)
                 passo = min(self.velocidade * dt, self.distancia - self.andado)
+                x0, y0 = self.ex, self.ey
                 self.ex += self.dx * passo
                 self.ey += self.dy * passo
                 self.andado += passo
-                acertou = self.andado >= self.distancia - 0.5 or self.andado >= ALCANCE or self._bateu(obstaculos)
+                acertou = self.andado >= self.distancia - 0.5 or self.andado >= ALCANCE or self._bateu(x0, y0, obstaculos)
             self.rastro.append((now, self.ex, self.ey))
             self.rastro = [r for r in self.rastro if now - r[0] <= self.perfil.rastro]
             self._faiscas_soltas(dt)
@@ -152,28 +200,58 @@ class KiBlast(QWidget):
         self.update()
         return True
 
+    def _ler_alvo(self):
+        return self.alvo() if callable(self.alvo) else self.alvo
+
+    def _medir_alvo(self, now):
+        """Na carga: a velocidade do alvo, em média móvel (o salto de um cursor que pulou não conta)."""
+        ax, ay = self._ler_alvo()
+        if self.mira is not None and now > self.mira[2]:
+            k = now - self.mira[2]
+            vx, vy = (ax - self.mira[0]) / k, (ay - self.mira[1]) / k
+            if math.hypot(vx, vy) <= SALTO_CURSOR:
+                a = 1.0 - math.exp(-k / MEDIA_CURSOR) if self.medido else 1.0      # a 1ª entra direto
+                self.medido = True
+                self.vel_alvo = (self.vel_alvo[0] + (vx - self.vel_alvo[0]) * a,
+                                 self.vel_alvo[1] + (vy - self.vel_alvo[1]) * a)
+        self.mira = (ax, ay, now)
+
     def _disparar(self, now):
-        """Fim da carga: mira no alvo a partir da pata e sai."""
-        ax, ay = self.alvo() if callable(self.alvo) else self.alvo
+        """Fim da carga: mira onde o alvo vai estar quando ela chegar (antecipa o movimento) e sai."""
+        ax, ay = self._ler_alvo()
+        if not self.forte:
+            t = 0.0
+            for _ in range(3):                      # ponto de encontro: o tempo de voo depende da mira
+                t = min(ANTECIPACAO_MAX, math.hypot(ax + self.vel_alvo[0] * t - self.ex,
+                                                    ay + self.vel_alvo[1] * t - self.ey) / self.perfil.velocidade
+                        + (1.0 - ARRANQUE) * ACELERACAO)    # o tempo que ela perde saindo mais devagar
+            ax, ay = ax + self.vel_alvo[0] * t, ay + self.vel_alvo[1] * t
         vx, vy = ax - self.ex, ay - self.ey
         self.distancia = math.hypot(vx, vy) or 1.0
         self.dx, self.dy = vx / self.distancia, vy / self.distancia
         self.distancia = min(self.distancia, ALCANCE)
         self.fase, self.inicio_fase = "voo", now
+        self.velocidade = self.perfil.velocidade * ARRANQUE
         self.rastro = [(now, self.ex, self.ey)]
 
     def _perseguir(self, dt):
-        """Teleguiada: vira para o cursor de agora (até GIRO rad/s) e anda. True quando acertou ou cansou."""
-        ax, ay = self.alvo() if callable(self.alvo) else self.alvo
+        """Teleguiada, como um míssil: vira para o cursor de agora com aceleração lateral limitada (a curva abre
+        com a velocidade), freia nas curvas fechadas e acelera na reta. True quando passou perto ou cansou."""
+        ax, ay = self._ler_alvo()
         desejado = math.atan2(ay - self.ey, ax - self.ex)
         atual = math.atan2(self.dy, self.dx)
         virada = (desejado - atual + math.pi) % math.tau - math.pi
-        atual += max(-GIRO * dt, min(GIRO * dt, virada))
+        giro = ACEL_LATERAL / max(self.velocidade, 1.0) * dt
+        atual += max(-giro, min(giro, virada))
         self.dx, self.dy = math.cos(atual), math.sin(atual)
+        alvo_v = self.perfil.velocidade * (1.0 - FREIO_CURVA * min(1.0, abs(virada) / (math.pi / 2)))
+        dv = max(-ACEL_FORTE * dt, min(ACEL_FORTE * dt, alvo_v - self.velocidade))
+        self.velocidade += dv
+        x0, y0 = self.ex, self.ey
         self.ex += self.dx * self.velocidade * dt
         self.ey += self.dy * self.velocidade * dt
         self.andado += self.velocidade * dt
-        perto = math.hypot(ax - self.ex, ay - self.ey) <= ACERTO
+        perto = _distancia_ao_segmento(ax, ay, x0, y0, self.ex, self.ey) <= ACERTO   # não passa reto por ele
         return perto or self.agora - self.inicio_fase >= VIDA_TELEGUIADO
 
     def _explodir(self, now):
@@ -189,8 +267,14 @@ class KiBlast(QWidget):
         esq, topo, dir_, base = limites
         return not (esq <= self.ex <= dir_ and topo <= self.ey <= base)
 
-    def _bateu(self, obstaculos):
-        return any(x <= self.ex <= x + w and y <= self.ey <= y + h for x, y, w, h in obstaculos)
+    def _bateu(self, x0, y0, obstaculos):
+        """O trecho (x0, y0) -> agora cruzou um obstáculo? Se sim, ela para no ponto onde entrou nele."""
+        entradas = [t for r in obstaculos if (t := _entrada(x0, y0, self.ex, self.ey, r)) is not None]
+        if not entradas:
+            return False
+        t = min(entradas)
+        self.ex, self.ey = x0 + (self.ex - x0) * t, y0 + (self.ey - y0) * t
+        return True
 
     # ---------------- partículas ----------------
 
@@ -251,10 +335,18 @@ class KiBlast(QWidget):
         if self.fase in ("carga", "voo"):
             r = self.raio()
             if r > 0.5:
+                p.save()
+                p.translate(centro)
+                if self.fase == "voo":                      # esticada no sentido do voo, mesma área
+                    k = 1.0 + ESTICA * min(1.0, self.velocidade / self.perfil.velocidade)
+                    p.rotate(math.degrees(math.atan2(self.dy, self.dx)))
+                    p.scale(k, 1.0 / math.sqrt(k))
+                origem = QPointF(0.0, 0.0)
                 if self.forte:
-                    self._desenhar_coroa(p, centro, r)
-                self._desenhar_esfera(p, centro, r)
-                self._desenhar_arcos(p, centro, r)
+                    self._desenhar_coroa(p, origem, r)
+                self._desenhar_esfera(p, origem, r)
+                self._desenhar_arcos(p, origem, r)
+                p.restore()
         else:
             self._desenhar_clarao(p, centro)
         self._desenhar_faiscas(p, ox, oy)

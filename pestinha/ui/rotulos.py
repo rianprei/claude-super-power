@@ -70,6 +70,9 @@ MOTORES = {
     "TRAVESSURA": "aprontar",
     "PAPEL": "atirar papel",
     "KI": "atirar Ki",
+    "VOO": "voar",
+    "TELEPORTE": "teletransportar",
+    "KAMEHAMEHA": "Kamehameha",
     "ACEITAR": "aceitar o castigo",
 }
 

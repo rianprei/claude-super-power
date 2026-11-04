@@ -73,6 +73,7 @@ class SessaoMixin(ContratoApp):
         self.castigo.set_visible(visible)
         if not visible:
             self.revolucao.esconder()
+            self.poderes.esconder()
         self.floats.sync(self.floats_base())
         self.protest_ctl.set_visible(visible, self.asleep)
         self.sad_ctl.set_visible(visible, self.asleep)
@@ -196,6 +197,7 @@ class SessaoMixin(ContratoApp):
             self.mesa.fechar()
             self.festa.fechar()
             self.revolucao.fechar()
+            self.poderes.fechar(self.pet.body, self.pet_state)
             if not self.wiping:
                 self.protest_ctl.drop_sign()
                 self.sad_ctl.drop_sign()

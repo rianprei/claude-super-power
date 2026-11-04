@@ -27,6 +27,7 @@ if TYPE_CHECKING:
     from ..mind.festa import FestaController
     from ..mind.mesa import MesaController
     from ..mind.mischief_ctl import MischiefController
+    from ..mind.poderes import PoderesController
     from ..mind.protest_ctl import ProtestController
     from ..mind.revolucao import RevolucaoController
     from ..mind.sleep import SleepController
@@ -67,6 +68,7 @@ class ContratoApp:
         mischief_ctl: MischiefController
         protest: Protesto
         protest_ctl: ProtestController
+        poderes: PoderesController
         revolucao: RevolucaoController
         sad: Protesto
         sad_ctl: ProtestController

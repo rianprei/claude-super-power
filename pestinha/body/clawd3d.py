@@ -91,6 +91,9 @@ CONTORNO_CABELO = (104, 54, 0)                          # contorno marcado de ca
 # Super Saiyajin: janela maior, com espaço em cima e dos lados para a juba e a aura (largura, altura,
 # centro x, centro y do corpo dentro dela).
 JANELA_SSJ = (272, 300, 136.0, 226.0)
+# no voo e no Kamehameha (aura maior e corpo inclinado até 24°): medido o que a pintura ocupa, x de -196 a
+# +190 e y de -258 a +66 em volta do centro do pet
+JANELA_PODER = (404, 340, 202.0, 268.0)
 REGIAO_AURA = QRectF(-JANELA_SSJ[2], -JANELA_SSJ[3], JANELA_SSJ[0], JANELA_SSJ[1])   # a janela, com o pet na origem
 MARGEM_AURA = 8.0                       # px livres entre a aura e a borda da janela
 # Aura SSJ2 em px, com o centro do pet na origem: um oval que envolve corpo e juba (mais estreito nos pés,
@@ -115,6 +118,7 @@ ALTURA_CLAWD = 203.0                    # px, dos pés à ponta da juba (medido 
 RAIO_COMPRIMENTO, RAIO_ESPESSURA = (0.08, 0.15), (0.006, 0.012)
 FAIXAS_RAIO = (0.3, 0.5, 0.7)           # alturas na aura (fração de π a partir do topo): em cima, meio, embaixo
 RAIO_DOBRAS, RAIO_ANGULO = (3, 5), (45.0, 70.0)        # dobras e o ângulo de cada uma (graus, na ponta da dobra)
+PARTICULAS_SUBINDO = 22                 # no voo e no Kamehameha
 OLHO_X, OLHO_Y = 4.1, -3.0              # centro dos olhos na face da frente (o y sobe com o dy da forma)
 
 
@@ -626,10 +630,44 @@ def patas(gaze=(0.0, 0.0), now=0.0):
     return tuple(cam.tela(v) for v in PONTAS_BRACOS)
 
 
-def draw_clawd(p, shape, gaze=(0.0, 0.0), blink=1.0, emotion="observando", carinho=False, ssj=None, now=0.0):
+def _aura_intensa(p, now, poder):
+    """Voo e Kamehameha: a mesma aura, de novo por cima, maior (crescendo a partir dos pés) e translúcida."""
+    p.save()
+    p.setOpacity(0.6 * poder)
+    p.translate(0.0, BODY_H / 2)
+    p.scale(1.0 + 0.1 * poder, 1.0 + 0.12 * poder)
+    p.translate(0.0, -BODY_H / 2)
+    _aura_pronta(p, now + CICLO_AURA / 3)              # outro quadro do ciclo: as labaredas não coincidem
+    p.restore()
+
+
+def _subindo(p, now, poder):
+    """Partículas de energia subindo dos pés até acima da juba (sem estado: cada uma tem o seu relógio)."""
+    p.save()
+    p.setPen(Qt.PenStyle.NoPen)
+    for i in range(PARTICULAS_SUBINDO):
+        periodo = 0.6 + 0.6 * _acaso(i, 1)
+        ciclo = now / periodo + _acaso(i, 2)
+        u, n = ciclo % 1.0, i * 977 + int(ciclo)       # u: 0 nos pés, 1 no alto; n muda a cada volta
+        x = (2.0 * _acaso(n, 3) - 1.0) * AURA_RX * 0.85 * (1.0 - 0.35 * u)
+        y = BODY_H / 2 - u * (ALTURA_CLAWD + 20.0)
+        q = _dentro(QPointF(x, y))
+        alfa = int(240 * poder * math.sin(math.pi * u))
+        cor = (255, 250, 220) if _acaso(n, 4) < 0.45 else ((255, 214, 70) if _acaso(n, 5) < 0.7 else (160, 232, 255))
+        comprimento = 7.0 + 9.0 * _acaso(n, 6)
+        p.setBrush(QColor(255, 150, 0, alfa // 3))                 # halo laranja: destaca do amarelo da aura
+        p.drawRoundedRect(QRectF(q.x() - 2.6, q.y() - comprimento / 2 - 1.5, 5.2, comprimento + 3.0), 2.6, 2.6)
+        p.setBrush(QColor(cor[0], cor[1], cor[2], alfa))
+        p.drawRoundedRect(QRectF(q.x() - 1.3, q.y() - comprimento / 2, 2.6, comprimento), 1.3, 1.3)
+    p.restore()
+
+
+def draw_clawd(p, shape, gaze=(0.0, 0.0), blink=1.0, emotion="observando", carinho=False, ssj=None, now=0.0,
+               poder=0.0):
     """
     Desenha o Clawd com o centro do pet na origem do painter e os pés em +BODY_H/2 (onde a física
     apoia o corpo). `ssj` = segundos desde a transformação em Super Saiyajin, ou None (desligado).
+    `poder` (0 a 1, só transformado): voo e Kamehameha, aura mais forte e partículas subindo.
     """
     cam, giro, inclinacao = _camera(gaze, now)
 
@@ -639,6 +677,8 @@ def draw_clawd(p, shape, gaze=(0.0, 0.0), blink=1.0, emotion="observando", carin
     if pronto:
         p.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)   # o corpo pode estar girado
         _aura_pronta(p, now)
+        if poder > 0.01:
+            _aura_intensa(p, now, poder)
         _juba(p, "tras", giro, inclinacao, cam.dy, dpr)  # a camada de trás fica atrás do corpo
     elif ssj is not None:                                # transformando: desenha ao vivo (dura 1,2 s)
         forca = 1.0 + 1.2 * (1.0 - ssj / EXPLOSAO)
@@ -654,6 +694,8 @@ def draw_clawd(p, shape, gaze=(0.0, 0.0), blink=1.0, emotion="observando", carin
     _olhos(p, cam, shape, gaze, blink, emotion, carinho, ssj is not None)
     if ssj is not None:
         _raios(p, now)
+    if pronto and poder > 0.01:
+        _subindo(p, now, poder)
     if ssj is not None and ssj < EXPLOSAO:                                   # clarão da transformação
         k = ssj / EXPLOSAO
         p.setPen(QPen(QColor(255, 250, 220, int(220 * (1 - k))), 4))

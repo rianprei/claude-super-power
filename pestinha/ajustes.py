@@ -128,6 +128,9 @@ GANHO_TRAVESSURA = 0.002        # travessuras por segundo, por Hz do motor TRAVE
 GANHO_CARTAZ = 0.5              # cartazes por segundo, por Hz do motor CARTAZ
 GANHO_PAPEL = 0.05              # bolinhas de papel por segundo, por Hz do motor PAPEL
 GANHO_KI = 0.015                # rajadas de Ki por segundo, por Hz do motor KI (em Super Saiyajin)
+GANHO_VOO = 0.002               # voos por segundo, por Hz do motor VOO (~1 a cada 40 s transformado)
+GANHO_TELEPORTE = 0.004         # teletransportes por segundo, por Hz do motor TELEPORTE (~1 a cada 25 s)
+GANHO_KAMEHAMEHA = 0.0015       # Kamehamehas por segundo, por Hz do motor KAMEHAMEHA (~1 a cada 60 s)
 
 # ---------------------------------------------------------------------------
 # Rosto e janela
@@ -212,6 +215,9 @@ _LIMITES = {
     "GANHO_CARTAZ": (float, 0.0, 1.0),
     "GANHO_PAPEL": (float, 0.0, 1.0),
     "GANHO_KI": (float, 0.0, 1.0),
+    "GANHO_VOO": (float, 0.0, 1.0),
+    "GANHO_TELEPORTE": (float, 0.0, 1.0),
+    "GANHO_KAMEHAMEHA": (float, 0.0, 1.0),
     "LADO_JANELA_PET": (int, 100, 1000),
     "ZZZ_QUANTIDADE": (int, 0, 20),
     "ZZZ_PERIODO": (float, 0.1, 60.0),

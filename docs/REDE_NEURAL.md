@@ -2,7 +2,7 @@
 
 > Gerado por `ferramentas/gerar_doc_rede.py` a partir do código. Não edite à mão: rode o script.
 
-A rede tem **486 neurônios** de integração e disparo com vazamento (LIF), **17260 sinapses**, **31 canais sensoriais**, **10 populações de interneurônios** e **16 populações motoras**.
+A rede tem **516 neurônios** de integração e disparo com vazamento (LIF), **22064 sinapses**, **31 canais sensoriais**, **10 populações de interneurônios** e **19 populações motoras**.
 
 ## Como o sinal anda
 
@@ -96,6 +96,9 @@ computador e você ──► sentidos (0..1) ──► neurônios sensoriais (Po
 | `PAPEL` | decisão | atirar papel | FRUSTRATION (+0.40), CALM (−0.40) | atira bolinha de papel (na revolução) |
 | `ACEITAR` | decisão | aceitar o castigo | CALM (+0.45), FRUSTRATION (−0.40), CARESS (+0.30), RANCOR (−0.20), VISITA (+0.08) | aceita o castigo e sai do canto por conta própria (perdão) |
 | `KI` | decisão | atirar Ki | PODER (+0.45), GLOOM (−0.40), TIRED (−0.30), FRUSTRATION (+0.20), CALM (−0.20), PLAYFUL (+0.15) | atira uma rajada de Ki (em Super Saiyajin; a taxa vira a frequência) |
+| `VOO` | decisão | voar | TIRED (−0.40), GLOOM (−0.40), PODER (+0.32), PLAYFUL (+0.25), CURIOUS (+0.10) | sai voando (em Super Saiyajin) |
+| `TELEPORTE` | decisão | teletransportar | PODER (+0.30), TIRED (−0.30), GLOOM (−0.30), ALERT (+0.25), PLAYFUL (+0.10) | some e reaparece em outro lugar (em Super Saiyajin) |
+| `KAMEHAMEHA` | decisão | Kamehameha | GLOOM (−0.40), FRUSTRATION (+0.35), TIRED (−0.35), PODER (+0.30), CALM (−0.25), PLAYFUL (+0.05) | carrega e dispara o feixe (em Super Saiyajin) |
 
 ## Decisões pela rede
 

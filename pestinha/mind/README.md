@@ -12,6 +12,7 @@ Controladores de decisão: ligam o que a rede decide à cena (sono, mesa, protes
 | `festa.py` | O fogo de artifício do pet feliz: a alegria da rede enche a euforia. |
 | `mesa.py` | O computadorzinho do pet: sentar e levantar do notebook. |
 | `mischief_ctl.py` | Quando e como ele apronta, e o que a dispensa causa. |
+| `poderes.py` | Voo, teletransporte e Kamehameha do Clawd SSJ2. |
 | `protest_ctl.py` | Liga o protesto (core/protesto.py) à cena: cartaz, estágio, repressão. |
 | `revolucao.py` | O que o pet atira no cursor quando está em revolução: bolinhas de papel ou, no Clawd em Super Saiyajin, rajadas de Ki (world/ki.py). |
 | `sleep.py` | Quando ele dorme, quando acorda, e o que acontece ao adormecer. |

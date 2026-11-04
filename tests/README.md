@@ -49,6 +49,7 @@ app inteiro usam um relógio virtual: avançam o tempo sem esperar.
 | `test_paineis.py` | Painéis do menu (monitor neural e painel de protesto): só abrem quando você pede e fecham fácil. |
 | `test_pedido.py` | Pedir para trabalhar: o neurônio SENTAR decide. |
 | `test_plataforma.py` | Plataforma: cada sistema expõe as mesmas funções, e as leituras de texto (wmctrl, xdotool, ioreg, janelas do Quartz) são testadas com saídas de exemplo, em qualquer sistema. |
+| `test_poderes.py` | Voo, teletransporte e Kamehameha do Clawd SSJ2: a rede decide, o controlador executa com física por tempo. |
 | `test_robustez.py` | Robustez: arquivo corrompido, assets faltando, log em arquivo. |
 | `test_robustez_v2.py` | Falhas do relatório técnico (docs/auditorias/ANALISE_TECNICA.md): cada caso tem um teste que reproduz o problema. |
 | `test_windows.py` | Windows: o que só quebra lá (DPI misto, clique na aura, arquivo preso por antivírus, pasta sem permissão). |

@@ -44,6 +44,9 @@ class PetState:
         self.desk_top = None        # y (na tela) da tampa do notebook quando ele está sentado: o corpo para ali
         self.castigo = False        # no cantinho do castigo: parado, sem passear
         self.super_saiyajin_desde = None    # monotonic da transformação (só o corpo clawd3d); None = normal
+        self.poder = 0.0                    # 0 a 1: aura mais forte no voo e no Kamehameha (mind/poderes.py)
+        self.escala = (1.0, 1.0)            # (x, y) do desenho: o teletransporte fecha o corpo num risco
+        self.concentrado = False            # no Kamehameha: fica parado no lugar
 
     def mark_caress(self, now=None):
         """Marca que ele está recebendo carinho agora (dura um instante)."""

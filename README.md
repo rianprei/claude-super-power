@@ -11,7 +11,7 @@ Pets de tela para Windows, macOS e Linux, cada um com o próprio cérebro. São 
   cobra nem pede nada de ninguém.
 
 Os dois têm a mesma rede neural, mas cada um tem seu temperamento, seu conteúdo e sua memória, separados.
-Quem decide o que o pet sente e faz é uma **rede neural pulsada** de 486 neurônios (integração e disparo com
+Quem decide o que o pet sente e faz é uma **rede neural pulsada** de 516 neurônios (integração e disparo com
 vazamento), alimentada pelo que acontece no seu computador e pelo que você faz com ele. Algumas regras
 do programa (limiares, o que pode ou não acontecer) são escritas à mão; a seção
 [Como a decisão funciona](docs/ARQUITETURA.md#como-a-decisão-funciona) explica o que é aprendido e o que é regra.

@@ -11,7 +11,15 @@ from PySide6.QtWidgets import QApplication
 from pestinha.body import pet as pet_mod
 from pestinha.mind.revolucao import RevolucaoController
 from pestinha.world import ki as ki_mod
-from pestinha.world.ki import ACELERACAO, CARGA, CLARAO, LADO, VELOCIDADE, KiBlast
+from pestinha.world.ki import (
+    ACELERACAO,
+    ARRANQUE,
+    CARGA,
+    CLARAO,
+    LADO,
+    VELOCIDADE,
+    KiBlast,
+)
 
 TELA = (0, 0, 3000, 2000)
 DT = 1 / 120
@@ -48,7 +56,7 @@ def test_carrega_na_pata_voa_rapido_e_explode_no_alvo():
     explodiu = next(t for t, f, _x, _y in linha if f == "clarao")
     assert inicio_voo == pytest.approx(CARGA, abs=2 * DT)
     voo = explodiu - inicio_voo
-    assert voo == pytest.approx(600 / VELOCIDADE + ACELERACAO / 2, abs=3 * DT)      # ~0,38 s para 600 px
+    assert voo == pytest.approx(600 / VELOCIDADE + (1 - ARRANQUE) * ACELERACAO, abs=2 * DT)   # ~0,24 s para 600 px
     assert linha[-1][0] - explodiu == pytest.approx(CLARAO, abs=2 * DT)              # some depois do flash
     x_explosao = next(x for _t, f, x, _y in linha if f == "clarao")
     assert x_explosao == pytest.approx(700.0, abs=1.0)
@@ -234,3 +242,45 @@ def test_o_forte_persegue_o_cursor_que_foge_e_explode_nele():
     x, y, (cx, cy) = explodiu
     assert math.hypot(x - cx, y - cy) <= ki_mod.ACERTO + ki_mod.VELOCIDADE_FORTE * DT      # alcançou o cursor
     assert ki.perfil.raio > ki_mod.RAIO and ki.perfil.lado > LADO                          # e é maior
+
+
+def test_antecipa_o_cursor_que_anda_e_acerta_onde_ele_vai_estar():
+    estado = {"t": 0.0}
+
+    def cursor():                                    # anda para a direita a 700 px/s
+        return (900.0 + 700.0 * estado["t"], 500.0)
+
+    ki = KiBlast(lambda: (100.0, 500.0), cursor, 0.0, semente=8)
+    t = 0.0
+    while ki.fase != "clarao":
+        t += DT
+        estado["t"] = t
+        ki.passo(t, DT, TELA)
+    assert ki.ex == pytest.approx(cursor()[0], abs=25.0)        # chegou junto com ele (sem antecipar: ~230 px atrás)
+
+
+def test_rapida_nao_atravessa_post_it_fino_num_quadro_lento():
+    ki = KiBlast(lambda: (100.0, 500.0), (1500.0, 500.0), 0.0, semente=9)
+    t = 0.0
+    while ki.fase != "clarao" and t < 3.0:
+        t += 0.05                                    # 20 quadros por segundo: 135 px por quadro
+        ki.passo(t, 0.05, TELA, [(700, 450, 6, 100)])
+    assert ki.fase == "clarao" and ki.ex == pytest.approx(700.0, abs=0.5)
+
+
+def test_teleguiada_freia_na_curva_fechada_e_acelera_na_reta():
+    alvo = {"p": (1400.0, 500.0)}
+    ki = KiBlast(lambda: (200.0, 500.0), lambda: alvo["p"], 0.0, semente=10, forte=True)
+    t = 0.0
+    while t < ki_mod.CARGA_FORTE + 0.3:
+        t += DT
+        ki.passo(t, DT, TELA)
+    reta = ki.velocidade
+    alvo["p"] = (0.0, 500.0)                          # o cursor foi para trás dela
+    menor = reta
+    for _ in range(20):
+        t += DT
+        ki.passo(t, DT, TELA)
+        menor = min(menor, ki.velocidade)
+    assert reta == pytest.approx(ki_mod.VELOCIDADE_FORTE, rel=0.02)
+    assert menor < reta * 0.75                        # freou para fazer a curva
