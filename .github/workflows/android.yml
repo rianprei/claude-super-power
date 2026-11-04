@@ -90,8 +90,9 @@ jobs:
             autoconf automake libtool pkg-config zlib1g-dev libffi-dev libssl-dev libgles2-mesa-dev libegl-dev
           echo "LLVM_INSTALL_DIR=/usr/lib/llvm-15" >> "$GITHUB_ENV"
           echo "JAVA_HOME=$JAVA_HOME_17_X64" >> "$GITHUB_ENV"
+          # android-28: o pyside-tools gera as ligações Java na API alvo (android.jar dela)
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;26.1.10909125" \
-            "platforms;android-34" "build-tools;34.0.0" >/dev/null
+            "platforms;android-28" "platforms;android-34" "build-tools;34.0.0" >/dev/null
       - name: Compilar as rodas
         run: sh ferramentas/gerar_rodas_android_32bits.sh ${{ matrix.arch }} "$ANDROID_HOME" "$ANDROID_HOME/ndk/26.1.10909125"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
