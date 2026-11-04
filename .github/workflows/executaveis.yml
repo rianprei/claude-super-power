@@ -41,6 +41,15 @@ jobs:
         with:
           python-version: ${{ matrix.py }}
           architecture: ${{ runner.os == 'Windows' && matrix.arch || '' }}
+      - name: "macOS legado: o Python 3.8 do python.org (o do setup-python pede o macOS 13.7)"
+        if: matrix.nome == 'macos-legado'
+        run: |
+          curl -fsSL -o py38.pkg https://www.python.org/ftp/python/3.8.10/python-3.8.10-macosx10.9.pkg
+          sudo installer -pkg py38.pkg -target /
+          mkdir -p "$HOME/py38"
+          ln -sf /Library/Frameworks/Python.framework/Versions/3.8/bin/python3 "$HOME/py38/python"
+          ln -sf /Library/Frameworks/Python.framework/Versions/3.8/bin/pip3 "$HOME/py38/pip"
+          echo "$HOME/py38" >> "$GITHUB_PATH"
       - run: pip install -r ${{ matrix.reqs }} pyinstaller==6.22.3
       - name: "Linux: bibliotecas do xcb que vão dentro do app (muitas distros não instalam)"
         if: runner.os == 'Linux'
