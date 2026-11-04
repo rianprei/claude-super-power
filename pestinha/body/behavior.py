@@ -146,6 +146,12 @@ class Behavior:
             self.tipped_since = None
             return
 
+        if st.escala != (1.0, 1.0):                     # teletransportando: o destino de antes não vale mais
+            self.target_x = None                        # (senão ele voltava andando para perto de onde sumiu)
+            self.crossing_screen = False
+            self.next_roam = now + 2.0
+            return
+
         # objeto carregado acompanha (e solta se o pet cair/voar)
         if self.mission and self.mission[0] == "deliver":
             thing = self.mission[1]

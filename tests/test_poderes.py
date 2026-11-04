@@ -215,3 +215,27 @@ def test_efeitos_desenham_sem_erro_em_todas_as_fases():
             assert not k.grab().toImage().isNull()
         t += DT
     k.close()
+
+
+def test_depois_do_teleporte_ele_nao_volta_andando_para_o_destino_antigo():
+    """Regressão: o passeio guardava o destino de antes de sumir e ele voltava deslizando até lá."""
+    from pestinha.body.behavior import Behavior
+
+    corpo, estado, ctl = _no_chao(400.0), PetState(), PoderesController()
+    comportamento = Behavior(corpo, estado, None)
+    comportamento.target_x = 380.0                       # andando por perto de onde estava
+    comportamento.next_roam = 1e9                        # sem passeio novo: só o destino antigo
+    comportamento.next_glance = 1e9
+    estado.tone.speed = lambda: 300.0                    # passeio rápido, como no app
+    prof = {"roam_interval": (100.0, 100.0), "righting_after": 1.0}
+    t, chegada = 0.0, None
+    while t < 2.2:                                       # o teleporte (~0,5 s) e mais 1,7 s sem passeio novo
+        corpo.step(DT, TELA, [])
+        comportamento.tick(DT, t, (1200.0, 300.0), TELA, prof)
+        ctl.tick(t, DT, corpo, estado, TELA, (1200.0, 300.0), {"TELEPORTE": QUER} if t == 0.0 else {},
+                 _patas(corpo), True, False)
+        if ctl.atual is None and chegada is None:
+            chegada = corpo.x
+        t += DT
+    assert chegada is not None and abs(chegada - 400.0) >= pod.TELE_LONGE
+    assert comportamento.target_x != 380.0 and corpo.x == pytest.approx(chegada, abs=5.0)    # ficou onde apareceu
