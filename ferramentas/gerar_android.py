@@ -5,7 +5,12 @@ novo, arm64-v8a ou x86_64). Na raiz do projeto, com o PySide6 de desktop da mesm
     python ferramentas/gerar_android.py --name ClaudeSuperPower --wheel-pyside pyside6-...android_aarch64.whl \
         --wheel-shiboken shiboken6-...android_aarch64.whl --ndk-path $NDK --sdk-path $SDK -f
 
-Os argumentos são os do pyside6-android-deploy. A ferramenta escreve um buildozer.spec só com
+Os argumentos são os do pyside6-android-deploy. Duas variáveis de ambiente escolhem a variante:
+- PESTINHA_API_MINIMA: a API mínima do Android (29 com o PySide6 6.12; 28 com o 6.8.3, o último cujas
+  bibliotecas não usam TLS nativo do ELF e por isso abrem no Android 9);
+- PESTINHA_P4A: a versão do python-for-android (a ferramenta do 6.8.3 clona o develop, que hoje traz um
+  Python mais novo que o das rodas cp311; a v2024.01.21 tem o Python 3.11 e o bootstrap Qt). Vazia: a da
+  ferramenta. A ferramenta escreve um buildozer.spec só com
 python3, shiboken6 e PySide6; aqui ele ganha o resto, antes do build:
 - Android 10 (API 29) como mínimo (a ferramenta diz 28, mas as rodas não abrem no 9);
 - numpy (a rede neural do pet);
@@ -15,6 +20,7 @@ python3, shiboken6 e PySide6; aqui ele ganha o resto, antes do build:
 
 from __future__ import annotations
 
+import os
 import runpy
 import sys
 from pathlib import Path
@@ -24,9 +30,10 @@ import PySide6
 REQUISITOS = "python3,shiboken6,PySide6,numpy"
 EXTENSOES = "py,png,jpg,jpeg,gif,webp,json,txt"
 FORA = "tests,ferramentas,docs,executáveis,build,dist,memory,bin,.github,.buildozer"
-# Android 10: a libshiboken6 das rodas usa TLS nativo do ELF, que o Android 9 não carrega
+# Android 10 com o PySide6 6.12: a libshiboken6 dele usa TLS nativo do ELF, que o Android 9 não carrega
 # ("dlopen failed: unknown reloc type 16", visto no emulador com API 28)
-API_MINIMA = "29"
+API_MINIMA = os.environ.get("PESTINHA_API_MINIMA", "29")
+P4A = os.environ.get("PESTINHA_P4A", "")
 
 
 def main() -> None:
@@ -45,6 +52,8 @@ def main() -> None:
         self.set_value("app", "source.exclude_dirs", FORA, raise_warning=False)
         self.set_value("app", "android.minapi", API_MINIMA, raise_warning=False)
         self.set_value("app", "android.ndk_api", API_MINIMA, raise_warning=False)
+        if P4A:
+            self.set_value("app", "p4a.branch", P4A, raise_warning=False)
         self.update_config()
 
     buildozer.BuildozerConfig.__init__ = completar

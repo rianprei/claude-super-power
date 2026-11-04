@@ -1,6 +1,8 @@
 name: android
-# Gera o APK do Android (10 ou mais novo, arm64-v8a e x86_64) e abre num emulador de verdade.
-# Roda ao criar uma tag (v1.0.0...) ou manualmente.
+# Gera os APKs do Android e abre num emulador de verdade. Roda ao criar uma tag (v1.0.0...) ou manualmente.
+#   moderno     Android 10+: PySide6 6.12 (Python 3.14 no aparelho), NDK r28c (páginas de 16 KB do Android 15)
+#   compativel  Android 9+:  PySide6 6.8.3 (Python 3.11), NDK r26b; o último PySide6 cujas bibliotecas não
+#               usam TLS nativo do ELF (o Android 9 não carrega: "unknown reloc type 16")
 on:
   push:
     tags: ["v*"]
@@ -10,30 +12,30 @@ on:
 permissions:
   contents: read
 
-env:
-  PYSIDE: "6.12.0"            # o Android usa o 6.12: as rodas dele rodam com Python 3.14 no aparelho
-  NDK: "28.2.13676358"        # r28c, o que o pyside6-android-deploy pede (páginas de 16 KB do Android 15)
-
 jobs:
   apk:
     strategy:
       fail-fast: false
       matrix:
         arch: [aarch64, x86_64]
+        variante: [moderno, compativel]
+        include:
+          - {variante: moderno, pyside: "6.12.0", prefixo: pyside6, etiqueta: cp310-abi3, ndk: "28.2.13676358", api: "29", host: "3.12", p4a: ""}
+          - {variante: compativel, pyside: "6.8.3", prefixo: PySide6, etiqueta: cp311-cp311, ndk: "26.1.10909125", api: "28", host: "3.11", p4a: "v2024.01.21"}
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.host }}
       - name: SDK, NDK, JDK 17 e as ferramentas de build do python-for-android
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends autoconf automake libtool libltdl-dev pkg-config \
             m4 gettext cmake zlib1g-dev libffi-dev libssl-dev zip unzip
           echo "JAVA_HOME=$JAVA_HOME_17_X64" >> "$GITHUB_ENV"
-          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;$NDK" \
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;${{ matrix.ndk }}" \
             "platforms;android-35" "build-tools;35.0.0" "platform-tools" >/dev/null
           # o buildozer procura o sdkmanager em <sdk>/tools/bin; o runner tem em cmdline-tools/latest
           sudo mkdir -p "$ANDROID_HOME/tools"
@@ -42,39 +44,47 @@ jobs:
       - name: PySide6 de desktop (a ferramenta) e as rodas do Android
         run: |
           # jinja2, pkginfo e tqdm: a ferramenta usa e não declara
-          pip install "PySide6==$PYSIDE" buildozer cython jinja2 pkginfo tqdm packaging
+          pip install "PySide6==${{ matrix.pyside }}" buildozer cython jinja2 pkginfo tqdm packaging
+          V="${{ matrix.pyside }}"
           BASE=https://download.qt.io/official_releases/QtForPython
+          FIM="${{ matrix.etiqueta }}-android_${{ matrix.arch }}.whl"
           mkdir rodas
-          curl -fsSL -o "rodas/pyside6.whl" "$BASE/pyside6/pyside6-$PYSIDE-$PYSIDE-cp310-abi3-android_${{ matrix.arch }}.whl"
-          curl -fsSL -o "rodas/shiboken6.whl" "$BASE/shiboken6/shiboken6-$PYSIDE-$PYSIDE-cp310-abi3-android_${{ matrix.arch }}.whl"
-          mv rodas/pyside6.whl "rodas/PySide6-$PYSIDE-cp310-abi3-android_${{ matrix.arch }}.whl"
-          mv rodas/shiboken6.whl "rodas/shiboken6-$PYSIDE-cp310-abi3-android_${{ matrix.arch }}.whl"
+          curl -fsSL -o "rodas/PySide6-$V-$FIM" "$BASE/pyside6/${{ matrix.prefixo }}-$V-$V-$FIM"
+          curl -fsSL -o "rodas/shiboken6-$V-$FIM" "$BASE/shiboken6/shiboken6-$V-$V-$FIM"
       - name: Gerar o APK
+        env:
+          PESTINHA_API_MINIMA: ${{ matrix.api }}
+          PESTINHA_P4A: ${{ matrix.p4a }}
         run: |
           python ferramentas/gerar_android.py --name ClaudeSuperPower -f \
             --wheel-pyside rodas/PySide6-*.whl --wheel-shiboken rodas/shiboken6-*.whl \
-            --ndk-path "$ANDROID_HOME/ndk/$NDK" --sdk-path "$ANDROID_HOME"
+            --ndk-path "$ANDROID_HOME/ndk/${{ matrix.ndk }}" --sdk-path "$ANDROID_HOME"
           mkdir entrega
-          mv ./*.apk "entrega/ClaudeSuperPower-${{ matrix.arch }}.apk"
+          mv ./*.apk "entrega/ClaudeSuperPower-${{ matrix.variante }}-${{ matrix.arch }}.apk"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
-          name: android-${{ matrix.arch }}
+          name: android-${{ matrix.variante }}-${{ matrix.arch }}
           path: entrega/
 
   emulador:
-    # o APK x86_64 no emulador: Android 10 (o mínimo) e 15
+    # o APK x86_64 de cada variante no emulador: na versão mínima dela e no Android 15
     needs: apk
+    if: ${{ !cancelled() }}
     strategy:
       fail-fast: false
       matrix:
-        api: [29, 35]
+        include:
+          - {variante: moderno, api: 29, alvo: default}
+          - {variante: moderno, api: 35, alvo: google_apis}
+          - {variante: compativel, api: 28, alvo: default}
+          - {variante: compativel, api: 35, alvo: google_apis}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
         with:
-          name: android-x86_64
+          name: android-${{ matrix.variante }}-x86_64
           path: apk
       - name: KVM para o emulador
         run: |
@@ -85,14 +95,14 @@ jobs:
         with:
           api-level: ${{ matrix.api }}
           arch: x86_64
-          target: ${{ matrix.api == 29 && 'default' || 'google_apis' }}
+          target: ${{ matrix.alvo }}
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
           disable-animations: true
-          script: sh ferramentas/fumaca_android.sh apk/ClaudeSuperPower-x86_64.apk "$ANDROID_HOME/build-tools/35.0.0/aapt"
+          script: sh ferramentas/fumaca_android.sh apk/ClaudeSuperPower-${{ matrix.variante }}-x86_64.apk "$ANDROID_HOME/build-tools/35.0.0/aapt"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         if: always()
         with:
-          name: android-emulador-api${{ matrix.api }}
+          name: android-emulador-${{ matrix.variante }}-api${{ matrix.api }}
           path: |
             logcat.txt
             tela.png
