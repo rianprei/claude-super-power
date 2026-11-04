@@ -414,6 +414,7 @@ class PestinhaApp(SessaoMixin, InteracaoMixin, QObject):
         intensities["PEDIDO"] = self.mesa.intensidade_pedido(now)
         intensities.update(self.castigo.sinais(body))  # preso, memória de fuga, placa, visita, receio, rancor
         intensities["RECUSA"] = self.pulso_recusa
+        intensities["PODER"] = 1.0 if self.pet.patas_na_tela(now) is not None else 0.0   # Clawd em Super Saiyajin
         self.pulso_recusa = 0.0
         total_ms = max(1, round(dt * 1000))
         while total_ms > 0:
@@ -526,6 +527,9 @@ class PestinhaApp(SessaoMixin, InteracaoMixin, QObject):
             papel_hz=motores["PAPEL"],
             obstaculos=self._obstaculos_da_mesa(),
             patas=lambda: self.pet.patas_na_tela(now),      # Clawd em Super Saiyajin: Ki no lugar do papel
+            ki_hz=motores["KI"],                            # fora da revolução, a rede decide se atira Ki
+            livre=not self.asleep and not preso and self.pet.isVisible(),
+            bravo=motores["ANGRY"] > motores["CHEER"],       # bravo mira em você; senão, atira para o alto
         )
         # o cursor também bate na bolinha
         if self._prev_cursor is not None and now > self._prev_cursor_t:

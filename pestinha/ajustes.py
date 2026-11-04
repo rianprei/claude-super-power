@@ -127,6 +127,7 @@ LIMIAR_CANTO_HZ = 3.0           # CANTO acima disso: vai para o cantinho
 GANHO_TRAVESSURA = 0.002        # travessuras por segundo, por Hz do motor TRAVESSURA
 GANHO_CARTAZ = 0.5              # cartazes por segundo, por Hz do motor CARTAZ
 GANHO_PAPEL = 0.05              # bolinhas de papel por segundo, por Hz do motor PAPEL
+GANHO_KI = 0.015                # rajadas de Ki por segundo, por Hz do motor KI (em Super Saiyajin)
 
 # ---------------------------------------------------------------------------
 # Rosto e janela
@@ -210,6 +211,7 @@ _LIMITES = {
     "GANHO_TRAVESSURA": (float, 0.0, 1.0),
     "GANHO_CARTAZ": (float, 0.0, 1.0),
     "GANHO_PAPEL": (float, 0.0, 1.0),
+    "GANHO_KI": (float, 0.0, 1.0),
     "LADO_JANELA_PET": (int, 100, 1000),
     "ZZZ_QUANTIDADE": (int, 0, 20),
     "ZZZ_PERIODO": (float, 0.1, 60.0),

@@ -142,3 +142,44 @@ def test_faiscas_freiam_por_tempo_e_nao_por_quadro():
     b.agora = 0.1
     b._mover_faiscas(0.1)
     assert a.faiscas[0][2] == pytest.approx(b.faiscas[0][2])
+
+
+def test_a_rede_quer_atirar_ki_so_quando_sente_o_poder():
+    from pestinha.core.nervous_system import LIFBrain
+
+    def media_ki(poder, extra=None):
+        cerebro = LIFBrain(seed=7)
+        taxas = []
+        for _ in range(300):                                   # 30 s
+            cerebro.stimulate({"WORK": 0.5, "PODER": poder, **(extra or {})})
+            cerebro.step(100)
+            taxas.append(cerebro.motor_activity()["KI"])
+        return sum(taxas) / len(taxas)
+
+    transformado = media_ki(1.0)
+    assert media_ki(0.0) < 0.5 < transformado                 # sem Super Saiyajin, a vontade quase não existe
+    assert media_ki(1.0, {"FATIGUE": 1.0}) < transformado      # cansado atira menos
+
+
+def test_fora_da_revolucao_o_motor_ki_decide_e_escolhe_a_mira(monkeypatch):
+    monkeypatch.setattr("pestinha.mind.revolucao.random.uniform", lambda a, b: (a + b) / 2)
+    corpo = SimpleNamespace(x=500.0, y=600.0, vx=0.0)
+    patas = [(450.0, 580.0), (550.0, 580.0)]
+    cursor = (900.0, 650.0)
+
+    def atirar(ki_hz, livre=True, bravo=False, sorte=0.5, com_patas=True):
+        monkeypatch.setattr("pestinha.mind.revolucao.random.random", lambda: sorte)
+        rev, _play = _revolucao()
+        rev.tick(0.0, 1.0, TELA, cursor, (0, 0), corpo, True, False, [], 0.0,
+                 patas=(lambda: patas) if com_patas else (lambda: None), ki_hz=ki_hz, livre=livre, bravo=bravo)
+        kis = list(rev.kis)
+        rev.fechar()
+        return kis, rev
+
+    assert atirar(ki_hz=0.0)[0] == []                          # a rede não quer: não atira
+    assert atirar(ki_hz=60.0, livre=False)[0] == []           # dormindo, preso ou escondido: não atira
+    assert atirar(ki_hz=60.0, com_patas=False)[0] == []       # fora do Super Saiyajin: não atira
+    kis, _ = atirar(ki_hz=60.0)
+    assert len(kis) == 1 and kis[0].alvo[1] < corpo.y - 300     # para se exibir: para o alto
+    kis, _ = atirar(ki_hz=60.0, bravo=True)
+    assert kis[0].alvo == cursor and (kis[0].ex, kis[0].ey) == patas[1]    # bravo: no cursor, pata do lado dele

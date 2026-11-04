@@ -152,7 +152,7 @@ Toda leitura e escrita passa por `store.py`:
 A rede neural decide **a tendência**; as regras decidem **as opções e a execução**. Em resumo:
 
 **O que é decidido pela rede** (em `core/nervous_system.py`, com a semente e o temperamento do pet):
-- Qual dos 15 motores está mais forte: sentar no notebook, fugir do canto, colar cartaz, ir para o canto,
+- Qual dos 16 motores está mais forte: sentar no notebook, fugir do canto, colar cartaz, ir para o canto,
   aprontar, atirar papel na revolução, aceitar o castigo, expressões (alegria, raiva, tristeza...).
 - A intensidade de cada motor (taxa de disparo em Hz). Essa taxa vira probabilidade: a chance de colar um
   cartaz e de aprontar uma travessura é a taxa do motor, não um sorteio fixo. Fugir e aceitar o perdão

@@ -38,6 +38,7 @@ CANAIS_SENSORIAIS = {
     "VISITA": "visita no canto",
     "RECEIO": "receio de fugir",
     "RANCOR": "rancor",
+    "PODER": "poder (SSJ)",
 }
 
 INTERNEURONIOS = {
@@ -68,6 +69,7 @@ MOTORES = {
     "CANTO": "ir para o cantinho",
     "TRAVESSURA": "aprontar",
     "PAPEL": "atirar papel",
+    "KI": "atirar Ki",
     "ACEITAR": "aceitar o castigo",
 }
 

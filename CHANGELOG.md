@@ -59,7 +59,13 @@
   - sai acelerando até 1700 px/s, com uma cauda de energia que afina e apaga e solta faíscas;
   - explode num flash curto (núcleo, anel e estilhaços) no alvo, num post-it ou na borda da tela.
 
-  O intervalo continua vindo do neurônio PAPEL. Às vezes vem um segundo tiro da outra pata, e cada tiro dá um
+  A própria rede decide quando atirar. O canal sensorial PODER fica ligado enquanto ele está transformado e
+  habitua devagar. O motor de decisão KI recebe PODER, brincadeira e raiva; calma, tristeza e cansaço seguram;
+  a taxa dele vira a chance de atirar (`GANHO_KI`). A rede também escolhe a mira: com ANGRY acima de CHEER,
+  mira no cursor; senão, atira para o alto para se exibir. Medido na rede: uns 13 tiros por minuto logo
+  depois de transformar, caindo para 2 ou 3 por minuto em 10 min; cansado, menos de 1 por minuto. A rede
+  passa a ter 486 neurônios, 31 canais e 16 motores, e o aprendizado salvo continua valendo.
+  Na revolução, o intervalo continua vindo do neurônio PAPEL. Às vezes vem um segundo tiro da outra pata, e cada tiro dá um
   coice no pet. A física é por tempo, sem depender da taxa de quadros. Fora do Super Saiyajin, continua o
   papel.
 - Android 10 ou mais novo (arm64-v8a e x86_64): o pet mora dentro do app, num palco preto (o Android não deixa

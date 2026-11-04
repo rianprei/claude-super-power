@@ -109,6 +109,7 @@ def main():
         f"| Travessuras | por segundo: taxa de `TRAVESSURA` × {ajustes.GANHO_TRAVESSURA:g}. |",
         f"| Cartazes do castigo | por segundo: taxa de `CARTAZ` × {ajustes.GANHO_CARTAZ:g} (cada um fica ao menos 8 s). |",
         f"| Bolinhas de papel | por segundo: taxa de `PAPEL` × {ajustes.GANHO_PAPEL:g} (só na revolução). |",
+        f"| Rajadas de Ki | por segundo: taxa de `KI` × {ajustes.GANHO_KI:g} (Clawd em Super Saiyajin, fora da revolução; bravo mira no cursor). |",
         "",
         ("Regras que ainda não são da rede: as condições do corpo (dormindo, segurado, no ar), os estágios do "
         "protesto (acúmulo com limiar), o sono pela energia e a escolha do tipo de travessura (memória episódica)."),

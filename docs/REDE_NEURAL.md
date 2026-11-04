@@ -2,7 +2,7 @@
 
 > Gerado por `ferramentas/gerar_doc_rede.py` a partir do código. Não edite à mão: rode o script.
 
-A rede tem **470 neurônios** de integração e disparo com vazamento (LIF), **15939 sinapses**, **30 canais sensoriais**, **10 populações de interneurônios** e **15 populações motoras**.
+A rede tem **486 neurônios** de integração e disparo com vazamento (LIF), **17260 sinapses**, **31 canais sensoriais**, **10 populações de interneurônios** e **16 populações motoras**.
 
 ## Como o sinal anda
 
@@ -59,12 +59,13 @@ computador e você ──► sentidos (0..1) ──► neurônios sensoriais (Po
 | `VISITA` | visita no canto | não | você está perto dele enquanto ele está preso |
 | `RECEIO` | receio de fugir | não | interno: fugas que deram errado (devolvido ao canto) |
 | `RANCOR` | rancor | não | interno: tempo de castigo acumulado, decai devagar |
+| `PODER` | poder (SSJ) | 0.0001 / 600 s | em Super Saiyajin: sente o próprio poder (a novidade passa) |
 
 ## Interneurônios
 
 | População | Nome no monitor | Tipo | Neurônios | Entradas (peso) |
 |---|---|---|---:|---|
-| `ALERT` | alerta | excitatória | 16 | MOTION (+0.14), ANTICIPATE (+0.12), ANTECIPA_PLACA (+0.12), IMPACT (+0.10), POKE (+0.08), NOVELTY (+0.06), DRAG (+0.06), TOY_TAKEN (+0.06), CALM (−0.06), THROW (+0.05), TIRED (−0.05), QUIET (−0.04), INHIB (−0.04), PRESO (+0.04), PLAY (+0.03), DISMISS (+0.03), TYPING (+0.02), PLACA (+0.02) |
+| `ALERT` | alerta | excitatória | 16 | MOTION (+0.14), ANTICIPATE (+0.12), ANTECIPA_PLACA (+0.12), IMPACT (+0.10), POKE (+0.08), NOVELTY (+0.06), DRAG (+0.06), TOY_TAKEN (+0.06), CALM (−0.06), THROW (+0.05), TIRED (−0.05), QUIET (−0.04), INHIB (−0.04), PRESO (+0.04), PODER (+0.04), PLAY (+0.03), DISMISS (+0.03), TYPING (+0.02), PLACA (+0.02) |
 | `FOCUS` | foco | excitatória | 16 | WORK (+0.14), PEDIDO (+0.12), QUIET (−0.08), TYPING (+0.05), INHIB (−0.03) |
 | `CURIOUS` | curiosidade | excitatória | 16 | BOREDOM (+0.12), NOVELTY (+0.10), DRAG (+0.07), WEB (+0.06), TOY_NEAR (+0.06), POKE (+0.05), ALERT (+0.05), QUIET (−0.05), SOCIAL (+0.04), GLOOM (−0.04), TIRED (−0.04), THROW (+0.03), INHIB (−0.03) |
 | `PLAYFUL` | brincadeira | excitatória | 12 | TOY_NEAR (+0.10), BOREDOM (+0.09), PLAY (+0.08), POKE (+0.08), THROW (+0.08), GLOOM (−0.06), DRAG (+0.05), CARESS (+0.05), FRUSTRATION (−0.05), TIRED (−0.05), INHIB (−0.03), SOUND (+0.02) |
@@ -94,6 +95,7 @@ computador e você ──► sentidos (0..1) ──► neurônios sensoriais (Po
 | `TRAVESSURA` | decisão | aprontar | PLACA (−0.60), GLOOM (−0.50), BOREDOM (+0.30), CALM (−0.30), CURIOUS (+0.20), RANCOR (+0.15), PLAYFUL (+0.12) | apronta uma travessura (a taxa vira a frequência) |
 | `PAPEL` | decisão | atirar papel | FRUSTRATION (+0.40), CALM (−0.40) | atira bolinha de papel (na revolução) |
 | `ACEITAR` | decisão | aceitar o castigo | CALM (+0.45), FRUSTRATION (−0.40), CARESS (+0.30), RANCOR (−0.20), VISITA (+0.08) | aceita o castigo e sai do canto por conta própria (perdão) |
+| `KI` | decisão | atirar Ki | PODER (+0.45), GLOOM (−0.40), TIRED (−0.30), FRUSTRATION (+0.20), CALM (−0.20), PLAYFUL (+0.15) | atira uma rajada de Ki (em Super Saiyajin; a taxa vira a frequência) |
 
 ## Decisões pela rede
 
@@ -108,5 +110,6 @@ Os motores de decisão viram comportamento assim (valores em `pestinha/ajustes.p
 | Travessuras | por segundo: taxa de `TRAVESSURA` × 0.002. |
 | Cartazes do castigo | por segundo: taxa de `CARTAZ` × 0.5 (cada um fica ao menos 8 s). |
 | Bolinhas de papel | por segundo: taxa de `PAPEL` × 0.05 (só na revolução). |
+| Rajadas de Ki | por segundo: taxa de `KI` × 0.015 (Clawd em Super Saiyajin, fora da revolução; bravo mira no cursor). |
 
 Regras que ainda não são da rede: as condições do corpo (dormindo, segurado, no ar), os estágios do protesto (acúmulo com limiar), o sono pela energia e a escolha do tipo de travessura (memória episódica).

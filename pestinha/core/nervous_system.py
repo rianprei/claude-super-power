@@ -87,6 +87,7 @@ SENSORY_SPEC = {
     "VISITA":  (6,  60.0, 0.0,        1.0),   # você está perto dele enquanto ele está preso
     "RECEIO":  (6,  40.0, 0.0,        1.0),   # interno: fugas que deram errado (devolvido ao canto)
     "RANCOR":  (6,  40.0, 0.0,        1.0),   # interno: tempo de castigo acumulado, decai devagar
+    "PODER":   (6,  60.0, 0.0001,   600.0),   # em Super Saiyajin: sente o próprio poder (a novidade passa)
 }
 
 # ============================================================
@@ -141,6 +142,7 @@ MOTOR_SPEC = [
     ("TRAVESSURA", 10, 60.0, 0.030, 4.0),   # apronta uma travessura (a taxa vira a frequência)
     ("PAPEL",   10, 60.0, 0.030, 4.0),      # atira bolinha de papel (na revolução)
     ("ACEITAR", 10, 80.0, 0.020, 4.0),      # aceita o castigo e sai do canto por conta própria (perdão)
+    ("KI",      10, 50.0, 0.040, 3.0),      # atira uma rajada de Ki (em Super Saiyajin; a taxa vira a frequência)
 ]
 
 # ============================================================
@@ -272,6 +274,13 @@ CONNECTIONS = [
     ("GLOOM",   "TRAVESSURA", -0.50, 0.5),  # triste não apronta
     ("FRUSTRATION", "PAPEL", 0.40, 0.6),    # na revolução, atira papel
     ("CALM",    "PAPEL",  -0.40, 0.5),
+    ("PODER",   "KI",      0.45, 0.6),      # transformado: o poder pede para sair
+    ("PODER",   "ALERT",   0.04, 0.6),      #    ...e deixa ele elétrico
+    ("PLAYFUL", "KI",      0.15, 0.6),      # brincalhão: atira para se exibir
+    ("FRUSTRATION", "KI",  0.20, 0.6),      # bravo: atira com raiva
+    ("CALM",    "KI",     -0.20, 0.5),
+    ("GLOOM",   "KI",     -0.40, 0.5),      # triste não atira
+    ("TIRED",   "KI",     -0.30, 0.5),      # cansado também não
 
     # ---- cantinho do castigo ----
     ("PLACA",   "TRAVESSURA", -0.60, 0.6),  # 3) a placa à vista desencoraja travessuras
@@ -295,7 +304,7 @@ CONNECTIONS = [
     ("BOREDOM", "FUGIR",   0.15, 0.6),      # 10) entediado no canto, foge do tédio
 ]
 
-DECISION_MOTORS = {"SENTAR", "FUGIR", "CARTAZ", "CANTO", "TRAVESSURA", "PAPEL", "ACEITAR"}   # decisões, não expressão
+DECISION_MOTORS = {"SENTAR", "FUGIR", "CARTAZ", "CANTO", "TRAVESSURA", "PAPEL", "ACEITAR", "KI"}   # decisões, não expressão
 LATERAL_INHIBITION = 0.05      # cada motor inibe os outros
 STARTLE_INHIBITION = 0.10      # o susto inibe mais forte
 
