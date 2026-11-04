@@ -20,7 +20,10 @@ python3, shiboken6 e PySide6; aqui ele ganha o resto, antes do build:
 - Android 10 (API 29) como mínimo (a ferramenta diz 28, mas as rodas não abrem no 9);
 - numpy (a rede neural do pet);
 - os arquivos de conteúdo dos pets (json, txt e imagens), que não são .py;
-- fora do pacote: testes, ferramentas, documentação, executáveis de desktop e a memória local.
+- fora do pacote: testes, ferramentas, documentação, executáveis de desktop e a memória local;
+- o pet flutuando sobre os outros apps, como no PC: a activity de entrada e a Ponte (android_java/, ver
+  pestinha/plataforma/android.py), a permissão SYSTEM_ALERT_WINDOW ("Exibir sobre outros apps") e o Qt
+  continuando a rodar com a activity em segundo plano (android.app.background_running).
 """
 
 from __future__ import annotations
@@ -35,7 +38,11 @@ import PySide6
 
 REQUISITOS = "python3,shiboken6,PySide6,numpy"
 EXTENSOES = "py,png,jpg,jpeg,gif,webp,json,txt"
-FORA = "tests,ferramentas,docs,executáveis,build,dist,memory,bin,.github,.buildozer"
+FORA = "tests,ferramentas,docs,executáveis,build,dist,memory,bin,.github,.buildozer,android_java"
+JAVA = Path(__file__).resolve().parent.parent / "android_java"
+ENTRADA = "org.claudesuperpower.Entrada"
+PERMISSOES = ("SYSTEM_ALERT_WINDOW",)
+META_DADOS = "android.app.background_running=true"
 # Android 10 com o PySide6 6.12: a libshiboken6 dele usa TLS nativo do ELF, que o Android 9 não carrega
 # ("dlopen failed: unknown reloc type 16", visto no emulador com API 28)
 API_MINIMA = os.environ.get("PESTINHA_API_MINIMA", "29")
@@ -53,6 +60,12 @@ def copiar_receitas(origem: Path, destino: Path) -> None:
         shutil.copytree(receita, destino / receita.name, dirs_exist_ok=True,
                         ignore=shutil.ignore_patterns("__pycache__"))
         print(f"receita {receita.name} -> {destino / receita.name}")
+
+
+def somar_permissoes(atuais: str, novas: tuple[str, ...]) -> str:
+    """As permissões que a ferramenta achou (texto "A, B") mais as nossas, sem repetir."""
+    lista = [p.strip() for p in atuais.split(",") if p.strip()]
+    return ", ".join(dict.fromkeys([*lista, *novas]))
 
 
 def main() -> None:
@@ -77,6 +90,11 @@ def main() -> None:
             self.set_value("app", "p4a.commit", P4A_COMMIT, raise_warning=False)
         if P4A_RECEITAS:
             copiar_receitas(Path(P4A_RECEITAS).resolve(), Path(config.recipe_dir))
+        self.set_value("app", "android.add_src", str(JAVA), raise_warning=False)
+        self.set_value("app", "android.entrypoint", ENTRADA, raise_warning=False)
+        self.set_value("app", "android.meta_data", META_DADOS, raise_warning=False)
+        atuais = self.get_value("app", "android.permissions", ignore_fail=True) or ""
+        self.set_value("app", "android.permissions", somar_permissoes(atuais, PERMISSOES), raise_warning=False)
         self.update_config()
 
     buildozer.BuildozerConfig.__init__ = completar

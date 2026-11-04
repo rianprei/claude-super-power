@@ -350,6 +350,9 @@ class PetWindow(QWidget):
 
 
 def cursor_pos():
-    """Posição atual do cursor em pixels (x, y)."""
+    """Posição atual do cursor em pixels (x, y); no Android, o último toque (plataforma.cursor)."""
+    outro = plataforma.cursor()
+    if outro is not None:
+        return outro
     p = QCursor.pos()
     return p.x(), p.y()

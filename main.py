@@ -92,6 +92,8 @@ def main():
 
     palco = palco_android() if plataforma.ANDROID else None     # antes do pet: fica atrás dele
     pet_app = PestinhaApp(store, paths)
+    if plataforma.ANDROID:          # o pet flutua sobre os outros apps (com a permissão); senão, fica no palco
+        plataforma.iniciar_sobreposicao(pet_app.tray, palco)
     if args.sair_em > 0:
         QTimer.singleShot(int(args.sair_em * 1000), pet_app.quit)
     codigo = app.exec()

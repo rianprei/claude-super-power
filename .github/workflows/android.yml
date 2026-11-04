@@ -69,6 +69,8 @@ jobs:
             --ndk-path "$ANDROID_HOME/ndk/${{ matrix.ndk }}" --sdk-path "$ANDROID_HOME"
           mkdir entrega
           mv ./*.apk "entrega/ClaudeSuperPower-${{ matrix.variante }}-${{ matrix.arch }}.apk"
+          sh ferramentas/finalizar_apk.sh "entrega/ClaudeSuperPower-${{ matrix.variante }}-${{ matrix.arch }}.apk" \
+            "$ANDROID_HOME/build-tools/35.0.0"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
           name: android-${{ matrix.variante }}-${{ matrix.arch }}
@@ -153,6 +155,8 @@ jobs:
             --ndk-path "$ANDROID_HOME/ndk/26.1.10909125" --sdk-path "$ANDROID_HOME"
           mkdir entrega
           mv ./*.apk "entrega/ClaudeSuperPower-32bits-${{ matrix.arch }}.apk"
+          sh ferramentas/finalizar_apk.sh "entrega/ClaudeSuperPower-32bits-${{ matrix.arch }}.apk" \
+            "$ANDROID_HOME/build-tools/35.0.0"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
           name: android-32bits-${{ matrix.arch }}

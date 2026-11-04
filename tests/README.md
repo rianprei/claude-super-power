@@ -18,6 +18,8 @@ app inteiro usam um relógio virtual: avançam o tempo sem esperar.
 | `janela_real_macos.py` | Prova, num macOS de verdade (Qt Cocoa, não offscreen), que as janelas do pet ficam visíveis com outro app ativo, não têm sombra e deixam o clique atravessar a aura. |
 | `janela_real_windows.py` | Prova, num Windows de verdade (Qt nativo, não offscreen), que o clique atravessa a aura semitransparente. |
 | `test_30_bugs.py` | Regressão dos 30 bugs encontrados na rodada de fuzzing e revisão (docs/auditorias/BUGS_30_RODADA.md). |
+| `test_alvo_sdk_apk.py` | Ferramentas/alvo_sdk_apk.py: troca o targetSdkVersion no manifesto binário do Android sem mexer no resto. |
+| `test_android_ponte.py` | Android: a Ponte espelha as janelas do Qt em janelas flutuantes e devolve os toques como mouse (lado Python). |
 | `test_aparencia.py` | Etapa 5 do multipet: cores e acessórios por pet, numa camada por cima do rosto. |
 | `test_app.py` | Testes de integração do app, com Qt em modo offscreen e tudo numa pasta temporária. |
 | `test_arquitetura.py` | Regra de camadas do pacote `pestinha`: cada camada só importa das que estão abaixo dela. |

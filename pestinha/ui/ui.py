@@ -400,6 +400,7 @@ class Tray(QObject):
         self.actions["pause"].setText("Continuar" if paused else "Pausar")
         self.actions["hide"].setText("Mostrar" if hidden else "Esconder")
         self.icon.setToolTip(self.titulo + ("  [MODO TESTE]" if test_mode else ""))
+        plataforma.estado_da_bandeja(paused, hidden)     # Android: a notificação faz o papel da bandeja
 
 
 # ============================================================

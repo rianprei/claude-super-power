@@ -18,6 +18,10 @@ lógicas pela escala de cada tela) ou, se COORDENADAS_LOGICAS, já nas coordenad
     pasta_de_dados()             pasta do app nos dados do usuário (quando a do programa não serve)
     preparar_qt()                antes do QApplication (Linux: Wayland abre pelo XWayland; macOS: o Qt 5 desenha
                                  pela camada do Core Animation)
+    cursor()                     onde está o "cursor" se não for o do mouse (Android: o último toque), ou None
+    area_util()                  (l, t, r, b) lógicos da tela sem as barras do sistema, ou None (o Qt sabe)
+    estado_da_bandeja(p, e)      avisa a bandeja do sistema que não é a do Qt (Android: a notificação)
+    iniciar_sobreposicao(b, p)   Android: as janelas do Qt passam a flutuar sobre os outros apps
 """
 
 from __future__ import annotations
@@ -50,6 +54,10 @@ iniciar_atalho = _backend.iniciar_atalho
 LIMITACAO_ATALHO = getattr(_backend, "LIMITACAO_ATALHO", None)
 COORDENADAS_LOGICAS = getattr(_backend, "COORDENADAS_LOGICAS", False)
 preparar_qt = getattr(_backend, "preparar_qt", lambda: None)
+cursor = getattr(_backend, "cursor", lambda: None)
+area_util = getattr(_backend, "area_util", lambda: None)
+estado_da_bandeja = getattr(_backend, "estado_da_bandeja", lambda _pausado, _escondido: None)
+iniciar_sobreposicao = getattr(_backend, "iniciar_sobreposicao", lambda _bandeja, _palco=None: None)
 
 
 def _sem_regiao(janela_id, retangulos):

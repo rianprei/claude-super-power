@@ -15,6 +15,7 @@ python ferramentas/gerar_doc_rede.py
 
 | Arquivo | O que faz |
 |---|---|
+| `alvo_sdk_apk.py` | Troca o targetSdkVersion no AndroidManifest.xml binário de um APK, sem recompilar (depois: zipalign e assinar): |
 | `fuzz_pestinha.py` | Roda o app inteiro com relógio virtual e ações aleatórias, checando invariantes. |
 | `gerar_android.py` | Gera o APK do Android com o pyside6-android-deploy (PySide6 6.12, Python 3.14 no aparelho, Android 10 ou mais novo, arm64-v8a ou x86_64). |
 | `gerar_doc_rede.py` | Gera docs/REDE_NEURAL.md a partir do código (canais, interneurônios, motores, conexões e limiares). |

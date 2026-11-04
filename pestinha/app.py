@@ -267,7 +267,11 @@ class PestinhaApp(SessaoMixin, InteracaoMixin, QObject):
     # ---------------- geometria ----------------
 
     def screen_bounds(self):
-        """Áreas úteis de todos os monitores, em coordenadas lógicas globais do Qt."""
+        """Áreas úteis de todos os monitores, em coordenadas lógicas globais do Qt (no Android, a tela sem as
+        barras do sistema, que a sobreposição informa)."""
+        util = plataforma.area_util()
+        if util is not None:
+            return [util]
         return [(g.x(), g.y(), g.x() + g.width(), g.y() + g.height())
                 for g in (screen.availableGeometry() for screen in QGuiApplication.screens())]
 

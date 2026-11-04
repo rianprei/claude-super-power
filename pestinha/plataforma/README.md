@@ -9,7 +9,7 @@ Tudo que depende do sistema operacional: programa em primeiro plano, tempo ocios
 | Arquivo | O que faz |
 |---|---|
 | `_comum.py` | Partes que os três sistemas compartilham: rodar comandos do sistema e o atalho global via pynput. |
-| `android.py` | Android: o pet mora dentro do próprio app. |
+| `android.py` | Android: o pet flutua sobre os outros apps, como no PC. |
 | `linux.py` | Linux: o próprio X11 (python-xlib) para as janelas e o tempo ocioso, e pynput para o atalho. |
 | `macos.py` | MacOS: Quartz (pyobjc) para as janelas e o tempo ocioso; AppKit para o programa em primeiro plano. |
 | `windows.py` | Windows: a API do sistema (user32, dwmapi) via ctypes e pywin32. |
