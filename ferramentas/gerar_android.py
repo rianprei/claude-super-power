@@ -12,8 +12,10 @@ Os argumentos são os do pyside6-android-deploy. Duas variáveis de ambiente esc
   develop, que hoje traz o Python 3.14 (as rodas dela são cp311); a v2024.01.21 tem o Python 3.11, mas o
   bootstrap Qt dela ainda chama QtNative.setEnvironmentVariable, que o Qt 6.8 tirou. O commit f8e5c05 (agosto de
   2024) tem o bootstrap já adaptado, o Python 3.11.5 e o numpy 1.26.5. Vazias: as da ferramenta.
-- PESTINHA_P4A_RECEITAS: pasta de receitas locais do python-for-android (ferramentas/receitas_p4a com o commit
-  f8e5c05: o numpy dele não compila com o `build` de hoje). Vazia: só as receitas dele. A ferramenta escreve um buildozer.spec só com
+- PESTINHA_P4A_RECEITAS: pasta com receitas a mais para o python-for-android (ferramentas/receitas_p4a com o
+  commit f8e5c05: o numpy dele não compila com o `build` de hoje). Elas são copiadas para a pasta de receitas da
+  ferramenta, ao lado das do PySide6 e do shiboken6 (que copiam as bibliotecas do Qt para o APK: apontar o
+  p4a.local_recipes para outra pasta as esconderia, e o APK sairia sem o Qt). Vazia: só as da ferramenta. A ferramenta escreve um buildozer.spec só com
 python3, shiboken6 e PySide6; aqui ele ganha o resto, antes do build:
 - Android 10 (API 29) como mínimo (a ferramenta diz 28, mas as rodas não abrem no 9);
 - numpy (a rede neural do pet);
@@ -25,6 +27,7 @@ from __future__ import annotations
 
 import os
 import runpy
+import shutil
 import sys
 from pathlib import Path
 
@@ -39,6 +42,17 @@ API_MINIMA = os.environ.get("PESTINHA_API_MINIMA", "29")
 P4A = os.environ.get("PESTINHA_P4A", "")
 P4A_COMMIT = os.environ.get("PESTINHA_P4A_COMMIT", "")
 P4A_RECEITAS = os.environ.get("PESTINHA_P4A_RECEITAS", "")
+
+
+def copiar_receitas(origem: Path, destino: Path) -> None:
+    """Copia cada receita (uma pasta com __init__.py) de `origem` para a pasta de receitas da ferramenta."""
+    receitas = [r for r in sorted(origem.iterdir()) if (r / "__init__.py").is_file()] if origem.is_dir() else []
+    if not receitas or not (destino / "PySide6").is_dir():
+        raise SystemExit(f"receitas: nada para copiar de {origem} ou {destino} sem a receita do PySide6")
+    for receita in receitas:
+        shutil.copytree(receita, destino / receita.name, dirs_exist_ok=True,
+                        ignore=shutil.ignore_patterns("__pycache__"))
+        print(f"receita {receita.name} -> {destino / receita.name}")
 
 
 def main() -> None:
@@ -62,10 +76,7 @@ def main() -> None:
         if P4A_COMMIT:
             self.set_value("app", "p4a.commit", P4A_COMMIT, raise_warning=False)
         if P4A_RECEITAS:
-            pasta = Path(P4A_RECEITAS).resolve()
-            if not (pasta / "numpy" / "__init__.py").is_file():
-                raise SystemExit(f"PESTINHA_P4A_RECEITAS sem receitas: {pasta}")
-            self.set_value("app", "p4a.local_recipes", str(pasta), raise_warning=False)
+            copiar_receitas(Path(P4A_RECEITAS).resolve(), Path(config.recipe_dir))
         self.update_config()
 
     buildozer.BuildozerConfig.__init__ = completar

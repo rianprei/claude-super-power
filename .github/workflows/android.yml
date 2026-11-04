@@ -7,10 +7,16 @@ on:
   push:
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      rodas_run:
+        description: "Id de uma rodada anterior cujas rodas de 32 bits servem (pula a compilação de ~1 h)"
+        required: false
+        default: ""
 
-# o token do workflow só lê o repositório
+# o token do workflow só lê o repositório (e os artefatos, para reaproveitar as rodas de outra rodada)
 permissions:
   contents: read
+  actions: read
 
 jobs:
   apk:
@@ -70,6 +76,7 @@ jobs:
 
   rodas-32bits:
     # o Qt não publica rodas Android de 32 bits: compila o PySide6 6.8.3 (QtCore, QtGui, QtWidgets) na API 28
+    if: ${{ !inputs.rodas_run }}
     strategy:
       fail-fast: false
       matrix:
@@ -103,6 +110,7 @@ jobs:
   apk-32bits:
     # Android 9+ de 32 bits: as rodas compiladas acima, no mesmo esquema da variante compatível
     needs: rodas-32bits
+    if: ${{ !cancelled() && (needs.rodas-32bits.result == 'success' || inputs.rodas_run) }}
     strategy:
       fail-fast: false
       matrix:
@@ -118,6 +126,8 @@ jobs:
         with:
           name: rodas-android-${{ matrix.arch }}
           path: rodas
+          run-id: ${{ inputs.rodas_run || github.run_id }}
+          github-token: ${{ github.token }}
       - name: SDK, NDK, JDK 17 e as ferramentas de build do python-for-android
         run: |
           sudo apt-get update
