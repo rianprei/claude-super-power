@@ -26,6 +26,9 @@ python -m pip install -q -r requirements.txt
 # só os módulos que o app usa: o build inteiro leva horas
 sed -i 's/"--no-qt-tools"\]/"--no-qt-tools", "--module-subset=Core,Gui,Widgets"]/' tools/cross_compile_android/main.py
 grep -q -- '--module-subset=Core,Gui,Widgets' tools/cross_compile_android/main.py
+# o teste de configuração do shiboken não recebe o --qt-host-path; o CMake do Qt lê o QT_HOST_PATH do ambiente
+export QT_HOST_PATH="$HOME/Qt/$QT/gcc_64"
+test -d "$QT_HOST_PATH/lib/cmake"
 python tools/cross_compile_android/main.py --plat-name "$ARCH" --qt-install-path "$HOME/Qt/$QT" \
     --ndk-path "$NDK" --sdk-path "$SDK" --api-level 28 --auto-accept-license --skip-update
 ls dist/

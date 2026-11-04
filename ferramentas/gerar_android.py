@@ -11,7 +11,9 @@ Os argumentos são os do pyside6-android-deploy. Duas variáveis de ambiente esc
 - PESTINHA_P4A e PESTINHA_P4A_COMMIT: o branch e o commit do python-for-android. A ferramenta do 6.8.3 clona o
   develop, que hoje traz o Python 3.14 (as rodas dela são cp311); a v2024.01.21 tem o Python 3.11, mas o
   bootstrap Qt dela ainda chama QtNative.setEnvironmentVariable, que o Qt 6.8 tirou. O commit f8e5c05 (agosto de
-  2024) tem o bootstrap já adaptado, o Python 3.11.5 e o numpy 1.26.5. Vazias: as da ferramenta. A ferramenta escreve um buildozer.spec só com
+  2024) tem o bootstrap já adaptado, o Python 3.11.5 e o numpy 1.26.5. Vazias: as da ferramenta.
+- PESTINHA_P4A_RECEITAS: pasta de receitas locais do python-for-android (ferramentas/receitas_p4a com o commit
+  f8e5c05: o numpy dele não compila com o `build` de hoje). Vazia: só as receitas dele. A ferramenta escreve um buildozer.spec só com
 python3, shiboken6 e PySide6; aqui ele ganha o resto, antes do build:
 - Android 10 (API 29) como mínimo (a ferramenta diz 28, mas as rodas não abrem no 9);
 - numpy (a rede neural do pet);
@@ -36,6 +38,7 @@ FORA = "tests,ferramentas,docs,executáveis,build,dist,memory,bin,.github,.build
 API_MINIMA = os.environ.get("PESTINHA_API_MINIMA", "29")
 P4A = os.environ.get("PESTINHA_P4A", "")
 P4A_COMMIT = os.environ.get("PESTINHA_P4A_COMMIT", "")
+P4A_RECEITAS = os.environ.get("PESTINHA_P4A_RECEITAS", "")
 
 
 def main() -> None:
@@ -58,6 +61,11 @@ def main() -> None:
             self.set_value("app", "p4a.branch", P4A, raise_warning=False)
         if P4A_COMMIT:
             self.set_value("app", "p4a.commit", P4A_COMMIT, raise_warning=False)
+        if P4A_RECEITAS:
+            pasta = Path(P4A_RECEITAS).resolve()
+            if not (pasta / "numpy" / "__init__.py").is_file():
+                raise SystemExit(f"PESTINHA_P4A_RECEITAS sem receitas: {pasta}")
+            self.set_value("app", "p4a.local_recipes", str(pasta), raise_warning=False)
         self.update_config()
 
     buildozer.BuildozerConfig.__init__ = completar

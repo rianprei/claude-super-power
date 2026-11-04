@@ -21,7 +21,7 @@ jobs:
         variante: [moderno, compativel]
         include:
           - {variante: moderno, pyside: "6.12.0", prefixo: pyside6, etiqueta: cp310-abi3, ndk: "28.2.13676358", api: "29", host: "3.12", p4a: ""}
-          - {variante: compativel, pyside: "6.8.3", prefixo: PySide6, etiqueta: cp311-cp311, ndk: "26.1.10909125", api: "28", host: "3.11", p4a: "develop", p4a_commit: "f8e5c05889c121181f309177ed0bc7b14e896212"}
+          - {variante: compativel, pyside: "6.8.3", prefixo: PySide6, etiqueta: cp311-cp311, ndk: "26.1.10909125", api: "28", host: "3.11", p4a: "develop", p4a_commit: "f8e5c05889c121181f309177ed0bc7b14e896212", receitas: "ferramentas/receitas_p4a"}
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
@@ -56,6 +56,7 @@ jobs:
           PESTINHA_API_MINIMA: ${{ matrix.api }}
           PESTINHA_P4A: ${{ matrix.p4a }}
           PESTINHA_P4A_COMMIT: ${{ matrix.p4a_commit }}
+          PESTINHA_P4A_RECEITAS: ${{ matrix.receitas }}
         run: |
           python ferramentas/gerar_android.py --name ClaudeSuperPower -f \
             --wheel-pyside rodas/PySide6-*.whl --wheel-shiboken rodas/shiboken6-*.whl \
@@ -132,6 +133,7 @@ jobs:
           PESTINHA_API_MINIMA: "28"
           PESTINHA_P4A: develop
           PESTINHA_P4A_COMMIT: f8e5c05889c121181f309177ed0bc7b14e896212
+          PESTINHA_P4A_RECEITAS: ferramentas/receitas_p4a
         run: |
           python ferramentas/gerar_android.py --name ClaudeSuperPower -f \
             --wheel-pyside "$(ls rodas/PySide6-*.whl)" --wheel-shiboken "$(ls rodas/shiboken6-*.whl)" \
